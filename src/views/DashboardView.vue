@@ -1,7 +1,6 @@
 <template>
   <div class="dashboard">
     <div class="dashboard-container">
-      <!-- Header mejorado -->
       <header class="header">
         <div class="header-content">
           <div class="title-section">
@@ -39,7 +38,6 @@
         </div>
       </header>
 
-      <!-- Estadísticas rápidas -->
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-icon stat-icon-purple">
@@ -81,7 +79,6 @@
         </div>
       </div>
 
-      <!-- Tabla mejorada -->
       <div class="table-container">
         <div class="table-header">
           <h2>Historial Detallado</h2>
@@ -167,7 +164,6 @@
           </table>
         </div>
 
-        <!-- Estado vacío mejorado -->
         <div v-if="yapeos.length === 0" class="empty-state">
           <div class="empty-icon">
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -221,6 +217,12 @@ onMounted(() => {
   });
 });
 
+/**
+ * Carga los datos de la colección "yape_notifications" en tiempo real filtrados por usuario
+ * @param {string} email - El correo electrónico del usuario autenticado
+ * Utiliza onSnapshot para escuchar cambios en tiempo real
+ */
+
 const cargarYapeos = (email) => {
   const q = query(
     collection(db, "yape_notifications"),
@@ -230,15 +232,12 @@ const cargarYapeos = (email) => {
   );
 
   unsubscribe = onSnapshot(q, (snapshot) => {
-    console.log("🔥 Cantidad de datos encontrados:", snapshot.docs.length);
-    
     yapeos.value = snapshot.docs.map(doc => {
         const data = doc.data();
-        console.log("📦 Dato individual:", data); // Para ver qué campos llegan
         return { id: doc.id, ...data };
     });
   }, (error) => {
-      console.error("❌ Error oculto:", error);
+    console.error("Error en tiempo real: ", error);
   });
 };
 
@@ -282,7 +281,6 @@ const getAmountClass = (amount) => {
   margin: 0 auto;
 }
 
-/* Header mejorado */
 .header {
   background: white;
   border-radius: 20px;
@@ -400,7 +398,6 @@ const getAmountClass = (amount) => {
   box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
 
-/* Tarjetas de estadísticas */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -463,7 +460,6 @@ const getAmountClass = (amount) => {
   color: #1f2937;
 }
 
-/* Contenedor de tabla */
 .table-container {
   background: white;
   border-radius: 20px;
@@ -517,7 +513,6 @@ const getAmountClass = (amount) => {
   border: 1px solid #f3f4f6;
 }
 
-/* Tabla moderna */
 .modern-table {
   width: 100%;
   border-collapse: collapse;
@@ -644,7 +639,6 @@ const getAmountClass = (amount) => {
   border: 1px solid #e5e7eb;
 }
 
-/* Estado vacío */
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -705,7 +699,6 @@ const getAmountClass = (amount) => {
   }
 }
 
-/* Responsive */
 @media (max-width: 768px) {
   .dashboard {
     padding: 1rem;

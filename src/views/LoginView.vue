@@ -41,13 +41,19 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 
+/**
+ * Inicia sesión con Google utilizando Firebase Authentication
+ * @returns {Promise<void>}
+ * Redirige al usuario a la vista del dashboard tras el inicio de sesión exitoso
+ */
+
 const iniciarSesion = async () => {
   try {
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
     router.push('/dashboard');
   } catch (error) {
-    alert("Error: " + error.message);
+    console.error("Error al iniciar sesión:", error);
   }
 };
 </script>
