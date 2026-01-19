@@ -1,44 +1,25 @@
-# yape-visualizer
+# LectorYape - Web Visualizer
 
-This template should help get you started developing with Vue 3 in Vite.
+Panel de control web diseñado para visualizar en tiempo real las notificaciones de pago sincronizadas desde la aplicación móvil.
 
-## Recommended IDE Setup
+## Funcionalidades
+- **Autenticación:** Login seguro con Google Firebase.
+- **Real-time:** Actualización instantánea de la tabla sin recargar la página.
+- **Estadísticas:** Cálculo automático de totales, promedios y cantidad de transacciones del día.
+- **Privacidad:** Filtro estricto por `userEmail` (cada usuario solo ve sus propios datos).
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Requisitos Técnicos
+- **Frontend:** Vue.js 3 (Vite)
+- **Base de Datos:** Firebase Firestore
+- **Estilos:** CSS3 Custom Properties (Diseño Responsivo)
 
-## Recommended Browser Setup
+## Configuración
+1. Instalar dependencias: `npm install`
+2. Configurar variables de entorno en un archivo `.env`:
+   - `VITE_FIREBASE_API_KEY`
+   - `VITE_FIREBASE_PROJECT_ID`
+   - (etc...)
+3. Ejecutar en desarrollo: `npm run dev`
+4. Construir para producción: `npm run build`
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+> **Nota:** Este repositorio corresponde únicamente al Login y Dashboard Web para la visualización de datos. El servicio de captura de datos reside en el repositorio del agente Android
