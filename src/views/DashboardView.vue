@@ -186,18 +186,35 @@
 </template>
 
 <script setup>
+/**
+ * DashboardView.vue
+ * Componente principal para la vista del dashboard
+ * Se encarga de la escucha en tiempo real de la colección 'yape_notifications'
+ * Filtra los datos por el email del usuario autenticado
+ */
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { auth, db } from '../firebaseConfig';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 
+/**
+ * Variables reactivas y configuración inicial
+ * - router: instancia del enrutador para navegación
+ * - usuario: información del usuario autenticado
+ * - yapeos: lista de transacciones obtenidas en tiempo real
+ * - unsubscribe: función para cancelar la suscripción a los cambios en tiempo real
+ */
 const router = useRouter();
 const usuario = ref(null);
 const yapeos = ref([]);
 let unsubscribe = null;
 
-// Computed properties para estadísticas
+/**
+ * Cálculos computados para estadísticas del dashboard
+ * - totalMonto: suma total de los montos de las transacciones
+ * - promedioMonto: monto promedio por transacción
+ */
 const totalMonto = computed(() => {
   return yapeos.value.reduce((sum, yape) => sum + yape.bigText, 0);
 });
@@ -241,12 +258,23 @@ const cargarYapeos = (email) => {
   });
 };
 
+/**
+ * Cierra la sesión del usuario
+ * @return {Promise<void>}
+ * Redirige al usuario a la vista de login tras cerrar sesión
+ */
 const cerrarSesion = async () => {
   if (unsubscribe) unsubscribe();
   await signOut(auth);
   router.push('/');
 };
 
+/**
+ * Funciones auxiliares para formateo y clases dinámicas
+ * - formatDate: Formatea una marca de tiempo a una fecha legible
+ * - formatTime: Formatea una marca de tiempo a una hora legible
+ * - getAmountClass: Devuelve una clase CSS basada en el monto
+ */
 const formatDate = (ts) => {
   return new Date(ts).toLocaleDateString('es-PE', { 
     day: '2-digit', 
