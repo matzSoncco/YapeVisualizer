@@ -35,27 +35,20 @@
 </template>
 
 <script setup>
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { auth } from "../firebaseConfig";
 import { useRouter } from "vue-router";
+import { useAuth } from "@/composables/useAuth";
 
 const router = useRouter();
+const { logInWithGoogle, error, loading } = useAuth();
 
-/**
- * Inicia sesión con Google utilizando Firebase Authentication
- * @returns {Promise<void>}
- * Redirige al usuario a la vista del dashboard tras el inicio de sesión exitoso
- */
-
-const iniciarSesion = async () => {
+const handleLogin = async () => {
   try {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    await logInWithGoogle();
     router.push('/dashboard');
-  } catch (error) {
-    console.error("Error al iniciar sesión:", error);
+  } catch (err) {
+    // el error se maneja en el composable
   }
-};
+}
 </script>
 
 <style scoped>
