@@ -18,7 +18,7 @@ export function useSucursal() {
 
     /**
      * Selecciona una sucursal y la guarda en localStorage
-     * @param {*} nombre 
+     * @param {*} nombre - nombres de la sucursal a seleccionar
      * @returns {void}
      */
     const seleccionar = (nombre) => {
