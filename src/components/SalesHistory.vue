@@ -43,14 +43,27 @@
 <script setup>
 import { computed } from 'vue';
 
+/**
+ * Propiedades del componente
+ * @prop {Array} ventas - Lista de ventas confirmadas
+ */
 const props = defineProps({
   ventas: { type: Array, required: true }
 });
 
+/**
+ * Suma total de los montos de las ventas actuales
+ * @type {import('vue').ComputedRef<number>}
+ */
 const total = computed(() => {
   return props.ventas.reduce((sum, item) => sum + Number(item.amount), 0);
 });
 
+/**
+ * Formatea un timestap de Firebase o un Date estándar a una cadena de hora legible
+ * @param {Object|data|string} ts - Timestamp de Firebase o Date
+ * @returns {string} Hora formateada (HH:MM)
+ */
 const formatTime = (ts) => {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
