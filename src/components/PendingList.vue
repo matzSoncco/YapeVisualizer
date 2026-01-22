@@ -27,12 +27,26 @@
 </template>
 
 <script setup>
+/**
+ * Propiedades recibidas por el componente
+ * @prop {Array} yapes - Lista de yapes pendientes de validar (pendientes)
+ */
 defineProps({
   yapes: { type: Array, required: true }
 });
 
+/**
+ * Eventos personalizados emitidos por el componente
+ * @event pescar - Evento emitido al reclamar una transaccion
+ * @property {Object} yape - Objeto de la transacción reclamada
+ */
 defineEmits(['pescar']);
 
+/**
+ * Convierte un formato de fecha/timestamp a una hora local de 24 horas
+ * @param {Object|Date|string} ts - Marca de tiempo (Firestore Timestamp, Date o ISO String)
+ * @returns {string} Hora formateada en español
+ */
 const formatTime = (ts) => {
   if (!ts) return '';
   const d = ts.toDate ? ts.toDate() : new Date(ts);
