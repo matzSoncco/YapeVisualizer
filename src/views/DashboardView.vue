@@ -13,10 +13,10 @@
               <p class="subtitle">Tienda: <strong>{{ sucursalActual }}</strong></p>
             </div>
             <div class="user-section">
-              <button @click="simularYapeo" class="btn-simular">🧪 Simular</button>
+              <button @click="simularYapeo" class="btn-simular">Simular</button>
               <div class="divider"></div>
-              <button @click="cambiarSucursal" class="btn-change">🔄 Cambiar</button>
-              <button @click="handleLogout" class="btn-logout">🚪 Salir</button>
+              <button @click="cambiarSucursal" class="btn-change">Cambiar</button>
+              <button @click="handleLogout" class="btn-logout">Salir</button>
             </div>
           </div>
         </header>
@@ -39,22 +39,25 @@
 import { onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import Swal from 'sweetalert2'; 
-import '../assets/dashboard.css'; // Tu CSS global
+import '../assets/dashboard.css';
 
-// Componentes Hijos
 import SucursalSelector from '../components/SucursalSelector.vue';
 import PendingList from '../components/PendingList.vue';
 import SalesHistory from '../components/SalesHistory.vue';
 
-// Composables
 import { useAuth } from '../composables/useAuth';
 import { useYape } from '../composables/useYape';
 import { useSucursal } from '../composables/useSucursal';
 
-// Simulador
+/**
+ * Simulador de yapeos + lógica de pesca + navegación
+ */
 import { db } from '../firebaseConfig';
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"; 
 
+/**
+ * Composables y variables reactivas
+ */
 const router = useRouter();
 const { user, logOut } = useAuth();
 const { sucursalActual, limpiarSucursal } = useSucursal();
@@ -67,7 +70,9 @@ const {
   misVentas 
 } = useYape();
 
-// --- LÓGICA DE SIMULACIÓN ---
+/**
+ * Logica de simulación de yapeos
+ */
 const simularYapeo = async () => {
   if (!user.value) return;
   const randomMonto = [10, 20, 50, 100][Math.floor(Math.random()*4)];
@@ -81,9 +86,11 @@ const simularYapeo = async () => {
   });
 };
 
-// --- LÓGICA DE PESCA (CONFIRMACIÓN) ---
+/**
+ * Lógica de confirmación de pesca de transacción
+ * @param yape - transacción a reclamar
+ */
 const confirmarPesca = (yape) => {
-  // El SweetAlert sigue aquí para dar esa capa de seguridad que pediste
   Swal.fire({
     title: '¿Es tu venta?',
     html: `Cliente: <b>${yape.senderName}</b><br>Monto: <b style="color:green">S/ ${Number(yape.amount).toFixed(2)}</b>`,
@@ -101,10 +108,15 @@ const confirmarPesca = (yape) => {
   });
 };
 
-// --- NAVEGACIÓN ---
+/**
+ * Cambio de sucursal y cierre de sesión
+ */
 const cambiarSucursal = () => { detenerTodo(); limpiarSucursal(); };
 const handleLogout = async () => { detenerTodo(); limpiarSucursal(); await logOut(); router.push('/'); };
 
+/**
+ * Inicialización de listeners al tener usuario y sucursal
+ */
 const iniciarDatos = () => {
   if (user.value && sucursalActual.value) {
     escucharPendientes(user.value.email);
@@ -112,13 +124,15 @@ const iniciarDatos = () => {
   }
 };
 
+/**
+ * Watchers y hooks
+ */
 watch(sucursalActual, (nuevo) => { if (nuevo) iniciarDatos(); });
 watch(user, (nuevo) => { if (nuevo && sucursalActual.value) iniciarDatos(); });
 onMounted(() => { if (sucursalActual.value && user.value) iniciarDatos(); });
 </script>
 
 <style scoped>
-  
 .btn-simular {
   background: #8b5cf6;
   color: white;
