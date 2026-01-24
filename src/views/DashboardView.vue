@@ -111,8 +111,17 @@ const confirmarPesca = (yape) => {
 /**
  * Cambio de sucursal y cierre de sesión
  */
-const cambiarSucursal = () => { detenerTodo(); limpiarSucursal(); };
-const handleLogout = async () => { detenerTodo(); limpiarSucursal(); await logOut(); router.push('/'); };
+const cambiarSucursal = () => { 
+    detenerTodo(); 
+    limpiarSucursal(); 
+};
+
+const handleLogout = async () => { 
+    detenerTodo(); 
+    limpiarSucursal(); 
+    await logOut(); 
+    router.push('/');
+};
 
 /**
  * Inicialización de listeners al tener usuario y sucursal
