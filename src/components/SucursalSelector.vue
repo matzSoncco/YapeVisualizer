@@ -4,7 +4,11 @@
       <h1 class="selector-title">📍 ¿Dónde estás trabajando hoy?</h1>
       <p class="selector-subtitle">Selecciona tu ubicación para filtrar las ventas</p>
       
-      <div class="branches-grid">
+      <div v-if="loading" class="loading-state">
+         Cargando tiendas...
+      </div>
+
+      <div v-else class="branches-grid">
         <div 
           v-for="tienda in sucursales" 
           :key="tienda.id" 
@@ -20,24 +24,34 @@
           <div class="branch-name">ADMINISTRADOR</div>
         </div>
       </div>
+
+      <p v-if="sucursales.length === 0 && !loading" style="margin-top: 20px; color: #666;">
+        No hay tiendas registradas. Ingresa como ADMIN para crear una.
+      </p>
+
     </div>
   </div>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router';
 import { useSucursal } from '../composables/useSucursal';
 
-/**
- * Componente para seleccionar la sucursal actual
- */
-const { sucursales, seleccionar } = useSucursal();
+const router = useRouter();
+const { sucursales, seleccionar, loading } = useSucursal();
 
 /**
- * Maneja la seleccion de una sucursal
- * @param nombre - nombre de la sucursal seleccionada
+ * Maneja la selección de una sucursal
+ * @param {String} nombre - nombre de la sucursal seleccionada
  */
 const handleSelect = (nombre) => {
-    seleccionar(nombre);
+    const exito = seleccionar(nombre);
+
+    if (exito) {
+        if (nombre === 'ADMIN') {
+            router.push('/admin');
+        }
+    }
 };
 </script>
 
@@ -79,6 +93,12 @@ const handleSelect = (nombre) => {
   border-color: #667eea;
   transform: translateY(-5px);
   box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+}
+
+.loading-state {
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
 }
 
 .branch-icon { font-size: 3rem; margin-bottom: 0.5rem; }
