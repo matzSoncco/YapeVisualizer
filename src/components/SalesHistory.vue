@@ -70,29 +70,3 @@ const formatTime = (ts) => {
   return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
 };
 </script>
-
-<style scoped>
-/* Solo estilos estructurales, el resto usa dashboard.css */
-.history-section {
-  background: white;
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  border-bottom: 2px solid #f3f4f6;
-  padding-bottom: 1rem;
-}
-
-.total-badge {
-  background: #d1fae5;
-  color: #065f46;
-  padding: 8px 16px;
-  border-radius: 12px;
-}
-</style>

@@ -34,16 +34,80 @@
       </div>
     </header>
 
-    <section class="filters-bar">
-       </section>
-    <main class="data-section">
-       </main>
+    <section class="filters-bar card">
+      <div class="filter-group">
+        <label>Desde:</label>
+        <input type="date" v-model="filters.startDate" class="input-control" />
+      </div>
+
+      <div class="filter-group">
+        <label>Hasta:</label>
+        <input type="date" v-model="filters.endDate" class="input-control" />
+      </div>
+
+      <div class="filter-group">
+        <label>Sede:</label>
+        <select v-model="filters.branchId" class="input-control select-control">
+          <option value="">Todas las sedes</option>
+          <option v-for="sucursal in sucursales" :key="sucursal.id" :value="sucursal.id">
+            {{ sucursal.nombre }}
+          </option>
+        </select>
+      </div>
+
+      <button @click="buscarCuadres" class="btn-primary" :disabled="loadingReportes">
+        {{ loadingReportes ? 'Buscando...' : '🔍 Buscar Reportes' }}
+      </button>
+    </section>
+
+    <main class="data-section card">
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Sede</th>
+              <th>Total Yape</th>
+              <th>Total Efectivo</th>
+              <th>Diferencia</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="reporte in reportes" :key="reporte.id">
+              <td>{{ formatDate(reporte.fecha) }}</td>
+              <td><strong>{{ reporte.sedeNombre }}</strong></td>
+              <td class="text-success">S/ {{ reporte.montoYape }}</td>
+              <td>S/ {{ reporte.montoEfectivo }}</td>
+              <td :class="reporte.diferencia < 0 ? 'text-danger' : 'text-success'">
+                S/ {{ reporte.diferencia }}
+              </td>
+              <td>
+                <span :class="['status-pill', reporte.estado === 'Cuadrado' ? 'bg-success' : 'bg-warning']">
+                  {{ reporte.estado }}
+                </span>
+              </td>
+              <td>
+                <button class="btn-icon" title="Ver detalle">👁️</button>
+              </td>
+            </tr>
+
+            <tr v-if="reportes.length === 0 && !loadingReportes">
+              <td colspan="7" class="text-center py-10 text-gray">
+                No se encontraron reportes con los filtros seleccionados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
 
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, watch } from 'vue';
+import { ref, computed, onUnmounted, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
@@ -51,12 +115,18 @@ import '@/assets/admin.css';
 
 const router = useRouter();
 const { user, logOut } = useAuth();
-const { limpiarSucursal } = useSucursal();
+const { sucursales, limpiarSucursal } = useSucursal();
 
 const showMenu = ref(false);
 const dropdownRef = ref(null);
 const reportes = ref([]);
-const filters = ref({ startDate: '', endDate: '', branchId: '' });
+const filters = ref({
+  startDate: new Date().toISOString().split('T')[0], // Fecha actual
+  endDate: new Date().toISOString().split('T')[0],
+  branchId: ''
+});
+
+const loadingReportes = ref(false);
 
 const userName = computed(() => user.value?.displayName || 'Admin');
 const userInitial = computed(() => (userName.value || 'A').charAt(0).toUpperCase());
@@ -99,26 +169,40 @@ const handleLogout = async () => {
   router.push('/');
 };
 
-// TODO: Implementar funcionalidad de reportes y filtros
-</script>
+/**
+ * Busca los cuadres de caja en Firestore según los filtros.
+ */
+const buscarCuadres = async () => {
+  loadingReportes.value = true;
+  console.log("Buscando con filtros:", filters.value);
+  
+  try {
+    // Simulación de carga
+    setTimeout(() => {
+      loadingReportes.value = false;
+      console.log("Busqueda finalizada");
+    }, 1000);
+  } catch (error) {
+    loadingReportes.value = false;
+  }
+};
 
-<style scoped>
-/* Estilo rápido para el botón de volver */
-.btn-back-dash {
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.3);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
-    margin-right: 15px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-.btn-back-dash:hover {
-    background: rgba(255,255,255,0.1);
-}
-.brand-section {
-    display: flex; 
-    align-items: center;
-}
-</style>
+/**
+ * Formatea fechas para la tabla
+ */
+const formatDate = (dateStr) => {
+  if (!dateStr) return '--';
+  return new Date(dateStr).toLocaleDateString('es-PE', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  });
+};
+
+// Manejo de eventos para el menú
+onMounted(() => {
+  document.addEventListener('click', closeMenuOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeMenuOutside);
+});
+</script>
