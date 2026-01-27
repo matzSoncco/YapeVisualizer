@@ -25,14 +25,15 @@ onAuthStateChanged(auth, async (currentUser) => {
                 await setDoc(userRef, {
                     email: currentUser.email,
                     displayName: currentUser.displayName || "Usuario",
-                    photoURL: currentUser.photoURL || "",
-                    role: "user",
+                    role: "owner",
                     createdAt: new Date().toISOString(),
                     subscription: {
-                        active: true,
-                        plan: "Prueba Gratuita",
+                        isAactive: true,
+                        status: 'trial', // Estado de facturacion (trial, active, overdue, canceled)
+                        planName: "Prueba Gratuita",
                         limitSucursales: 3,
-                        trialEndDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString() // 15 días de prueba
+                        trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 días de prueba
+                        nextBillingDate: null
                     }
                 });
             }
