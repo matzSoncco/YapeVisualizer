@@ -6,7 +6,19 @@ import { reactive } from 'vue';
 export const store = reactive({
     sucursales: [],
     sucursalActual: localStorage.getItem('sucursalActual') || null,
-    loading: false
+    loading: false,
+
+    userProfile: {
+        role: 'user',
+        subscription: {
+            isActive: false,
+            planName: 'Cargando...',
+            limitSucursales: 0,
+            status: 'trial',
+            nextBillingDate: null,
+            trialEndDate: null
+        }
+    }
 });
 
 /**
@@ -33,4 +45,24 @@ export const setSucursalActual = (id) => {
  */
 export const setLoading = (estado) => {
     store.loading = estado;
+};
+
+/**
+ * Actualiza los datos del perfil y suscripción
+ * @param {Object} data - Objeto con role y subscription
+ */
+export const setUserProfile = (data) => {
+    if (!data || Object.keys(data).length === 0) {
+        store.userProfile = {
+            role: 'user',
+            subscription: {
+                isActive: false,
+                planName: '',
+                limitSucursales: 0,
+                status: 'trial'
+            }
+        };
+        return;
+    }
+    store.userProfile = data;
 };

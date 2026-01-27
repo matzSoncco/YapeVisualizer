@@ -13,13 +13,21 @@ export function useSucursal() {
 
     /**
      * Agrega una nueva sucursal a la subcolección del usuario actual en Firestore.
-     * @param {Object} data - Datos de la sucursal (ej: { nombre: string, icono: string })
-     * @param {string} data.nombre - Nombre identificador de la sede.
-     * @param {string} [data.icono] - Emoji o identificador visual opcional.
+     * @param {Object} data - Datos de la sucursal
      * @returns {Promise<void>} Promesa que se resuelve cuando la operación en la BD finaliza.
      */
     const addSucursal = async (data) => {
         if(!user.value?.uid) return;
+        const subscription = store.userProfile.subscription || {};
+        const limitePermitido = subscription.limitSucursales || 0;
+        const cantidadActual = store.sucursales.length;
+
+        if (cantidadActual >= limitePermitido) {
+            // Lanzamos error para que el 'catch' del ProfileView lo muestre en alerta
+            // TODO: Mejorar con un modal para UX más amigable (decidir donde mostrarlo y qué lógica usar)
+            throw new Error(`Límite alcanzado (${cantidadActual}/${limitePermitido}). Tu plan actual no permite crear más sedes.`);
+        }
+
         const newRef = doc(collection(db, 'users', user.value.uid, 'sucursales'));
         await setDoc(newRef, {
             ...data,
@@ -40,7 +48,7 @@ export function useSucursal() {
 
     const seleccionar = (nombreId) => {
         if (nombreId === 'ADMIN') {
-             const pin = prompt("🔐 PIN Admin:");
+             const pin = prompt("PIN Admin:");
              if (pin !== "1234") return false;
              // TODO: Mejorar seguridad para el ingreso a la vista de administrador
         }

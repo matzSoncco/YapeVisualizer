@@ -2,9 +2,9 @@
 import { RouterView, useRoute } from 'vue-router'
 import { watch } from 'vue'
 import { db } from './firebaseConfig'
-import { collection, query, onSnapshot } from 'firebase/firestore'
+import { collection, query, onSnapshot, doc } from 'firebase/firestore'
 import { useAuth } from '@/composables/useAuth'
-import { setSucursales, setLoading } from '@/store'
+import { setSucursales, setLoading, setUserProfile } from '@/store'
 
 /**
  * Escucha en tiempo real los cambios en las sucursales del usuario autenticado
@@ -12,30 +12,42 @@ import { setSucursales, setLoading } from '@/store'
  */
 const route = useRoute()
 const { user } = useAuth()
-let unsubscribe = null
+
+/**
+ * Referencias para desuscribirse de los listeners
+ */
+let unsubSucursales = null;
+let unsubPerfil = null;
 
 /**
  * Vigila cambios en el usuario autenticado para actualizar las sucursales
+ * y el perfil en tiempo real
  */
 watch(user, (newUser) => {
-  if (unsubscribe) {
-    unsubscribe()
-    unsubscribe = null
+  if (unsubSucursales) {
+    unsubSucursales()
+    unsubSucursales = null
+  }
+
+  if (unsubPerfil) {
+    unsubPerfil()
+    unsubPerfil = null
   }
 
   if (!newUser?.uid) {
     setSucursales([])
+    setUserProfile(null)
     return
   }
 
   setLoading(true)
   
-  const q = query(collection(db, 'users', newUser.uid, 'sucursales'))
+  const qSucursales = query(collection(db, 'users', newUser.uid, 'sucursales'))
   
   /**
    * Escucha cambios en tiempo real y actualiza el store
    */
-  unsubscribe = onSnapshot(q, (snapshot) => {
+  unsubSucursales = onSnapshot(qSucursales, (snapshot) => {
     const docs = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -43,12 +55,29 @@ watch(user, (newUser) => {
     }))
     
     setSucursales(docs) 
-    
     setLoading(false)
   }, (error) => {
     console.error("Error escuchando sucursales: ", error)
     setLoading(false)
   })
+
+  const userDocRef = doc(db, 'users', newUser.uid);
+
+  /**
+   * Escucha cambios en el perfil del usuario
+   */
+  unsubPerfil = onSnapshot(userDocRef, (docSnap) => {
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      
+      setUserProfile({
+        role: data.role,
+        subscription: data.subscription || {}
+      });
+    }
+  }, (error) => {
+    console.error("Error escuchando perfil:", error);
+  });
 }, { immediate: true })
 </script>
 

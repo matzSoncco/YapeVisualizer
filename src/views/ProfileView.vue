@@ -35,7 +35,7 @@
               <strong>{{ subscriptionStatus.plan }}</strong>
             </div>
             <div class="detail-row">
-              <span>Próximo cobro:</span>
+              <span>{{ subscriptionStatus.labelFecha }}:</span>
               <span>{{ subscriptionStatus.nextBilling }}</span>
             </div>
             <div class="detail-row">
@@ -59,7 +59,7 @@
         <div class="card">
           <div class="card-header-action">
             <h3>🏢 Mis Sucursales</h3>
-            <button @click="showModal = true" class="btn-primary-sm">
+            <button @click="openModalCreation" class="btn-primary-sm">
               + Nueva Sede
             </button>
           </div>
@@ -77,10 +77,10 @@
               </div>
               
               <div class="branch-actions">
-                <button @click="editarSucursal(sucursal)" class="action-btn edit" title="Editar">
+                <button @click="openModalEdit(sucursal)" class="action-btn edit" title="Editar">
                   ✏️
                 </button>
-                <button @click="eliminarSucursal(sucursal.id)" class="action-btn delete" title="Eliminar">
+                <button @click="deleteSucursalModal(sucursal.id)" class="action-btn delete" title="Eliminar">
                   🗑️
                 </button>
               </div>
@@ -121,12 +121,14 @@
 </template>
 
 <script setup>
-import { computed, onUnmounted, watch, ref, reactive } from 'vue';
-import { doc, onSnapshot } from "firebase/firestore";
+import { computed, ref, reactive } from 'vue';
+import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
+import { formatearFecha } from '@/utils/dates';
+import { store } from '@/store';
 import '@/assets/admin.css'; 
 import '@/assets/profile.css';
 
@@ -138,75 +140,36 @@ const showModal = ref(false);
 const isEditing = ref(false); 
 const form = reactive({ id: null, nombre: '', icono: '' });
 
-/**
- * Estado de suscripción del usuario
- */
-const subscriptionStatus = ref({
-  active: false,
-  plan: 'Cargando información...',
-  nextBilling: '--',
-  limit: 0
-});
-
-let unsubUserListener = null;
-
-/**
- * Formatea una fecha ISO a formato legible
- * @param {String} fechaISO - fecha en formato ISO
- */
-// TODO: Mover a un utilitario común
-const formatearFecha = (fechaISO) => {
-  if (!fechaISO) return 'Indefinido';
-  const fecha = new Date(fechaISO + 'T12:00:00'); 
-  return fecha.toLocaleDateString('es-PE', {
-    day: 'numeric', month: 'short', year: 'numeric'
-  });
-};
-
-/**
- * Observa cambios en el usuario autenticado para actualizar estado de suscripción
- * @param {Object} newUser - nuevo usuario autenticado
- */
-watch(user, (newUser) => {
-  if (unsubUserListener) {
-    unsubUserListener();
-    unsubUserListener = null;
-  }
-
-  if (newUser?.uid) {
-    const userRef = doc(db, 'users', newUser.uid);
-    
-    unsubUserListener = onSnapshot(userRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const sub = data.subscription || {};
-
-        let fechaMostrar = 'N/A';
-        if (sub.nextBillingDate) {
-            fechaMostrar = formatearFecha(sub.nextBillingDate);
-        } else if (sub.trialEndDate) {
-            fechaMostrar = formatearFecha(sub.trialEndDate) + ' (Fin de prueba)';
-        }
-
-        subscriptionStatus.value = {
-          active: sub.active || false,
-          plan: sub.plan || 'Plan Gratuito',
-          limit: sub.limitSucursales || 1,
-          nextBilling: fechaMostrar
-        };
-      }
-    });
-  }
-}, { immediate: true });
-
-/**
- * Limpia el listener al desmontar el componente
- */
-onUnmounted(() => {
-  if (unsubUserListener) unsubUserListener();
-});
 const userName = computed(() => user.value?.displayName || 'Usuario');
 const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
+
+/**
+ * Estado de la suscripción del usuario
+ * @return {Object} Información de la suscripción del usuario
+ */
+const subscriptionStatus = computed(() => {
+  const sub = store.userProfile.subscription || {};
+  
+  let fechaMostrar = 'N/A';
+  let etiqueta = 'Próximo cobro';
+
+  if (sub.status === 'trial' && sub.trialEndDate) {
+      fechaMostrar = formatearFecha(sub.trialEndDate);
+      etiqueta = 'Fin de prueba';
+  } else if (sub.nextBillingDate) {
+      fechaMostrar = formatearFecha(sub.nextBillingDate);
+  }
+
+  const isVisuallyActive = sub.isActive && (sub.status === 'active' || sub.status === 'trial');
+
+  return {
+    active: isVisuallyActive,
+    plan: sub.planName || 'Cargando...',
+    limit: sub.limitSucursales || 0,
+    nextBilling: fechaMostrar,
+    labelFecha: etiqueta
+  };
+});
 
 /**
  * Cierra el modal de creación/edición de sucursal
@@ -220,28 +183,31 @@ const closeModal = () => {
 };
 
 /**
- * Guarda una nueva sucursal o actualiza una existente
+ * Abre el modal de creación SOLO si el usuario tiene cupo.
  */
-const handleSaveBranch = async () => {
-  if (!form.nombre.trim()) return;
+const openModalCreation = () => {
+    const limite = subscriptionStatus.value.limit;
+    const actual = sucursales.value.length;
 
-  try {
-    if (isEditing.value) {
-      // TODO: Implementar logica de edición de sucursal
-    } else {
-      await addSucursal({ nombre: form.nombre, icono: form.icono || '🏪' });
+    if (actual >= limite) {
+        // Alerta de prueba
+        // TODO: Mejorar con un modal para UX más amigable
+        alert(`Has alcanzado el límite de sedes permitidas (${actual}/${limite}). Por favor, actualiza tu plan para agregar más sedes.`);
+        return;
     }
-    closeModal();
-  } catch (e) {
-    alert("Error: " + e.message);
-  }
+
+    form.id = null;
+    form.nombre = '';
+    form.icono = '';
+    isEditing.value = false;
+    showModal.value = true;
 };
 
 /**
  * Inicia la edición de una sucursal
  * @param {Object} sucursal - sucursal a editar
  */
-const editarSucursal = (sucursal) => {
+const openModalEdit = (sucursal) => {
   form.id = sucursal.id;
   form.nombre = sucursal.nombre;
   form.icono = sucursal.icono;
@@ -250,10 +216,32 @@ const editarSucursal = (sucursal) => {
 };
 
 /**
+ * Guarda una nueva sucursal o actualiza una existente
+ */
+const handleSaveBranch = async () => {
+  if (!form.nombre.trim()) return;
+
+  try {
+    if (isEditing.value) {
+      const sucursalRef = doc(db, 'users', user.value.uid, 'sucursales', form.id);
+      await updateDoc(sucursalRef, {
+        nombre: form.nombre,
+        icono: form.icono || '🏪'
+      });
+    } else {
+      await addSucursal({ nombre: form.nombre, icono: form.icono || '🏪' });
+    }
+    closeModal();
+  } catch (e) {
+    alert("Error al guardar: " + e.message);
+  }
+};
+
+/**
  * Elimina una sucursal
  * @param {String} id - ID de la sucursal a eliminar
  */
-const eliminarSucursal = async (id) => {
+const deleteSucursalModal = async (id) => {
   if (confirm('¿Estás seguro de eliminar esta sucursal?')) {
     try {
       await deleteSucursal(id);
