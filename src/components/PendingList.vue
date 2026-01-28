@@ -1,32 +1,54 @@
 <template>
-  <div class="section-container pending-section">
+  <div class="pending-section">
     <div class="section-header">
-      <h3>🔔 Bolsa Común (Por Validar)</h3>
-      <span class="badge-count">{{ yapes.length }}</span>
+      <div class="section-title">
+        <i class="pi pi-bell" style="color: var(--antique-brass);"></i>
+        <h3>Pagos por Validar</h3>
+      </div>
+      <Badge :value="yapes.length" severity="warning" size="large" />
     </div>
 
-    <div v-if="yapes.length === 0" class="empty-mini-state">
+    <div v-if="yapes.length === 0" class="empty-state">
+      <i class="pi pi-inbox" style="font-size: 3rem; color: var(--coffee); opacity: 0.3;"></i>
       <p>Esperando nuevos yapeos...</p>
-      </div>
+    </div>
 
     <div v-else class="pending-grid">
-      <div v-for="yape in yapes" :key="yape.id" class="pending-card bounce-in">
-        <div class="card-top">
-          <span class="time">{{ formatTime(yape.timestamp) }}</span>
-          <strong class="amount">S/ {{ Number(yape.amount).toFixed(2) }}</strong>
-        </div>
-        <div class="card-mid">
-          <span class="sender">{{ yape.senderName }}</span>
-        </div>
-        <button @click="$emit('pescar', yape)" class="btn-claim-full">
-          ¡ES MÍO! 🙋‍♂️
-        </button>
-      </div>
+      <Card 
+        v-for="yape in yapes" 
+        :key="yape.id" 
+        class="pending-card"
+      >
+        <template #content>
+          <div class="pending-card-top">
+            <span class="pending-time">
+              <i class="pi pi-clock"></i>
+              {{ formatTime(yape.timestamp) }}
+            </span>
+            <span class="pending-amount">S/ {{ Number(yape.amount).toFixed(2) }}</span>
+          </div>
+          <div class="pending-sender">
+            <i class="pi pi-user"></i>
+            {{ yape.senderName }}
+          </div>
+          <Button
+            label="¡ES MÍO!"
+            icon="pi pi-check"
+            @click="$emit('pescar', yape)"
+            class="w-full"
+            style="margin-top: 0.75rem;"
+          />
+        </template>
+      </Card>
     </div>
   </div>
 </template>
 
 <script setup>
+import Badge from 'primevue/badge';
+import Card from 'primevue/card';
+import Button from 'primevue/button';
+
 /**
  * Propiedades recibidas por el componente
  * @prop {Array} yapes - Lista de yapes pendientes de validar (pendientes)

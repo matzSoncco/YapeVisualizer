@@ -1,46 +1,67 @@
 <template>
-  <div class="section-container history-section">
+  <div class="history-section">
     <div class="section-header">
-      <h3>💰 Mis Ventas Confirmadas</h3>
+      <div class="section-title">
+        <i class="pi pi-wallet" style="color: var(--antique-brass);"></i>
+        <h3>Mis Ventas Confirmadas</h3>
+      </div>
       <div class="total-badge">
         Total Hoy: <strong>S/ {{ total.toFixed(2) }}</strong>
       </div>
     </div>
 
-    <div v-if="ventas.length === 0" class="empty-mini-state">
+    <div v-if="ventas.length === 0" class="empty-state">
+      <i class="pi pi-shopping-cart" style="font-size: 3rem; color: var(--coffee); opacity: 0.3;"></i>
       <p>Aún no has validado ventas hoy.</p>
     </div>
 
-    <div v-else class="table-wrapper">
-      <table class="modern-table">
-        <thead>
-          <tr>
-            <th>Hora</th>
-            <th>Cliente</th>
-            <th>Monto</th>
-            <th>Estado</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="venta in ventas" :key="venta.id">
-            <td>{{ formatTime(venta.timestamp) }}</td>
-            <td>
-              <span class="client-name">{{ venta.senderName }}</span>
-            </td>
-            <td class="amount-cell">
-              S/ {{ Number(venta.amount).toFixed(2) }}
-            </td>
-            <td>
-              <span class="status-badge">✅ En Caja</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <Card v-else class="history-card">
+      <template #content>
+        <DataTable 
+          :value="ventas" 
+          :paginator="ventas.length > 10"
+          :rows="10"
+          stripedRows
+          responsiveLayout="scroll"
+        >
+          <Column field="timestamp" header="Hora">
+            <template #body="slotProps">
+              <i class="pi pi-clock" style="margin-right: 0.5rem; color: var(--jet);"></i>
+              {{ formatTime(slotProps.data.timestamp) }}
+            </template>
+          </Column>
+          
+          <Column field="senderName" header="Cliente">
+            <template #body="slotProps">
+              <span class="client-name">{{ slotProps.data.senderName }}</span>
+            </template>
+          </Column>
+          
+          <Column field="amount" header="Monto">
+            <template #body="slotProps">
+              <span class="amount-cell">
+                S/ {{ Number(slotProps.data.amount).toFixed(2) }}
+              </span>
+            </template>
+          </Column>
+          
+          <Column header="Estado">
+            <template #body>
+              <Tag value="En Caja" severity="success" icon="pi pi-check" />
+            </template>
+          </Column>
+        </DataTable>
+      </template>
+    </Card>
   </div>
 </template>
 
 <script setup>
+import Card from 'primevue/card';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Tag from 'primevue/tag';
+
 import { computed } from 'vue';
 
 /**

@@ -1,26 +1,49 @@
 <template>
   <div class="dashboard">
-    <div class="dashboard-container">
-      
-      <SucursalSelector v-if="!sucursalActual" />
+    <Toast />
+    <ConfirmDialog />
+    <div v-if="!sucursalActual">
+      <SucursalSelector />
+    </div>
 
-      <div v-else class="main-dashboard">
-        
-        <header class="header">
-          <div class="header-content">
-            <div class="title-section">
-              <h1>Monitor Yape</h1>
-              <p class="subtitle">Tienda: <strong>{{ sucursalActual }}</strong></p>
-            </div>
-            <div class="user-section">
-              <Button label="Simular Yape" @click="handleSimulacion" />
-              <div class="divider"></div>
-              <Button @click="cambiarSucursal" class="btn-change">Cambiar</Button>
-              <Button @click="handleLogout" class="btn-logout">Salir</Button>
-            </div>
+    <div v-else class="dashboard-layout">
+      <!-- Header -->
+      <header class="dashboard-header">
+        <div class="dashboard-header-content">
+          <div class="dashboard-title-section">
+            <h1>Monitor Yape</h1>
+            <p class="dashboard-subtitle">
+              Tienda: <strong>{{ sucursalActual }}</strong>
+            </p>
           </div>
-        </header>
+          
+          <div class="dashboard-actions">
+            <Button 
+              label="Simular Yape" 
+              icon="pi pi-play"
+              @click="handleSimulacion"
+              outlined
+            />
+            <div class="divider-vertical"></div>
+            <Button 
+              label="Cambiar" 
+              icon="pi pi-refresh"
+              @click="cambiarSucursal"
+              text
+            />
+            <Button 
+              label="Salir" 
+              icon="pi pi-sign-out"
+              @click="handleLogout"
+              severity="danger"
+              text
+            />
+          </div>
+        </div>
+      </header>
 
+      <!-- Content -->
+      <main class="dashboard-content">
         <PendingList 
           :yapes="yapesPendientes" 
           @pescar="handlePesca" 
@@ -29,8 +52,7 @@
         <SalesHistory 
           :ventas="misVentas" 
         />
-
-      </div>
+      </main>
     </div>
   </div>
 </template>
@@ -136,27 +158,3 @@ onMounted(() => {
   if (sucursalActual.value && user.value) iniciarListeners();
 });
 </script>
-
-<style scoped>
-.btn-simular {
-  background: #8b5cf6;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  margin-right: 10px;
-  transition: transform 0.1s;
-}
-.btn-simular:active { transform: scale(0.95); }
-
-.status-badge {
-  background: #d1fae5;
-  color: #065f46;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-</style>

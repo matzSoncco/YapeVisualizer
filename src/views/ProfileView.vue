@@ -1,122 +1,204 @@
 <template>
-  <div class="admin-container">
-    
+  <div class="profile-container">
+    <Toast />
+    <ConfirmDialog />
+
+    <!-- Header -->
     <header class="profile-header">
-      <button @click="router.push('/admin')" class="btn-back">
-        ← Volver al Panel
-      </button>
+      <Button
+        label="Volver al Panel"
+        icon="pi pi-arrow-left"
+        @click="router.push('/admin')"
+        outlined
+      />
       <h1>Mi Perfil y Configuración</h1>
     </header>
 
     <div class="profile-grid">
       
-      <aside class="profile-sidebar space-y-6">
+      <!-- Sidebar -->
+      <aside class="profile-sidebar">
         
-        <div class="card user-card">
-          <div class="user-avatar-large">
-            {{ userInitial }}
-          </div>
-          <h2 class="user-name">{{ userName }}</h2>
-          <p class="user-email">{{ user?.email }}</p>
-          <div class="user-role-badge">Dueño de Negocio</div>
-        </div>
+        <!-- User Card -->
+        <Card class="user-card">
+          <template #content>
+            <Avatar
+              :label="userInitial"
+              size="xlarge"
+              shape="circle"
+              style="background-color: var(--dark-jungle-green); color: white; width: 80px; height: 80px; font-size: 2rem;"
+            />
+            <h2 class="user-name">{{ userName }}</h2>
+            <p class="user-email">{{ user?.email }}</p>
+            <Tag value="Dueño de Negocio" severity="secondary" />
+          </template>
+        </Card>
 
-        <div class="card subscription-card">
-          <div class="card-header">
-            <h3>Estado de Suscripción</h3>
-            <span :class="['status-badge', subscriptionStatus.active ? 'active' : 'suspended']">
-              {{ subscriptionStatus.active ? 'ACTIVO' : 'SUSPENDIDO' }}
-            </span>
-          </div>
-          
-          <div class="sub-details">
-            <div class="detail-row">
-              <span>Plan Actual:</span>
-              <strong>{{ subscriptionStatus.plan }}</strong>
+        <!-- Subscription Card -->
+        <Card class="subscription-card">
+          <template #header>
+            <div class="subscription-header">
+              <h3>Estado de Suscripción</h3>
+              <Tag 
+                :value="subscriptionStatus.active ? 'ACTIVO' : 'SUSPENDIDO'"
+                :severity="subscriptionStatus.active ? 'success' : 'danger'"
+              />
             </div>
-            <div class="detail-row">
-              <span>{{ subscriptionStatus.labelFecha }}:</span>
-              <span>{{ subscriptionStatus.nextBilling }}</span>
-            </div>
-            <div class="detail-row">
-              <span>Límite de Sedes:</span>
-              <span>{{ sucursales.length }} / {{ subscriptionStatus.limit }}</span>
-            </div>
-          </div>
+          </template>
 
-          <div class="sub-actions">
-            <button v-if="!subscriptionStatus.active" class="btn-reactivate">
-              ⚡ Reactivar Servicio
-            </button>
-            <button v-else class="btn-outline-danger">
-              Cancelar Suscripción
-            </button>
-          </div>
-        </div>
+          <template #content>
+            <div class="sub-details">
+              <div class="detail-row">
+                <span>Plan Actual:</span>
+                <strong>{{ subscriptionStatus.plan }}</strong>
+              </div>
+              <div class="detail-row">
+                <span>{{ subscriptionStatus.labelFecha }}:</span>
+                <span>{{ subscriptionStatus.nextBilling }}</span>
+              </div>
+              <div class="detail-row">
+                <span>Límite de Sedes:</span>
+                <Badge 
+                  :value="`${sucursales.length} / ${subscriptionStatus.limit}`"
+                  :severity="sucursales.length >= subscriptionStatus.limit ? 'danger' : 'success'"
+                />
+              </div>
+            </div>
+          </template>
+
+          <template #footer>
+            <Button
+              v-if="!subscriptionStatus.active"
+              label="Reactivar Servicio"
+              icon="pi pi-bolt"
+              severity="warning"
+              class="w-full"
+            />
+            <Button
+              v-else
+              label="Cancelar Suscripción"
+              icon="pi pi-times"
+              severity="danger"
+              outlined
+              class="w-full"
+            />
+          </template>
+        </Card>
       </aside>
 
+      <!-- Branches Section -->
       <main class="branches-section">
-        <div class="card">
-          <div class="card-header-action">
-            <h3>🏢 Mis Sucursales</h3>
-            <button @click="openModalCreation" class="btn-primary-sm">
-              + Nueva Sede
-            </button>
-          </div>
-
-          <div class="branches-list">
-            <div v-for="sucursal in sucursales" :key="sucursal.id" class="branch-item">
-              <div class="branch-info">
-                <div class="branch-icon-wrapper">
-                  {{ sucursal.icono || '🏪' }}
-                </div>
-                <div>
-                  <h4 class="branch-title">{{ sucursal.nombre }}</h4>
-                  <p class="branch-id">ID: {{ sucursal.id }}</p>
-                </div>
+        <Card>
+          <template #header>
+            <div class="branches-header">
+              <div class="branches-title">
+                <i class="pi pi-building"></i>
+                <h3>Mis Sucursales</h3>
               </div>
-              
-              <div class="branch-actions">
-                <button @click="openModalEdit(sucursal)" class="action-btn edit" title="Editar">
-                  ✏️
-                </button>
-                <button @click="deleteSucursalModal(sucursal.id)" class="action-btn delete" title="Eliminar">
-                  🗑️
-                </button>
-              </div>
+              <Button
+                label="Nueva Sede"
+                icon="pi pi-plus"
+                @click="openModalCreation"
+                size="small"
+              />
             </div>
+          </template>
 
+          <template #content>
             <div v-if="sucursales.length === 0" class="empty-branches">
+              <i class="pi pi-inbox" style="font-size: 3rem; color: var(--jet); opacity: 0.3;"></i>
               <p>No tienes sucursales registradas.</p>
               <p class="subtext">Agrega tu primera tienda para comenzar a monitorear.</p>
             </div>
-          </div>
-        </div>
+
+            <div v-else class="branches-list">
+              <Card 
+                v-for="sucursal in sucursales" 
+                :key="sucursal.id" 
+                class="branch-item"
+              >
+                <template #content>
+                  <div class="branch-content">
+                    <div class="branch-info">
+                      <div class="branch-icon-wrapper">
+                        {{ sucursal.icono || '🏪' }}
+                      </div>
+                      <div>
+                        <h4 class="branch-title">{{ sucursal.nombre }}</h4>
+                        <p class="branch-id">ID: {{ sucursal.id }}</p>
+                      </div>
+                    </div>
+                    
+                    <div class="branch-actions">
+                      <Button
+                        icon="pi pi-pencil"
+                        @click="openModalEdit(sucursal)"
+                        text
+                        rounded
+                        severity="secondary"
+                      />
+                      <Button
+                        icon="pi pi-trash"
+                        @click="deleteSucursalModal(sucursal.id)"
+                        text
+                        rounded
+                        severity="danger"
+                      />
+                    </div>
+                  </div>
+                </template>
+              </Card>
+            </div>
+          </template>
+        </Card>
       </main>
-
     </div>
 
-    <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
-        <h3>{{ isEditing ? 'Editar Sucursal' : 'Nueva Sucursal' }}</h3>
-        <form @submit.prevent="handleSaveBranch">
-          <div class="form-group">
-            <label>Nombre de la Sede</label>
-            <input v-model="form.nombre" type="text" class="input-control w-full" required placeholder="Ej. Tienda Centro" />
-          </div>
-          <div class="form-group">
-            <label>Icono (Emoji)</label>
-            <input v-model="form.icono" type="text" class="input-control w-full" placeholder="Ej. 🍕" />
-          </div>
-          
-          <div class="modal-actions">
-            <button type="button" @click="closeModal" class="btn-secondary">Cancelar</button>
-            <button type="submit" class="btn-primary">Guardar</button>
-          </div>
-        </form>
+    <!-- Modal -->
+    <Dialog
+      v-model:visible="showModal"
+      :header="isEditing ? 'Editar Sucursal' : 'Nueva Sucursal'"
+      :modal="true"
+      :closable="true"
+      :style="{ width: '450px' }"
+    >
+      <div class="modal-form">
+        <div class="form-group">
+          <label for="nombre">Nombre de la Sede</label>
+          <InputText
+            id="nombre"
+            v-model="form.nombre"
+            placeholder="Ej. Tienda Centro"
+            class="w-full"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="icono">Icono (Emoji)</label>
+          <InputText
+            id="icono"
+            v-model="form.icono"
+            placeholder="Ej. 🍕"
+            class="w-full"
+          />
+        </div>
       </div>
-    </div>
 
+      <template #footer>
+        <Button
+          label="Cancelar"
+          icon="pi pi-times"
+          @click="closeModal"
+          severity="secondary"
+          outlined
+        />
+        <Button
+          label="Guardar"
+          icon="pi pi-check"
+          @click="handleSaveBranch"
+        />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -127,12 +209,16 @@ import { db } from "../firebaseConfig";
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 import { formatearFecha } from '@/utils/dates';
 import { store } from '@/store';
-import '@/assets/admin.css'; 
+
 import '@/assets/profile.css';
 
 const router = useRouter();
+const toast = useToast();
+const confirm = useConfirm();
 const { user } = useAuth();
 const { sucursales, addSucursal, deleteSucursal } = useSucursal();
 
@@ -143,10 +229,6 @@ const form = reactive({ id: null, nombre: '', icono: '' });
 const userName = computed(() => user.value?.displayName || 'Usuario');
 const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
 
-/**
- * Estado de la suscripción del usuario
- * @return {Object} Información de la suscripción del usuario
- */
 const subscriptionStatus = computed(() => {
   const sub = store.userProfile.subscription || {};
   
@@ -171,9 +253,6 @@ const subscriptionStatus = computed(() => {
   };
 });
 
-/**
- * Cierra el modal de creación/edición de sucursal
- */
 const closeModal = () => {
   showModal.value = false;
   isEditing.value = false;
@@ -182,17 +261,17 @@ const closeModal = () => {
   form.id = null;
 };
 
-/**
- * Abre el modal de creación SOLO si el usuario tiene cupo.
- */
 const openModalCreation = () => {
     const limite = subscriptionStatus.value.limit;
     const actual = sucursales.value.length;
 
     if (actual >= limite) {
-        // Alerta de prueba
-        // TODO: Mejorar con un modal para UX más amigable
-        alert(`Has alcanzado el límite de sedes permitidas (${actual}/${limite}). Por favor, actualiza tu plan para agregar más sedes.`);
+        toast.add({
+          severity: 'warn',
+          summary: 'Límite alcanzado',
+          detail: `Has alcanzado el límite de sedes (${actual}/${limite}). Actualiza tu plan.`,
+          life: 4000
+        });
         return;
     }
 
@@ -203,10 +282,6 @@ const openModalCreation = () => {
     showModal.value = true;
 };
 
-/**
- * Inicia la edición de una sucursal
- * @param {Object} sucursal - sucursal a editar
- */
 const openModalEdit = (sucursal) => {
   form.id = sucursal.id;
   form.nombre = sucursal.nombre;
@@ -215,11 +290,16 @@ const openModalEdit = (sucursal) => {
   showModal.value = true;
 };
 
-/**
- * Guarda una nueva sucursal o actualiza una existente
- */
 const handleSaveBranch = async () => {
-  if (!form.nombre.trim()) return;
+  if (!form.nombre.trim()) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'El nombre es obligatorio',
+      life: 3000
+    });
+    return;
+  }
 
   try {
     if (isEditing.value) {
@@ -228,26 +308,57 @@ const handleSaveBranch = async () => {
         nombre: form.nombre,
         icono: form.icono || '🏪'
       });
+      toast.add({
+        severity: 'success',
+        summary: 'Actualizado',
+        detail: 'Sucursal actualizada correctamente',
+        life: 3000
+      });
     } else {
       await addSucursal({ nombre: form.nombre, icono: form.icono || '🏪' });
+      toast.add({
+        severity: 'success',
+        summary: 'Creado',
+        detail: 'Sucursal creada correctamente',
+        life: 3000
+      });
     }
     closeModal();
   } catch (e) {
-    alert("Error al guardar: " + e.message);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: e.message,
+      life: 3000
+    });
   }
 };
 
-/**
- * Elimina una sucursal
- * @param {String} id - ID de la sucursal a eliminar
- */
-const deleteSucursalModal = async (id) => {
-  if (confirm('¿Estás seguro de eliminar esta sucursal?')) {
-    try {
-      await deleteSucursal(id);
-    } catch (e) {
-      alert(e.message);
+const deleteSucursalModal = (id) => {
+  confirm.require({
+    message: '¿Estás seguro de eliminar esta sucursal?',
+    header: 'Confirmar eliminación',
+    icon: 'pi pi-exclamation-triangle',
+    rejectProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
+    acceptProps: { label: 'Eliminar', severity: 'danger' },
+    accept: async () => {
+      try {
+        await deleteSucursal(id);
+        toast.add({
+          severity: 'success',
+          summary: 'Eliminado',
+          detail: 'Sucursal eliminada correctamente',
+          life: 3000
+        });
+      } catch (e) {
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: e.message,
+          life: 3000
+        });
+      }
     }
-  }
+  });
 };
 </script>

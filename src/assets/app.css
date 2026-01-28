@@ -1,6 +1,5 @@
 /* ============================================
-   MONITOR YAPE - Paleta Personalizada
-   Chinese Black + Dark Jungle Green + Coffee + Antique Brass
+   MONITOR YAPE - Oscuros como protagonistas
    ============================================ */
 
 /* --- TIPOGRAFÍA SUAVE --- */
@@ -13,8 +12,6 @@
   --jet: #3a3534;
   --coffee: #724b39;
   --antique-brass: #cf9d7b;
-  --warm-white: #fdfaf7;
-  --card-white: #ffffff;
 }
 
 /* --- RESET BÁSICO --- */
@@ -36,7 +33,7 @@ body,
 
 body {
   font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: linear-gradient(135deg, var(--warm-white) 0%, #f5efe8 100%);
+  background: #fafbfc;
   color: var(--chinese-black);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -45,24 +42,29 @@ body {
   line-height: 1.6;
 }
 
+#app {
+  min-height: 100vh;
+}
+
 /* --- LOGIN VIEW --- */
 .login-container {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   padding: 1.5rem;
 }
 
 .login-card {
   width: 100%;
   max-width: 420px;
-  background: var(--card-white);
+  background: #ffffff;
   box-shadow: 
-    0 4px 24px rgba(207, 157, 123, 0.1),
-    0 2px 8px rgba(12, 21, 25, 0.05);
+    0 4px 24px rgba(12, 21, 25, 0.08),
+    0 1px 3px rgba(0, 0, 0, 0.05);
   border-radius: 16px;
-  border: 1.5px solid rgba(207, 157, 123, 0.2);
+  border: 1px solid #e5e7eb;
 }
 
 .login-header {
@@ -74,16 +76,14 @@ body {
   width: 68px;
   height: 68px;
   margin: 0 auto 1.25rem;
-  background: linear-gradient(135deg, var(--antique-brass) 0%, var(--coffee) 100%);
+  background: var(--dark-jungle-green);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #ffffff;
   font-size: 1.875rem;
-  box-shadow: 
-    0 8px 20px rgba(207, 157, 123, 0.3),
-    0 2px 8px rgba(114, 75, 57, 0.2);
+  box-shadow: 0 8px 24px rgba(22, 33, 39, 0.25);
 }
 
 .login-title {
@@ -104,10 +104,10 @@ body {
 .login-footer {
   margin-top: 1.75rem;
   padding-top: 1.75rem;
-  border-top: 1.5px solid rgba(207, 157, 123, 0.15);
+  border-top: 1px solid #e5e7eb;
   text-align: center;
   font-size: 0.8125rem;
-  color: var(--coffee);
+  color: #6b7280;
   font-weight: 500;
 }
 
