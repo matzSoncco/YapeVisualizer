@@ -13,20 +13,23 @@ import 'primeicons/primeicons.css'
 
 import './assets/app.css'
 
+/**
+ * Preset para Monitor Yape usando colores inspirados Lara Dark
+ */
 const MonitorYapePreset = definePreset(Lara, {
     semantic: {
         primary: {
-        50: '#fdf6f0',
-        100: '#f9e9dc',
-        200: '#f3d1b8',
-        300: '#e9b38f',
-        400: '#dd8f64',
-        500: '#cf9d7b', // Antique Brass
-        600: '#b87d5e',
-        700: '#9a6449',
-        800: '#7d5139',
-        900: '#67442f',
-        950: '#372318'
+            50: '#fdf6f0',
+            100: '#f9e9dc',
+            200: '#f3d1b8',
+            300: '#e9b38f',
+            400: '#dd8f64',
+            500: '#cf9d7b', // Antique Brass
+            600: '#b87d5e',
+            700: '#9a6449',
+            800: '#7d5139',
+            900: '#67442f',
+            950: '#372318'
         },
         colorScheme: {
             light: {
