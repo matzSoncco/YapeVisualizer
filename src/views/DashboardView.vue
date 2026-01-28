@@ -13,17 +13,17 @@
               <p class="subtitle">Tienda: <strong>{{ sucursalActual }}</strong></p>
             </div>
             <div class="user-section">
-              <button @click="simularYapeo" class="btn-simular">Simular</button>
+              <Button label="Simular Yape" @click="handleSimulacion" />
               <div class="divider"></div>
-              <button @click="cambiarSucursal" class="btn-change">Cambiar</button>
-              <button @click="handleLogout" class="btn-logout">Salir</button>
+              <Button @click="cambiarSucursal" class="btn-change">Cambiar</Button>
+              <Button @click="handleLogout" class="btn-logout">Salir</Button>
             </div>
           </div>
         </header>
 
         <PendingList 
           :yapes="yapesPendientes" 
-          @pescar="confirmarPesca" 
+          @pescar="handlePesca" 
         />
 
         <SalesHistory 
@@ -36,31 +36,31 @@
 </template>
 
 <script setup>
-import { onMounted, watch } from 'vue';
+import { onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import Swal from 'sweetalert2'; 
-import '../assets/dashboard.css';
 
 import SucursalSelector from '../components/SucursalSelector.vue';
 import PendingList from '../components/PendingList.vue';
 import SalesHistory from '../components/SalesHistory.vue';
+import Button from 'primevue/button'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm';
+import '../assets/dashboard.css';
 
 import { useAuth } from '../composables/useAuth';
 import { useYape } from '../composables/useYape';
 import { useSucursal } from '../composables/useSucursal';
-
-/**
- * Simulador de yapeos + lógica de pesca + navegación
- */
-import { db } from '../firebaseConfig';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"; 
+import { simularDatos } from '@/utils/devSimulator';
 
 /**
  * Composables y variables reactivas
  */
 const router = useRouter();
+const toast = useToast();
+const confirm = useConfirm();
+
 const { user, logOut } = useAuth();
-const { sucursalActual, limpiarSucursal } = useSucursal();
+const { sucursalActual, sucursales, limpiarSucursal } = useSucursal();
 const { 
   escucharPendientes, 
   escucharMisVentas, 
@@ -70,43 +70,41 @@ const {
   misVentas 
 } = useYape();
 
-/**
- * Logica de simulación de yapeos
- */
-const simularYapeo = async () => {
-  if (!user.value) return;
-  const randomMonto = [10, 20, 50, 100][Math.floor(Math.random()*4)];
-  await addDoc(collection(db, "yape_notifications"), {
-      userEmail: user.value.email,
-      senderName: "Cliente Simulado",
-      amount: randomMonto,
-      status: "pending",
-      branchName: null,
-      timestamp: serverTimestamp()
-  });
-};
+const unaSucursal = computed(() => sucursales.value.length === 1);
 
-/**
- * Lógica de confirmación de pesca de transacción
- * @param yape - transacción a reclamar
- */
-const confirmarPesca = (yape) => {
-  Swal.fire({
-    title: '¿Es tu venta?',
-    html: `Cliente: <b>${yape.senderName}</b><br>Monto: <b style="color:green">S/ ${Number(yape.amount).toFixed(2)}</b>`,
-    icon: 'question',
-    showCancelButton: true,
-    confirmButtonText: 'SÍ, ES MÍO',
-    confirmButtonColor: '#10b981',
-    cancelButtonColor: '#d33'
-  }).then(async (result) => {
-    if (result.isConfirmed) {
-      await reclamarYape(yape.id, sucursalActual.value);
-      const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-      Toast.fire({ icon: 'success', title: '¡Venta registrada!' });
+const handlePesca = async (yape) => {
+  confirm.require({
+    message: `¿Confirmas que recibiste S/. ${yape.monto} de ${yape.nombre}?`,
+    header: 'Confirmar venta',
+    icon: 'pi pi-check-triangle',
+    rejectPropts: { label: 'Cancelar', severity: 'secondary', outlined: true },
+    acceptPropts: { label: 'Confirmar', severity: 'success' },
+    accept: async () => {
+      try {
+        await reclamarYape(yape.id, user.value.email, sucursalActual.value);
+        toast.add({ severity: 'success', summary: 'Venta confirmada', detail: 'El monto se agregó a tu caja', life: 3000 });
+      } catch (error) {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo confirmar la venta', life: 3000 });
+      }
     }
-  });
-};
+  })
+}
+
+const handleSimulacion = () => {
+  if (user.value?.email) {
+    simularDatos(user.value.email);
+    toast.add({ severity: 'info', summary: 'Simulación', detail: 'Se están generando datos de prueba', life: 3000 });
+  } else {
+    console.error("No hay usuario logueado para simular");
+  }
+}
+
+const iniciarListeners = () => {
+  if (user.value && sucursalActual.value) {
+    escucharPendientes(user.value.email);
+    escucharMisVentas(user.value.email, sucursalActual.value);
+  }
+}
 
 /**
  * Cambio de sucursal y cierre de sesión
@@ -124,21 +122,19 @@ const handleLogout = async () => {
 };
 
 /**
- * Inicialización de listeners al tener usuario y sucursal
- */
-const iniciarDatos = () => {
-  if (user.value && sucursalActual.value) {
-    escucharPendientes(user.value.email);
-    escucharMisVentas(user.value.email, sucursalActual.value);
-  }
-};
-
-/**
  * Watchers y hooks
  */
-watch(sucursalActual, (nuevo) => { if (nuevo) iniciarDatos(); });
-watch(user, (nuevo) => { if (nuevo && sucursalActual.value) iniciarDatos(); });
-onMounted(() => { if (sucursalActual.value && user.value) iniciarDatos(); });
+watch(sucursalActual, (nuevo) => {
+  if (nuevo) iniciarListeners();
+});
+
+watch(user, (nuevo) => {
+  if (nuevo && sucursalActual.value) iniciarListeners();
+});
+
+onMounted(() => {
+  if (sucursalActual.value && user.value) iniciarListeners();
+});
 </script>
 
 <style scoped>
