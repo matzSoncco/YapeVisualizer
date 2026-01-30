@@ -1,13 +1,8 @@
-/* ============================================
-   PROFILE - Con componentes PrimeVue
-   ============================================ */
-
 .profile-container {
   min-height: 100vh;
   background: #fafbfc;
 }
 
-/* --- HEADER --- */
 .profile-header {
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
@@ -24,7 +19,6 @@
   color: var(--chinese-black);
 }
 
-/* --- GRID LAYOUT --- */
 .profile-grid {
   max-width: 1400px;
   margin: 0 auto;
@@ -35,7 +29,6 @@
   align-items: start;
 }
 
-/* --- SIDEBAR --- */
 .profile-sidebar {
   display: flex;
   flex-direction: column;
@@ -67,7 +60,6 @@
   margin: 0;
 }
 
-/* --- SUBSCRIPTION CARD --- */
 .subscription-card {
   border: 1px solid #e5e7eb;
 }
@@ -108,7 +100,6 @@
   font-weight: 600;
 }
 
-/* --- BRANCHES SECTION --- */
 .branches-section {
   min-width: 0;
 }
@@ -216,7 +207,6 @@
   gap: 0.5rem;
 }
 
-/* --- MODAL FORM --- */
 .modal-form {
   display: flex;
   flex-direction: column;
@@ -236,12 +226,10 @@
   color: var(--chinese-black);
 }
 
-/* --- UTILITIES --- */
 .w-full {
   width: 100%;
 }
 
-/* --- RESPONSIVE --- */
 @media (max-width: 1024px) {
   .profile-grid {
     grid-template-columns: 1fr;

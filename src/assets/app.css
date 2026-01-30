@@ -1,11 +1,5 @@
-/* ============================================
-   MONITOR YAPE - Oscuros como protagonistas
-   ============================================ */
-
-/* --- TIPOGRAFÍA SUAVE --- */
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap');
 
-/* --- VARIABLES CUSTOM --- */
 :root {
   --chinese-black: #0c1519;
   --dark-jungle-green: #162127;
@@ -14,7 +8,6 @@
   --antique-brass: #cf9d7b;
 }
 
-/* --- RESET BÁSICO --- */
 *,
 *::before,
 *::after {
@@ -46,7 +39,6 @@ body {
   min-height: 100vh;
 }
 
-/* --- LOGIN VIEW --- */
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -111,7 +103,6 @@ body {
   font-weight: 500;
 }
 
-/* --- RESPONSIVE --- */
 @media (max-width: 768px) {
   .login-title {
     font-size: 1.5rem;

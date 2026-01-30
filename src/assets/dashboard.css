@@ -7,14 +7,12 @@
   background: #fafbfc;
 }
 
-/* --- LAYOUT --- */
 .dashboard-layout {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
 }
 
-/* --- HEADER --- */
 .dashboard-header {
   background: #ffffff;
   border-bottom: 1px solid #e5e7eb;
@@ -65,7 +63,6 @@
   background: #e5e7eb;
 }
 
-/* --- CONTENT --- */
 .dashboard-content {
   flex: 1;
   max-width: 1400px;
@@ -195,7 +192,7 @@
    PENDING LIST - Columna izquierda fija
    ============================================ */
 
-.pending-section {
+.grid-col-pending {
   width: 250px;
   min-width: 250px;
   max-width: 250px;
@@ -255,7 +252,6 @@
   min-height: 0;
 }
 
-/* Scrollbar personalizado */
 .pending-grid::-webkit-scrollbar {
   width: 6px;
 }
@@ -323,11 +319,16 @@
    SALES HISTORY - Ocupa todo el espacio restante
    ============================================ */
 
-.history-section {
+.grid-col-history {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+
+.grid-col-history.full-width {
+  flex: 1;
+  max-width: 100%;
 }
 
 .total-badge {
@@ -355,7 +356,6 @@
   min-height: 0;
 }
 
-/* Forzar que el contenido de la card use todo el espacio */
 .history-card :deep(.p-card-body) {
   flex: 1;
   display: flex;
@@ -401,10 +401,6 @@
 .w-full {
   width: 100%;
 }
-
-/* ============================================
-   RESPONSIVE
-   ============================================ */
 
 @media (max-width: 1024px) {
   .dashboard-content {
