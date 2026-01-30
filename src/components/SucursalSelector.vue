@@ -60,15 +60,18 @@ const { sucursales, seleccionar, loading } = useSucursal();
 
 /**
  * Maneja la selección de una sucursal
- * @param {String} nombre - nombre de la sucursal seleccionada
+ * @param {String} valorSeleccionado - uid o 'ADMIN' seleccionado
  */
-const handleSelect = (nombre) => {
-    const exito = seleccionar(nombre);
+const handleSelect = (valorSeleccionado) => {
+  if (valorSeleccionado === 'ADMIN') {
+    seleccionar('ADMIN');
+    router.push('/admin');
+    return;
+  }
 
-    if (exito) {
-        if (nombre === 'ADMIN') {
-            router.push('/admin');
-        }
-    }
+  const existe = sucursales.value.find(s => s.nombre === valorSeleccionado);
+  if (existe) {
+    seleccionar(existe.id);
+  }
 };
 </script>
