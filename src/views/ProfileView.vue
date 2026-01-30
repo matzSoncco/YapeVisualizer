@@ -26,7 +26,7 @@
               :label="userInitial"
               size="xlarge"
               shape="circle"
-              style="background-color: var(--dark-jungle-green); color: white; width: 80px; height: 80px; font-size: 2rem;"
+              style="background-color: var(--dark-jungle-green); color: white; width: 60px; height: 60px; font-size: 2rem;"
             />
             <h2 class="user-name">{{ userName }}</h2>
             <p class="user-email">{{ user?.email }}</p>
@@ -40,8 +40,8 @@
             <div class="subscription-header">
               <h3>Estado de Suscripción</h3>
               <Tag 
-                :value="subscriptionStatus.active ? 'ACTIVO' : 'SUSPENDIDO'"
-                :severity="subscriptionStatus.active ? 'success' : 'danger'"
+                :value="subscriptionStatus.isActive ? 'ACTIVO' : 'SUSPENDIDO'"
+                :severity="subscriptionStatus.isActive ? 'success' : 'danger'"
               />
             </div>
           </template>
@@ -50,25 +50,26 @@
             <div class="sub-details">
               <div class="detail-row">
                 <span>Plan Actual:</span>
-                <strong>{{ subscriptionStatus.plan }}</strong>
+                <strong>{{ subscriptionStatus.planName }}</strong>
               </div>
               <div class="detail-row">
                 <span>{{ subscriptionStatus.labelFecha }}:</span>
-                <span>{{ subscriptionStatus.nextBilling }}</span>
+                <strong>{{ subscriptionStatus.fechaMostrar }}</strong>
               </div>
               <div class="detail-row">
-                <span>Límite de Sedes:</span>
-                <Badge 
-                  :value="`${sucursales.length} / ${subscriptionStatus.limit}`"
-                  :severity="sucursales.length >= subscriptionStatus.limit ? 'danger' : 'success'"
-                />
+                <span>Límite de Sucursales:</span>
+                <strong 
+                  :class="sucursales.length >= subscriptionStatus.limitSucursales ? 'text-danger' : 'text-success'"
+                >
+                  {{ sucursales.length }} / {{ subscriptionStatus.limitSucursales }}
+                </strong>
               </div>
             </div>
           </template>
 
           <template #footer>
             <Button
-              v-if="!subscriptionStatus.active"
+              v-if="!subscriptionStatus.isActive"
               label="Reactivar Servicio"
               icon="pi pi-bolt"
               severity="warning"
@@ -211,8 +212,7 @@ import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import { formatearFecha } from '@/utils/dates';
-import { store } from '@/store';
+import { useSubscription } from '@/composables/useSubscription';
 
 import '@/assets/profile.css';
 
@@ -221,6 +221,7 @@ const toast = useToast();
 const confirm = useConfirm();
 const { user } = useAuth();
 const { sucursales, addSucursal, deleteSucursal } = useSucursal();
+const { subscriptionStatus } = useSubscription();
 
 const showModal = ref(false);
 const isEditing = ref(false); 
@@ -228,30 +229,6 @@ const form = reactive({ id: null, nombre: '', icono: '' });
 
 const userName = computed(() => user.value?.displayName || 'Usuario');
 const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
-
-const subscriptionStatus = computed(() => {
-  const sub = store.userProfile.subscription || {};
-  
-  let fechaMostrar = 'N/A';
-  let etiqueta = 'Próximo cobro';
-
-  if (sub.status === 'trial' && sub.trialEndDate) {
-      fechaMostrar = formatearFecha(sub.trialEndDate);
-      etiqueta = 'Fin de prueba';
-  } else if (sub.nextBillingDate) {
-      fechaMostrar = formatearFecha(sub.nextBillingDate);
-  }
-
-  const isVisuallyActive = sub.isActive && (sub.status === 'active' || sub.status === 'trial');
-
-  return {
-    active: isVisuallyActive,
-    plan: sub.planName || 'Cargando...',
-    limit: sub.limitSucursales || 0,
-    nextBilling: fechaMostrar,
-    labelFecha: etiqueta
-  };
-});
 
 const closeModal = () => {
   showModal.value = false;
