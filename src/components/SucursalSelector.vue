@@ -64,8 +64,13 @@ const { sucursales, seleccionar, loading } = useSucursal();
  */
 const handleSelect = (valorSeleccionado) => {
   if (valorSeleccionado === 'ADMIN') {
-    seleccionar('ADMIN');
-    router.push('/admin');
+    const accesoAdmin = seleccionar('ADMIN');
+    if (accesoAdmin) {
+      router.push({ name: 'admin' });
+    } else {
+      // TODO: Mostrar mensaje de error o redirigir a una página de acceso denegado
+      console.warn("Acceso denegado al panel de administración");
+    }
     return;
   }
 
