@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { setUserProfile } from '@/store';
 
 const user = ref(null);
 
@@ -10,6 +11,7 @@ const user = ref(null);
  * Gestiona la sincronización entre Firebase Auth y el perfil en Firestore
  */
 onAuthStateChanged(auth, async (currentUser) => {
+    console.log("🔥 AUTH CHANGE DETECTADO:", currentUser ? currentUser.email : "Sin usuario");
     user.value = currentUser;
     
     if (currentUser) {
@@ -20,26 +22,33 @@ onAuthStateChanged(auth, async (currentUser) => {
             /**
              * Inicialización de perfil: Si es la primera vez que entra,
              * creamos su documento base con el plan de prueba.
+             * TODO: Cambiar el limite de sucursales y duración del trial según se requiera
              */
-            if (!userSnap.exists()) {
-                await setDoc(userRef, {
+            if (userSnap.exists()) {
+                const newProfile = {
                     email: currentUser.email,
                     displayName: currentUser.displayName || "Usuario",
                     role: "owner",
                     createdAt: new Date().toISOString(),
                     subscription: {
-                        isAactive: true,
-                        status: 'trial', // Estado de facturacion (trial, active, overdue, canceled)
+                        isActive: true,
+                        status: 'trial',
                         planName: "Prueba Gratuita",
                         limitSucursales: 3,
-                        trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 días de prueba
+                        trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
                         nextBillingDate: null
                     }
-                });
+                };
+                await setDoc(userRef, newProfile);
+                setUserProfile(newProfile);
+            } else {
+                setUserProfile(userSnap.data());
             }
         } catch (error) {
             console.error("Error al sincronizar perfil en Firestore:", error);
         }
+    } else {
+        setUserProfile(null);
     }
 });
 
