@@ -10,6 +10,7 @@ export const store = reactive({
 
     userProfile: {
         role: 'user',
+        adminPin: null,
         subscription: {
             isActive: false,
             planName: 'Cargando...',
@@ -31,12 +32,16 @@ export const setSucursales = (data) => {
 
 /**
  * Establece la sucursal actual en el store y en localStorage
- * @param {*} id - UID de la sucursal actual
+ * @param {string} id - UID de la sucursal actual o 'ADMIN'
  */
 export const setSucursalActual = (id) => {
     store.sucursalActual = id;
-    if (id) localStorage.setItem('sucursalActual', id);
-    else localStorage.removeItem('sucursalActual');
+
+    if (id && id !== 'ADMIN') {
+        localStorage.setItem('sucursalActual', id);
+    } else {
+        localStorage.removeItem('sucursalActual');
+    }
 };
 
 /**
@@ -55,6 +60,7 @@ export const setUserProfile = (data) => {
     if (!data || Object.keys(data).length === 0) {
         store.userProfile = {
             role: 'user',
+            adminPin: data?.adminPin || '0000',
             subscription: {
                 isActive: false,
                 planName: '',
