@@ -48,9 +48,13 @@ export function useSucursal() {
 
     const seleccionar = (nombreId) => {
         if (nombreId === 'ADMIN') {
-             const pin = prompt("PIN Admin:");
-             if (pin !== "1234") return false;
-             // TODO: Mejorar seguridad para el ingreso a la vista de administrador
+            const pinIngresado = prompt("PIN Admin:");
+            const pinReal = store.userProfile.adminPin;
+             
+            if(pinIngresado != pinReal) {
+                alert('Pin INCORRECTO')
+                return false;
+            }
         }
         setSucursalActual(nombreId);
         return true;
