@@ -1,7 +1,15 @@
 import { computed } from "vue";
 import { store } from "@/store";
 
+/**
+ * Composable para manejar la suscripción del usuario
+ * @returns {Object} Funciones y propiedades relacionadas con la suscripción
+ */
 export function useSubscription() {
+    /**
+     * Estado de la suscripción del usuario
+     * @returns {Object} Información detallada sobre el estado de la suscripción
+     */
     const subscriptionStatus = computed(() => {
         const userProfile = store.userProfile || {};
         const subData = userProfile.subscription || {};
@@ -35,19 +43,17 @@ export function useSubscription() {
 
         if (subData.status === 'trial' && trialEnd) {
              etiqueta = 'Fin de prueba';
-             fechaMostrar = trialEnd.toLocaleDateString(); // Formato simple
+             fechaMostrar = trialEnd.toLocaleDateString();
         } else if (nextBillingDate) {
              fechaMostrar = nextBillingDate.toLocaleDateString();
         }
 
         return {
-            // Datos Crudos
             planName: subData.planName || 'Gratuito',
             status: subData.status || 'trial',
             limitSucursales: subData.limitSucursales || 1,
             isActive: subData.isActive || false,
             
-            // Datos Calculados
             daysLeft: daysLeft,
             isExpired: isTrialExpired || isHardExpired,
             labelFecha: etiqueta,
@@ -55,6 +61,10 @@ export function useSubscription() {
         };
     });
 
+    /**
+     * Determina si el usuario puede acceder a funciones premium
+     * @returns {Boolean} true si tiene acceso, false en caso contrario
+     */
     const canAccess = computed(() => {
         const info = subscriptionStatus.value;
 
