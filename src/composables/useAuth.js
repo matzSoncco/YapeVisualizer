@@ -11,7 +11,6 @@ const user = ref(null);
  * Gestiona la sincronización entre Firebase Auth y el perfil en Firestore
  */
 onAuthStateChanged(auth, async (currentUser) => {
-    console.log("🔥 AUTH CHANGE DETECTADO:", currentUser ? currentUser.email : "Sin usuario");
     user.value = currentUser;
     
     if (currentUser) {
@@ -29,6 +28,7 @@ onAuthStateChanged(auth, async (currentUser) => {
                     email: currentUser.email,
                     displayName: currentUser.displayName || "Usuario",
                     role: "owner",
+                    adminPin: '1234',
                     createdAt: new Date().toISOString(),
                     subscription: {
                         isActive: true,
