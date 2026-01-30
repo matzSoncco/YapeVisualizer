@@ -22,14 +22,16 @@ export function useYape() {
     /**
      * Reclama una transacción pendiente (Método base).
      * @param {string} yapeId - ID del documento
+     * @param {string} sucuralId - ID de la sede destino
      * @param {string} nombreSucursal - Nombre de la sede destino
      * @returns {Promise<boolean>}
      */
-    const reclamarYape = async (yapeId, nombreSucursal) => {
+    const reclamarYape = async (yapeId, sucuralId, nombreSucursal) => {
         try {
             const yapeRef = doc(db, "yape_notifications", yapeId);
             await updateDoc(yapeRef, {
                 status: "claimed",
+                branchId: sucuralId,
                 branchName: nombreSucursal,
                 claimedAt: serverTimestamp()
             });
@@ -50,9 +52,8 @@ export function useYape() {
 
         if (totalSucursales === 1) {
             const unicaSucursal = store.sucursales[0];
-            console.log(`Asignando Yape ${yapeId} a ${unicaSucursal.nombre}`);
             
-            await reclamarYape(yapeId, unicaSucursal.nombre);
+            await reclamarYape(yapeId, unicaSucursal.id, unicaSucursal.nombre);
         }
     };
 
@@ -91,12 +92,12 @@ export function useYape() {
      * @param {string} emailAdmin 
      * @param {string} nombreSucursal 
      */
-    const escucharMisVentas = (emailAdmin, nombreSucursal) => {
+    const escucharMisVentas = (emailAdmin, idSucursal) => {
         const q = query(
             collection(db, "yape_notifications"),
             where("userEmail", "==", emailAdmin),
             where("status", "==", "claimed"),
-            where("branchName", "==", nombreSucursal),
+            where("branchId", "==", idSucursal),
             orderBy("claimedAt", "desc")
         );
 
