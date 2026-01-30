@@ -16,6 +16,7 @@ export const simularDatos = async (userEmail) => {
             senderName: randomName,
             amount: randomMonto,
             status: "pending",
+            branchId: null,
             branchName: null,
             timestamp: serverTimestamp()
         });
