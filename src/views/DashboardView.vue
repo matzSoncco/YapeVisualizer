@@ -13,7 +13,7 @@
           <div class="dashboard-title-section">
             <h1>Monitor Yape</h1>
             <p class="dashboard-subtitle">
-              Tienda: <strong>{{ sucursalActual }}</strong>
+              Tienda: <strong>{{ nombreSucursalVisual }}</strong>
             </p>
           </div>
           
@@ -44,14 +44,18 @@
 
       <!-- Content -->
       <main class="dashboard-content">
-        <PendingList 
-          :yapes="yapesPendientes" 
-          @pescar="handlePesca" 
-        />
+        <section v-if="!unaSucursal" class="grid-col-pending">
+          <PendingList 
+            :yapes="yapesPendientes" 
+            @pescar="handlePesca" 
+          />
+        </section>
 
-        <SalesHistory 
-          :ventas="misVentas" 
-        />
+        <section class="grid-col-history" :class="{ 'full-width': unaSucursal }">
+          <SalesHistory 
+            :ventas="misVentas" 
+          />
+        </section>
       </main>
     </div>
   </div>
@@ -94,24 +98,37 @@ const {
 
 const unaSucursal = computed(() => sucursales.value.length === 1);
 
+/**
+ * Manejo de pesca de Yape
+ * @param {Object} yape - Objeto Yape pendiente
+ * TODO: Mover a useYape.js
+ */
 const handlePesca = async (yape) => {
+  const sucObj = sucursales.value.find(s => s.id === sucursalActual.value);
+  const nombreSucursal = sucObj ? sucObj.nombre : 'Sucursal Desconocida';
+
   confirm.require({
-    message: `¿Confirmas que recibiste S/. ${yape.monto} de ${yape.nombre}?`,
+    message: `¿Confirmas que recibiste S/. ${yape.amount} de ${yape.senderName}?`,
     header: 'Confirmar venta',
     icon: 'pi pi-check-triangle',
     rejectPropts: { label: 'Cancelar', severity: 'secondary', outlined: true },
     acceptPropts: { label: 'Confirmar', severity: 'success' },
     accept: async () => {
       try {
-        await reclamarYape(yape.id, user.value.email, sucursalActual.value);
+        await reclamarYape(yape.id, sucursalActual.value, nombreSucursal);
         toast.add({ severity: 'success', summary: 'Venta confirmada', detail: 'El monto se agregó a tu caja', life: 3000 });
       } catch (error) {
+        console.error("Error al confirmar la venta:", error);
         toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo confirmar la venta', life: 3000 });
       }
     }
   })
 }
 
+/**
+ * Manejo de simulación de datos
+ * TODO: Mover al utilitario de simulación
+ */
 const handleSimulacion = () => {
   if (user.value?.email) {
     simularDatos(user.value.email);
@@ -121,6 +138,22 @@ const handleSimulacion = () => {
   }
 }
 
+/**
+ * Cálculo del nombre de la sucursal actual
+ * @return {string} Nombre de la sucursal o 'Administrador'
+ * TODO: Mover a useSucursal.js
+ */
+const nombreSucursalVisual = computed(() => {
+    if (!sucursalActual.value) return '';
+    if (sucursalActual.value === 'ADMIN') return 'Administrador';
+    
+    const suc = sucursales.value.find(s => s.id === sucursalActual.value);
+    return suc ? suc.nombre : 'Cargando...';
+});
+
+/**
+ * Iniciar listeners de Yape
+ */
 const iniciarListeners = () => {
   if (user.value && sucursalActual.value) {
     escucharPendientes(user.value.email);
@@ -136,6 +169,9 @@ const cambiarSucursal = () => {
     limpiarSucursal(); 
 };
 
+/**
+ * Cierre de sesión
+ */
 const handleLogout = async () => { 
     detenerTodo(); 
     limpiarSucursal(); 
