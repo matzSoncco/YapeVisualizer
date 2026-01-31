@@ -46,17 +46,60 @@
         </div>
       </template>
     </Card>
+
+    <Dialog
+      v-model:visible="showPinModal"
+      modal
+      header="Seguridad"
+      :style="{ width: '420px' }"
+      :draggable="false"
+    >
+    <div class="pin-modal-content">
+        <p class="pin-instructions">Ingresa tu PIN de administrador</p>
+        
+        <div class="pin-input-wrapper">
+            <InputOtp 
+                v-model="pin" 
+                integerOnly 
+                :length="4" 
+                mask 
+                style="gap: 10px"
+            />
+        </div>
+
+        <div class="pin-actions">
+          <Button 
+            type="button" 
+            label="Cancelar" 
+            severity="secondary" 
+            @click="showPinModal = false" 
+          ></Button>
+          <Button 
+            type="button" 
+            label="Entrar" 
+            @click="verificarPin" 
+            :loading="loadingPin"
+            :disabled="pin.length < 4"
+          ></Button>
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
 <script setup>
-import Card from 'primevue/card';
-
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSucursal } from '../composables/useSucursal';
+import { useToast } from 'primevue/usetoast';
 
 const router = useRouter();
+const toast = useToast();
 const { sucursales, seleccionar, loading } = useSucursal();
+
+const showPinModal = ref(false);
+const pin = ref('');
+const loadingPin = ref(false);
 
 /**
  * Maneja la selección de una sucursal
@@ -64,13 +107,8 @@ const { sucursales, seleccionar, loading } = useSucursal();
  */
 const handleSelect = (valorSeleccionado) => {
   if (valorSeleccionado === 'ADMIN') {
-    const accesoAdmin = seleccionar('ADMIN');
-    if (accesoAdmin) {
-      router.push({ name: 'admin' });
-    } else {
-      // TODO: Mostrar mensaje de error o redirigir a una página de acceso denegado
-      console.warn("Acceso denegado al panel de administración");
-    }
+    pin.value = '';
+    showPinModal.value = true;
     return;
   }
 
@@ -79,4 +117,25 @@ const handleSelect = (valorSeleccionado) => {
     seleccionar(existe.id);
   }
 };
+
+const verificarPin = async () => {
+  if (pin.value.length < 4) return;
+
+  loadingPin.value = true;
+
+  await new Promise(r => setTimeout(r, 600));
+
+  const exito = seleccionar('ADMIN', pin.value);
+
+  if (exito) {
+    showPinModal.value = false;
+    toast.add({ severity: 'success', summary: 'Acceso Concedido', life: 2000 });
+    router.push({ name: 'admin' });
+  } else {
+    toast.add({ severity: 'error', summary: 'Acceso Denegado', detail: 'PIN Incorrecto', life: 3000 });
+    pin.value = '';
+  }
+
+  loadingPin.value = false;
+}
 </script>
