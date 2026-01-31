@@ -23,7 +23,7 @@ onAuthStateChanged(auth, async (currentUser) => {
              * creamos su documento base con el plan de prueba.
              * TODO: Cambiar el limite de sucursales y duración del trial según se requiera
              */
-            if (userSnap.exists()) {
+            if (!userSnap.exists()) {
                 const newProfile = {
                     email: currentUser.email,
                     displayName: currentUser.displayName || "Usuario",
@@ -45,7 +45,7 @@ onAuthStateChanged(auth, async (currentUser) => {
                 setUserProfile(userSnap.data());
             }
         } catch (error) {
-            console.error("Error al sincronizar perfil en Firestore:", error);
+            console.error("Error al sincronizar perfil en Firestore:", error.code, error.message);
         }
     } else {
         setUserProfile(null);

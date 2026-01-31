@@ -46,11 +46,15 @@ export function useSucursal() {
         await deleteDoc(doc(db, 'users', user.value.uid, 'sucursales', id));
     };
 
+    /**
+     * Metodo para seleccionar la sucursal o ADMIN
+     * @param {string} nombreId - uid de la sucursal seleccionada o ADMIN
+     * @returns 
+     */
     const seleccionar = (nombreId) => {
         if (nombreId === 'ADMIN') {
             const pinIngresado = prompt("PIN Admin:");
             const pinReal = store.userProfile.adminPin;
-             
             if(pinIngresado != pinReal) {
                 alert('Pin INCORRECTO')
                 return false;
