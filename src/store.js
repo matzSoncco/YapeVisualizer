@@ -15,7 +15,7 @@ export const store = reactive({
             isActive: false,
             planName: 'Cargando...',
             limitSucursales: 0,
-            status: 'trial',
+            status: 'loading',
             nextBillingDate: null,
             trialEndDate: null
         }
@@ -65,13 +65,13 @@ export const setUserProfile = (data) => {
                 isActive: false,
                 planName: '',
                 limitSucursales: 0,
-                status: 'trial'
+                status: 'loading'
             }
         };
         return;
     }
-    store.userProfile = {
+    Object.assign(store.userProfile, {
         ...data,
-        adminPin: data.adminPin || '1234'
-    };
+        adminPin: data.adminPin || '1234' 
+    });
 };
