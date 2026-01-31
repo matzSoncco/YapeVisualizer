@@ -48,20 +48,30 @@ export function useSucursal() {
 
     /**
      * Metodo para seleccionar la sucursal o ADMIN
-     * @param {string} nombreId - uid de la sucursal seleccionada o ADMIN
-     * @returns 
+     * @param {string} nombreId - uid de la sucursal o 'ADMIN'
+     * @param {string|null} pinIngresado - El PIN que viene del Modal (solo si es ADMIN)
      */
-    const seleccionar = (nombreId) => {
-        if (nombreId === 'ADMIN') {
-            const pinIngresado = prompt("PIN Admin:");
-            const pinReal = store.userProfile.adminPin;
-            if(pinIngresado != pinReal) {
-                alert('Pin INCORRECTO')
-                return false;
-            }
+    const seleccionar = (nombreId, pinIngresado = null) => {
+        if (nombreId !== 'ADMIN') {
+            setSucursalActual(nombreId);
+            return true;    
         }
-        setSucursalActual(nombreId);
-        return true;
+
+        if (!pinIngresado) {
+            console.error("Se requiere PIN para acceso ADMIN");
+            return false;
+        }
+
+        const pinReal = String(store.userProfile.adminPin || '1234');
+        const pinUsuario = String(pinIngresado).trim();
+
+        if (pinUsuario === pinReal) {
+            setSucursalActual('ADMIN');
+            return true;
+        } else {
+            return false;
+        }
+        
     };
 
     /**
