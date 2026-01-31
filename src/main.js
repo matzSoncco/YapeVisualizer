@@ -16,12 +16,13 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import Toast from 'primevue/toast';
 import Card from 'primevue/card'
 import Button from 'primevue/button'
-import Calendar from 'primevue/calendar'
+import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import Avatar from 'primevue/avatar'
 import Menu from 'primevue/menu'
 import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
+import InputOtp from 'primevue/inputotp'
 
 import 'primeicons/primeicons.css'
 
@@ -89,11 +90,12 @@ app.component('ConfirmDialog', ConfirmDialog);
 app.component('Toast', Toast);
 app.component('Card', Card)
 app.component('Button', Button)
-app.component('Calendar', Calendar)
+app.component('DatePicker', DatePicker)
 app.component('Select', Select)
 app.component('Avatar', Avatar)
 app.component('Menu', Menu)
 app.component('InputText', InputText)
 app.component('Dialog', Dialog)
+app.component('InputOtp', InputOtp)
 
 app.mount('#app')
