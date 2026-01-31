@@ -14,14 +14,14 @@ export function useSubscription() {
         const userProfile = store.userProfile || {};
         const subData = userProfile.subscription || {};
 
-        if (!userProfile.email) {
+        if (subData.status === 'loading') {
             return {
                 planName: 'Cargando...',
                 status: 'loading',
                 daysLeft: 0,
                 isExpired: false,
                 isActive: false,
-                labelFecha: '...'
+                labelFecha: 'Cargando...'
             };
         }
 
