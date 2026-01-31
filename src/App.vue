@@ -82,6 +82,7 @@ watch(user, (newUser) => {
 </script>
 
 <template>
+  <Toast />
   <RouterView :key="route.fullPath" />
 </template>
 
