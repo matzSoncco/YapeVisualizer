@@ -41,7 +41,7 @@
         <div class="filters-grid">
           <div class="filter-item">
             <label>Desde:</label>
-            <Calendar 
+            <DatePicker
               v-model="filters.startDate" 
               dateFormat="dd/mm/yy"
               showIcon
@@ -51,7 +51,7 @@
 
           <div class="filter-item">
             <label>Hasta:</label>
-            <Calendar 
+            <DatePicker
               v-model="filters.endDate" 
               dateFormat="dd/mm/yy"
               showIcon
@@ -163,7 +163,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
