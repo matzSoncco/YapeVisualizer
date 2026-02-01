@@ -8,9 +8,9 @@
 
     <div v-else class="dashboard-layout">
 
-      <div v-if="loadingCaja" class="flex flex-col items-center justify-center h-screen bg-surface-50 dark:bg-surface-900">
-        <i class="pi pi-spin pi-spinner text-4xl text-primary mb-4"></i>
-        <p class="text-surface-600 dark:text-surface-400 font-medium">Verificando turno...</p>
+      <div v-if="loadingCaja" class="caja-loading-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        <p>Verificando turno...</p>
       </div>
 
       <template v-else>
@@ -18,18 +18,18 @@
           v-model:visible="showAperturaModal" 
           modal 
           header="👋 Iniciar Turno" 
-          :style="{ width: '25rem' }"
+          :style="{ width: '420px' }"
           :closable="false"
           :closeOnEscape="false"
           :draggable="false"
         >
-          <div class="flex flex-col gap-4 pt-2">
-            <p class="text-surface-600 dark:text-surface-400 mb-4">
+          <div class="apertura-modal-content">
+            <p class="apertura-instructions">
               Para comenzar a recibir pagos, registra quién será el responsable de la caja.
             </p>
 
-            <div class="flex flex-col gap-2 mb-2">
-              <label for="cajero" class="font-bold">Nombre del Cajero</label>
+            <div class="apertura-form-group">
+              <label for="cajero">Nombre del Cajero</label>
               <InputText 
                 id="cajero" 
                 v-model="nombreCajero" 
@@ -39,7 +39,7 @@
               />
             </div>
 
-            <div class="flex justify-end mt-4">
+            <div class="apertura-actions">
               <Button 
                 label="Abrir Caja" 
                 icon="pi pi-check" 
@@ -102,10 +102,10 @@
           </main>
         </div>
 
-        <div v-else class="flex flex-col items-center justify-center h-full p-8 text-center">
-          <i class="pi pi-lock text-6xl text-surface-400 mb-4"></i>
-          <h2 class="text-xl font-bold mb-2">Caja Cerrada</h2>
-          <p class="mb-4 text-surface-600">Debes iniciar turno para ver el panel.</p>
+        <div v-else class="caja-closed-state">
+          <i class="pi pi-lock"></i>
+          <h2>Caja Cerrada</h2>
+          <p>Debes iniciar turno para ver el panel.</p>
           <Button label="Abrir Turno" @click="showAperturaModal = true" />
         </div>
       </template>
