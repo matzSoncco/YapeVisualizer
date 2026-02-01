@@ -1,0 +1,102 @@
+import { computed } from 'vue';
+import { db } from "../firebaseConfig";
+import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { useAuth } from './useAuth';
+import { store, setSucursalActual } from '../store'; 
+
+/**
+ * Composable para manejar sucursales
+ * @returns {Object} Funciones y propiedades relacionadas con sucursales
+ */
+export function useSucursal() {
+    const { user } = useAuth();
+
+    /**
+     * Agrega una nueva sucursal a la subcolección del usuario actual en Firestore.
+     * @param {Object} data - Datos de la sucursal
+     * @returns {Promise<void>} Promesa que se resuelve cuando la operación en la BD finaliza.
+     */
+    const addSucursal = async (data) => {
+        if(!user.value?.uid) return;
+        const subscription = store.userProfile.subscription || {};
+        const limitePermitido = subscription.limitSucursales || 0;
+        const cantidadActual = store.sucursales.length;
+
+        if (cantidadActual >= limitePermitido) {
+            // Lanzamos error para que el 'catch' del ProfileView lo muestre en alerta
+            // TODO: Mejorar con un modal para UX más amigable (decidir donde mostrarlo y qué lógica usar)
+            throw new Error(`Límite alcanzado (${cantidadActual}/${limitePermitido}). Tu plan actual no permite crear más sedes.`);
+        }
+
+        const newRef = doc(collection(db, 'users', user.value.uid, 'sucursales'));
+        await setDoc(newRef, {
+            ...data,
+            activa: true,
+            createdAt: new Date().toISOString()
+        });
+    };
+
+    /**
+     * Elimina una sucursal de la subcolección del usuario actual en Firestore
+     * @param {String} id - UID de la sucursal a eliminar
+     * @returns {Promise<void>} Promesa que se resuelve cuando la operación en la BD finaliza.
+     */
+    const deleteSucursal = async (id) => {
+        if (!user.value?.uid) return;
+        await deleteDoc(doc(db, 'users', user.value.uid, 'sucursales', id));
+    };
+
+    /**
+     * Metodo para seleccionar la sucursal o ADMIN
+     * @param {string} nombreId - uid de la sucursal o 'ADMIN'
+     * @param {string|null} pinIngresado - El PIN que viene del Modal (solo si es ADMIN)
+     */
+    const seleccionar = (nombreId, pinIngresado = null) => {
+        if (nombreId !== 'ADMIN') {
+            setSucursalActual(nombreId);
+            return true;    
+        }
+
+        if (!pinIngresado) {
+            console.error("Se requiere PIN para acceso ADMIN");
+            return false;
+        }
+
+        const pinReal = String(store.userProfile.adminPin || '1234');
+        const pinUsuario = String(pinIngresado).trim();
+
+        if (pinUsuario === pinReal) {
+            setSucursalActual('ADMIN');
+            return true;
+        } else {
+            return false;
+        }
+        
+    };
+
+    /**
+     * Limpia la sucursal actual seleccionada
+     */
+    const limpiarSucursal = () => {
+        setSucursalActual(null);
+    };
+
+    /**
+     * Lista de sucursales desde el store reactivo
+     */
+    const sucursales = computed(() => {
+        return store.sucursales;
+    })
+
+    return {
+        sucursales,
+        sucursalActual: computed(() => store.sucursalActual),
+        loading: computed(() => store.loading),
+        esAdmin: computed(() => store.sucursalActual === 'ADMIN'),
+        
+        addSucursal,
+        deleteSucursal,
+        seleccionar,
+        limpiarSucursal
+    };
+}
