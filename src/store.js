@@ -7,6 +7,7 @@ export const store = reactive({
     sucursales: [],
     sucursalActual: localStorage.getItem('sucursalActual') || null,
     loading: false,
+    cashSession: null,
 
     userProfile: {
         role: 'user',
@@ -75,3 +76,11 @@ export const setUserProfile = (data) => {
         adminPin: data.adminPin || '1234' 
     });
 };
+
+/**
+ * Establece los datos de la sesión de caja en el store
+ * @param {Object} data - Datos de la sesión de caja
+ */
+export const setCajaSesion = (data) => {
+    store.cashSession = data;
+}
