@@ -28,12 +28,20 @@ export function useYape() {
      */
     const reclamarYape = async (yapeId, sucuralId, nombreSucursal) => {
         try {
+            const currentSession = store.cashSession;
+
+            if (!currentSession?.id) {
+                console.warn("Advertencia: Se está registrando una venta sin sesión de caja activa.");
+            }
+
             const yapeRef = doc(db, "yape_notifications", yapeId);
             await updateDoc(yapeRef, {
                 status: "claimed",
                 branchId: sucuralId,
                 branchName: nombreSucursal,
-                claimedAt: serverTimestamp()
+                claimedAt: serverTimestamp(),
+                sessionId: currentSession?.id || null,
+                cashierName: currentSession?.cajero || 'Cajero no registrado'
             });
             return true;
         } catch (e) {
