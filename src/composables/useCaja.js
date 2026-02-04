@@ -44,14 +44,19 @@ export function useCaja() {
         if (!user.value?.uid || !sucursalId.value) throw new Error("No hay sucursal seleccionada");
 
         const nuevaCaja = {
+            status: 'OPEN',
+            cajero: nombreCajero,
             fechaApertura: new Date().toISOString(),
             timestampApertura: Timestamp.now(),
-            cajero: nombreCajero,
-            status: 'OPEN',
-            montoInicial: 0,
+            
+            montoInicial: 0, 
             totalYape: 0,
+            cantidadYape: 0,
             totalEfectivo: 0,
-            fechaCierre: null
+            totalIngresos: 0,
+            
+            fechaCierre: null,
+            timestampCierre: null
         };
 
         try {
@@ -68,25 +73,43 @@ export function useCaja() {
 
     /**
      * Cierra el turno actual
-     * @param {number} totalEfectivoDeclarado - Monto que el cajero dice tener en tickets (Opcional)
-     * @param {number} totalYapeValidado - Suma total de los Yapes pescados (calculado en el front o back)
+     * @param {number} montoEfectivoDeclarado - Monto que el cajero dice tener en tickets (Opcional)
      */
-    const cerrarCaja = async (totalEfectivoDeclarado, totalYapeValidado) => {
+    const cerrarCaja = async (montoEfectivoDeclarado = 0) => {
         const session = store.cashSession;
         if (!session?.id) throw new Error("No hay caja abierta para cerrar");
 
-        const cierreData = {
-            fechaCierre: new Date().toISOString(),
-            timestampCierre: Timestamp.now(),
-            status: 'CLOSED',
-            totalYape: totalYapeValidado || 0,
-            montoDeclaradoEfectivo: totalEfectivoDeclarado || 0
-        };
-
         try {
-            const docRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'cuadres', session.id);
-            await updateDoc(docRef, cierreData);
+            const yapesRef = collection(db, 'yape_notifications');
+            const q = query(yapesRef, where('sessionId', '==', session.id), where('status', '==', 'claimed'));
+            const snapshot = await getDocs(q);
+
+            let totalYapeCalculado = 0;
+            let cantidadVentas = 0;
+
+            snapshot.forEach((doc) => {
+                totalYapeCalculado += Number(doc.data().amount || 0);
+                cantidadVentas++;
+            });
+
+            const cierreData = {
+                status: 'CLOSED',
+                fechaCierre: new Date().toISOString(),
+                timestampCierre: Timestamp.now(),
+
+                cantidadYape: cantidadVentas,
+                totalYape: totalYapeCalculado,
+                totalEfectivo: Number(montoEfectivoDeclarado || 0),
+                
+                totalIngresos: totalYapeCalculado + Number(montoEfectivoDeclarado || 0)
+            };
+
+            const sessionRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'cuadres', session.id);
+            await updateDoc(sessionRef, cierreData);
+
             setCajaSesion(null);
+
+            return cierreData;
         } catch (error) {
             console.error("Error al cerrar caja:", error);
             throw error;
