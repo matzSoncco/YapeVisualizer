@@ -92,6 +92,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSucursal } from '../composables/useSucursal';
 import { useToast } from 'primevue/usetoast';
+import { setAdminAuth } from '@/store';
 
 const router = useRouter();
 const toast = useToast();
@@ -128,6 +129,7 @@ const verificarPin = async () => {
   const exito = seleccionar('ADMIN', pin.value);
 
   if (exito) {
+    setAdminAuth (true);
     showPinModal.value = false;
     toast.add({ severity: 'success', summary: 'Acceso Concedido', life: 2000 });
     router.push({ name: 'admin' });
