@@ -77,6 +77,7 @@ router.beforeEach(async (to, from, next) => {
   else {
     if (store.isAdminAuthenticated) {
       setAdminAuth(false);
+      store.sucursalActual = null;
     }
     next();
   }
