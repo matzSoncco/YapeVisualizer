@@ -101,11 +101,21 @@ export function useYape() {
      * @param {string} nombreSucursal 
      */
     const escucharMisVentas = (emailAdmin, idSucursal) => {
+        misVentas.value = [];
+        if(!idSucursal) return;
+
+        const currentSessionId = store.cashSession?.id;
+        if (!currentSessionId) {
+            console.log("No hay sesión activa, no se cargan ventas históricas.");
+            return;
+        }
+
         const q = query(
             collection(db, "yape_notifications"),
             where("userEmail", "==", emailAdmin),
             where("status", "==", "claimed"),
             where("branchId", "==", idSucursal),
+            where("sessionId", "==", currentSessionId),
             orderBy("claimedAt", "desc")
         );
 
