@@ -2,6 +2,69 @@
   <div class="dashboard">
     <Toast />
     <ConfirmDialog />
+    <Dialog 
+      v-model:visible="showCierreModal" 
+      modal 
+      header="🔒 Cerrar Turno" 
+      :style="{ width: '25rem' }"
+    >
+        <div class="flex flex-col gap-2 mb-4">
+            <label class="font-bold">Monto en Efectivo</label>
+            <InputNumber 
+                v-model="efectivoInput" 
+                inputId="currency-pe" 
+                mode="currency" 
+                currency="PEN" 
+                locale="es-PE" 
+                placeholder="Deja vacío si no recibiste efectivo"
+                class="w-full"
+            />
+            <small class="text-surface-500">Nota: Si no ingresas nada, el sistema asumirá que el total de tu turno fue únicamente por Yape. No afectará tu historial de ventas.</small>
+        </div>
+
+        <template #footer>
+            <Button label="Cancelar" text severity="secondary" @click="showCierreModal = false" />
+            <Button 
+                label="Cerrar Caja" 
+                icon="pi pi-lock" 
+                severity="danger" 
+                @click="procesarCierre" 
+                :loading="loadingCierre"
+            />
+        </template>
+    </Dialog>
+
+    <Dialog 
+      v-model:visible="showResumenCierreModal" 
+      modal 
+      header="🧾 Resumen de Turno" 
+      :style="{ width: '25rem' }"
+      :closable="false"
+      :closeOnEscape="false"
+    >
+        <div v-if="resumenData" class="flex flex-col gap-4 text-center pt-2">
+            <i class="pi pi-check-circle text-5xl text-green-500 mb-2"></i>
+            <h3 class="font-bold text-xl">¡Turno Finalizado!</h3>
+            
+            <div class="bg-surface-100 dark:bg-surface-800 p-4 rounded-lg flex flex-col gap-2">
+                <div class="flex justify-between">
+                    <span>Ventas Yape ({{ resumenData.cantidadYape }}):</span>
+                    <span class="font-bold text-primary">S/ {{ resumenData.totalYape.toFixed(2) }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Efectivo Declarado:</span>
+                    <span class="font-bold text-surface-900 dark:text-white">S/ {{ resumenData.totalEfectivo.toFixed(2) }}</span>
+                </div>
+                <div class="divider my-1 border-t border-surface-300"></div>
+                <div class="flex justify-between text-lg">
+                    <span class="font-bold">Total Recaudado:</span>
+                    <span class="font-bold text-green-600">S/ {{ resumenData.totalIngresos.toFixed(2) }}</span>
+                </div>
+            </div>
+
+            <Button label="Entendido" class="w-full mt-2" @click="finalizarTurno" />
+        </div>
+    </Dialog>
     <div v-if="!sucursalActual">
       <SucursalSelector />
     </div>
@@ -17,7 +80,7 @@
         <Dialog 
           v-model:visible="showAperturaModal" 
           modal 
-          header="👋 Iniciar Turno" 
+          :header="`👋 Iniciar Turno en ${nombreSucursalActual}`" 
           :style="{ width: '420px' }"
           :closable="false"
           :closeOnEscape="false"
@@ -40,6 +103,13 @@
             </div>
 
             <div class="apertura-actions">
+              <Button 
+                label="Cambiar Sede" 
+                icon="pi pi-arrow-left" 
+                text 
+                severity="secondary"
+                @click="cambiarSucursal" 
+            />
               <Button 
                 label="Abrir Caja" 
                 icon="pi pi-check" 
@@ -73,6 +143,13 @@
                   label="Cambiar" 
                   icon="pi pi-refresh"
                   @click="cambiarSucursal"
+                  text
+                />
+                <Button
+                  label="Cerrar caja"
+                  icon="pi pi-lock"
+                  @click="solicitarCierre"
+                  severity="warning"
                   text
                 />
                 <Button 
@@ -148,12 +225,18 @@ const {
   yapesPendientes, 
   misVentas 
 } = useYape();
-const { verificarCajaAbierta, abrirCaja, isSessionOpened } = useCaja();
+const { verificarCajaAbierta, abrirCaja, cerrarCaja, isSessionOpened } = useCaja();
 
 const showAperturaModal = ref(false);
 const nombreCajero = ref('');
 const loadingApertura = ref(false);
 const loadingCaja = ref(true);
+
+const showCierreModal = ref(false);
+const showResumenCierreModal = ref(false);
+const efectivoInput = ref(null);
+const resumenData = ref(null);
+const loadingCierre = ref(false);
 
 const unaSucursal = computed(() => sucursales.value.length === 1);
 
@@ -166,6 +249,10 @@ const handleAbrirCaja = async () => {
   loadingApertura.value = true;
   try {
     await abrirCaja(nombreCajero.value);
+    await Promise.all([
+        escucharPendientes(user.value.email),
+        escucharMisVentas(user.value.email, sucursalActual.value)
+    ]);
     showAperturaModal.value = false;
     toast.add({ severity: 'success', summary: 'Turno Iniciado', detail: `Caja abierta por ${nombreCajero.value}`, life: 3000 });
   } catch (error) {
@@ -174,6 +261,46 @@ const handleAbrirCaja = async () => {
   } finally {
     loadingApertura.value = false;
   }
+};
+
+/**
+ * Método encargado de iniciar el proceso de cierre de caja
+ */
+const solicitarCierre = () => {
+    efectivoInput.value = null;
+    showCierreModal.value = true;
+};
+
+/**
+ * Método encargado de procesar cierre de caja
+ * TODO: Mover lógica a useCaja.js
+ */
+const procesarCierre = async () => {
+    loadingCierre.value = true;
+    try {
+        const resultado = await cerrarCaja(efectivoInput.value);
+        
+        resumenData.value = resultado;
+        
+        showCierreModal.value = false;
+        showResumenCierreModal.value = true;
+        
+        toast.add({ severity: 'success', summary: 'Turno Cerrado Correctamente' });
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cerrar el turno' });
+        console.error(e);
+    } finally {
+        loadingCierre.value = false;
+    }
+};
+
+/**
+ * Finalización del turno y recarga de la app
+ * TODO: Mover lógica a useCaja.js
+ */
+const finalizarTurno = () => {
+    showResumenCierreModal.value = false;
+    window.location.reload();
 };
 
 /**
@@ -237,10 +364,16 @@ const cambiarSucursal = () => {
 const iniciarLogicaSucursal = async () => {
   if(!user.value || !sucursalActual.value) return;
 
+  if (sucursalActual.value === 'ADMIN') {
+    loadingCaja.value = false;
+    router.push('/admin');
+    return;
+  }
+
   loadingCaja.value = true;
+  misVentas.value = [];
 
   try {
-    if (sucursalActual.value !== 'ADMIN') {
       await verificarCajaAbierta();
       
       if (!isSessionOpened.value) {
@@ -252,7 +385,8 @@ const iniciarLogicaSucursal = async () => {
           escucharMisVentas(user.value.email, sucursalActual.value)
         ]);
       }
-    }
+  } catch (e) {
+      console.error("Error cargando sucursal:", e);
   } finally {
     loadingCaja.value = false;
   }
