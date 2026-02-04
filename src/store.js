@@ -8,6 +8,7 @@ export const store = reactive({
     sucursalActual: localStorage.getItem('sucursalActual') || null,
     loading: false,
     cashSession: null,
+    isAdminAuthenticated: false,
 
     userProfile: {
         role: 'user',
@@ -84,3 +85,11 @@ export const setUserProfile = (data) => {
 export const setCajaSesion = (data) => {
     store.cashSession = data;
 }
+
+/**
+ * Establece si el usuario está autenticado como administrador
+ * @param {boolean} value - Valor booleano que indica si el usuario está autenticado como administrador
+ */
+export const setAdminAuth = (value) => {
+    store.isAdminAuthenticated = value;
+};
