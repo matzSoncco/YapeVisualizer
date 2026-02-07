@@ -75,7 +75,7 @@ export function useCaja() {
      * Cierra el turno actual
      * @param {number} montoEfectivoDeclarado - Monto que el cajero dice tener en tickets (Opcional)
      */
-    const cerrarCaja = async (montoEfectivoDeclarado = 0) => {
+    const cerrarCaja = async (montoEfectivoDeclarado, nombreSucursal) => {
         const session = store.cashSession;
         if (!session?.id) throw new Error("No hay caja abierta para cerrar");
 
@@ -96,6 +96,9 @@ export function useCaja() {
                 status: 'CLOSED',
                 fechaCierre: new Date().toISOString(),
                 timestampCierre: Timestamp.now(),
+
+                sucursalId: sucursalId.value,
+                sedeNombre: nombreSucursal || 'Sucursal Desconocida',
 
                 cantidadYape: cantidadVentas,
                 totalYape: totalYapeCalculado,
