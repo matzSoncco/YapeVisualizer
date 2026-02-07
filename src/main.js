@@ -24,6 +24,7 @@ import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 import InputOtp from 'primevue/inputotp'
 import InputNumber from 'primevue/inputnumber'
+import Tab from 'primevue/tab'
 
 import 'primeicons/primeicons.css'
 
@@ -99,5 +100,6 @@ app.component('InputText', InputText)
 app.component('Dialog', Dialog)
 app.component('InputOtp', InputOtp)
 app.component('InputNumber', InputNumber)
+app.component('Tab', Tab)
 
 app.mount('#app')
