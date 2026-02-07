@@ -278,7 +278,10 @@ const solicitarCierre = () => {
 const procesarCierre = async () => {
     loadingCierre.value = true;
     try {
-        const resultado = await cerrarCaja(efectivoInput.value);
+        const sucursalObj = sucursales.value.find(s => s.id === sucursalActual.value);
+        const nombreSede = sucursalObj ? sucursalObj.nombre : 'Sede Principal';
+
+        const resultado = await cerrarCaja(efectivoInput.value, nombreSede);
         
         resumenData.value = resultado;
         
