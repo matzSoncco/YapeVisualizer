@@ -1,4 +1,4 @@
-import { reactive } from 'vue';
+import { reactive, computed } from 'vue';
 
 /**
  * Store reactivo simple para manejar el estado global de sucursales
@@ -7,7 +7,7 @@ export const store = reactive({
     sucursales: [],
     sucursalActual: localStorage.getItem('sucursalActual') || null,
     loading: false,
-    cashSession: null,
+    currentShift: null,
     isAdminAuthenticated: false,
 
     userProfile: {
@@ -23,6 +23,12 @@ export const store = reactive({
         }
     }
 });
+
+/**
+ * Helper computado para usar en templates
+ * Reemplaza la necesidad de un booleano manual
+ */
+export const isShiftOpen = computed(() => store.currentShift !== null);
 
 /**
  * Actualiza la lista de sucursales en el store
@@ -43,6 +49,7 @@ export const setSucursalActual = (id) => {
         localStorage.setItem('sucursalActual', id);
     } else {
         localStorage.removeItem('sucursalActual');
+        store.currentShift = null;
     }
 };
 
@@ -82,8 +89,8 @@ export const setUserProfile = (data) => {
  * Establece los datos de la sesión de caja en el store
  * @param {Object} data - Datos de la sesión de caja
  */
-export const setCajaSesion = (data) => {
-    store.cashSession = data;
+export const setCurrentShift = (data) => {
+    store.currentShift = data;
 }
 
 /**

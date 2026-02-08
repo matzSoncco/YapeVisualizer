@@ -1,129 +1,147 @@
 import { computed } from 'vue';
 import { db } from "../firebaseConfig";
-import { collection, addDoc, doc, updateDoc, query, where, getDocs, limit, Timestamp } from "firebase/firestore";
+import {
+    collection,
+    addDoc,
+    doc,
+    updateDoc,
+    query,
+    where,
+    getDocs,
+    limit,
+    serverTimestamp,
+} from "firebase/firestore";
 import { useAuth } from './useAuth';
-import { store, setCajaSesion } from '../store';
+import { store, setCurrentShift } from '@/store';
 
-export function useCaja() {
+export function useShift() {
     const { user } = useAuth();
 
-    const isSessionOpened = computed(() => store.cashSession !== null);
-    const datosSesion = computed(() => store.cashSession);
+    const isShiftOpen = computed(() => store.currentShift !== null);
+    const currentShift = computed(() => store.currentShift);
     const sucursalId = computed(() => store.sucursalActual);
 
     /**
-     * Verifica si existe una caja abierta para la sucursal actual
+     * Verifica si existe un turno abierta para la sucursal actual
      * Se debe llamar al montar el Dashboard
      */
-    const verificarCajaAbierta = async () => {
-        setCajaSesion(null);
+    const verificarTurnoActivo = async () => {
+        setCurrentShift(null);
         if (!user.value?.uid || !sucursalId.value || sucursalId.value === 'ADMIN') return;
 
         try {
-            const cuadresRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'cuadres');
-            const q = query(cuadresRef, where('status', '==', 'OPEN'), limit(1));
+            const shiftsRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts');
+            const q = query(shiftsRef, where('status', '==', 'OPEN'), limit(1));
             
             const snapshot = await getDocs(q);
             
             if (!snapshot.empty) {
                 const docData = snapshot.docs[0];
-                setCajaSesion({ id: docData.id, ...docData.data() });
+                setCurrentShift({ id: docData.id, ...docData.data() });
             } else {
-                setCajaSesion(null);
+                setCurrentShift(null);
             }
         } catch (error) {
-            console.error("Error verificando caja:", error);
+            console.error("Error verificando turno activo:", error);
         }
     };
 
     /**
      * Abre un nuevo turno de caja
+     * @param {number} montoInicial - Monto inicial declarado para el turno
      * @param {string} nombreCajero - Nombre de quien abre el turno
      */
-    const abrirCaja = async (nombreCajero) => {
-        if (!user.value?.uid || !sucursalId.value) throw new Error("No hay sucursal seleccionada");
+    const abrirTurno = async (montoInicial, cajeroNombre) => {
+        if (!user.value?.uid || !sucursalId.value) throw new Error("Error de contexto: No hay sucursal");
 
-        const nuevaCaja = {
+        const nuevoTurno = {
             status: 'OPEN',
-            cajero: nombreCajero,
+            cajero: cajeroNombre,
             fechaApertura: new Date().toISOString(),
-            timestampApertura: Timestamp.now(),
-            
-            montoInicial: 0, 
-            totalYape: 0,
-            cantidadYape: 0,
-            totalEfectivo: 0,
-            totalIngresos: 0,
+            timestampApertura: serverTimestamp(),
+
+            stats: {
+                fund: Number(montoInicial),
+                totalCashSales: 0,
+                totalYapeSales: 0,
+                totalExpenses: 0,
+                totalTransactions: 0
+            },
             
             fechaCierre: null,
-            timestampCierre: null
+            timestampCierre: null,
+            audit: null
         };
 
         try {
-            const cuadresRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'cuadres');
-            const docRef = await addDoc(cuadresRef, nuevaCaja);
+            const shiftsRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts');
+            const docRef = await addDoc(shiftsRef, nuevoTurno);
 
-            setCajaSesion({ id: docRef.id, ...nuevaCaja });
+            setCurrentShift({ id: docRef.id, ...nuevoTurno });
             return docRef.id;
         } catch (error) {
-            console.error("Error al abrir caja:", error);
+            console.error("Error al abrir turno:", error);
             throw error;
         }
     };
 
     /**
      * Cierra el turno actual
-     * @param {number} montoEfectivoDeclarado - Monto que el cajero dice tener en tickets (Opcional)
+     * @param {number} efectivoRealDeclarado - Monto que el cajero dice tener en efectivo al cerrar
+     * @param {string} nombreSucursal - Nombre de la sucursal (valioso para Admin)
      */
-    const cerrarCaja = async (montoEfectivoDeclarado, nombreSucursal) => {
-        const session = store.cashSession;
-        if (!session?.id) throw new Error("No hay caja abierta para cerrar");
+    const cerrarTurno = async (efectivoRealDeclarado, nombreSucursal) => {
+        const shift = store.currentShift;
+        if (!shift?.id) throw new Error("No hay turno activo para cerrar");
 
         try {
-            const yapesRef = collection(db, 'yape_notifications');
-            const q = query(yapesRef, where('sessionId', '==', session.id), where('status', '==', 'claimed'));
-            const snapshot = await getDocs(q);
-
-            let totalYapeCalculado = 0;
-            let cantidadVentas = 0;
-
-            snapshot.forEach((doc) => {
-                totalYapeCalculado += Number(doc.data().amount || 0);
-                cantidadVentas++;
-            });
+            const stats = shift.stats || {
+                fund: 0,
+                totalCashSales: 0,
+                totalYapeSales: 0,
+                totalExpenses: 0,
+                totalTransactions: 0
+            };
+            const efectivoTeorico = stats.fund + stats.totalCashSales - stats.totalExpenses;
+            const diferencia = Number(efectivoRealDeclarado) - efectivoTeorico;
 
             const cierreData = {
                 status: 'CLOSED',
                 fechaCierre: new Date().toISOString(),
-                timestampCierre: Timestamp.now(),
+                timestampCierre: serverTimestamp(),
 
                 sucursalId: sucursalId.value,
                 sedeNombre: nombreSucursal || 'Sucursal Desconocida',
 
-                cantidadYape: cantidadVentas,
-                totalYape: totalYapeCalculado,
-                totalEfectivo: Number(montoEfectivoDeclarado || 0),
-                
-                totalIngresos: totalYapeCalculado + Number(montoEfectivoDeclarado || 0)
+                audit: {
+                    fund: stats.fund,
+                    totalSystemCash: efectivoTeorico,
+                    declaredCash: Number(efectivoRealDeclarado),
+                    difference: diferencia,
+                    isBalanced: Math.abs(diferencia) < 0.5
+                },
+
+                totalIngresosDia: (stats.totalCashSales + stats.totalYapeSales),
+                totalYape: stats.totalYapeSales,
             };
 
-            const sessionRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'cuadres', session.id);
-            await updateDoc(sessionRef, cierreData);
+            const shiftsRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts', session.id);
+            await updateDoc(shiftsRef, cierreData);
 
-            setCajaSesion(null);
+            setCurrentShift(null);
 
             return cierreData;
         } catch (error) {
-            console.error("Error al cerrar caja:", error);
+            console.error("Error al cerrar turno:", error);
             throw error;
         }
     };
 
     return {
-        isSessionOpened,
-        datosSesion,
-        verificarCajaAbierta,
-        abrirCaja,
-        cerrarCaja
+        currentShift,
+        isShiftOpen,
+        verificarTurnoActivo,
+        abrirTurno,
+        cerrarTurno
     };
 }
