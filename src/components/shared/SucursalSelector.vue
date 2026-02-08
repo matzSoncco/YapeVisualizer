@@ -90,7 +90,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useSucursal } from '../composables/useSucursal';
+import { useSucursal } from '../../composables/useSucursal';
 import { useToast } from 'primevue/usetoast';
 import { setAdminAuth } from '@/store';
 

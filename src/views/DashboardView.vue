@@ -194,9 +194,9 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 
-import SucursalSelector from '../components/SucursalSelector.vue';
-import PendingList from '../components/PendingList.vue';
-import SalesHistory from '../components/SalesHistory.vue';
+import SucursalSelector from '../components/shared/SucursalSelector.vue';
+import PendingList from '../components/pos/YapeFeed.vue';
+import SalesHistory from '../components/shared/SalesHistory.vue';
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm';
@@ -205,7 +205,7 @@ import '../assets/dashboard.css';
 import { useAuth } from '../composables/useAuth';
 import { useYape } from '../composables/useYape';
 import { useSucursal } from '../composables/useSucursal';
-import { useCaja } from '@/composables/useCaja';
+import { useCaja } from '@/composables/useShift';
 import { simularDatos } from '@/utils/devSimulator';
 
 /**
