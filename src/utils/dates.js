@@ -29,3 +29,13 @@ export const formatearFecha = (fechaInput) => {
     hour12: true
   });
 };
+
+export const formatearHora = (timestampRecibido) => {
+  if (!timestampRecibido) return '--:--';
+  const horaFormateada = timestampRecibido.toDate ? timestampRecibido.toDate() : new DAte(timestampRecibido);
+  return horaFormateada.toLocaleTimeString('es-PE', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+}
