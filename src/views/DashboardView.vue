@@ -3,6 +3,43 @@
     <Toast />
     <ConfirmDialog />
 
+    <Dialog 
+        v-model:visible="matcherState.showModal" 
+        modal 
+        header="Confirmar Pago Yape" 
+        :style="{ width: '400px' }"
+        :closable="false"
+    >
+        <div class="flex flex-col items-center gap-4 pt-2">
+            <div class="text-center">
+                <i class="pi pi-check-circle text-5xl text-purple-600 mb-2"></i>
+                <h3 class="font-bold text-xl text-slate-800">¡Pago Detectado!</h3>
+                <p class="text-slate-500 text-sm" v-if="matcherState.matchType === 'AUTO'">Coincidencia automática</p>
+                <p class="text-slate-500 text-sm" v-else>Selección manual</p>
+            </div>
+
+            <div class="w-full bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <div class="flex justify-between mb-2">
+                    <span class="text-slate-500">Cliente:</span>
+                    <span class="font-bold text-slate-800">{{ matcherState.candidateYape?.senderName }}</span>
+                </div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-slate-500">Monto:</span>
+                    <span class="font-bold text-purple-700 text-lg">S/ {{ Number(matcherState.candidateYape?.amount).toFixed(2) }}</span>
+                </div>
+                 <div class="flex justify-between">
+                    <span class="text-slate-500">Hora:</span>
+                    <span class="font-mono text-slate-600">{{ formatearHora(matcherState.candidateYape?.timestamp) }}</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2 w-full mt-2">
+                <Button label="Cancelar" severity="secondary" text class="flex-1" @click="cancelarVinculo" />
+                <Button label="CONFIRMAR VENTA" severity="help" class="flex-1" @click="confirmarVinculo" icon="pi pi-check" autofocus />
+            </div>
+        </div>
+    </Dialog>
+
     <div v-if="globalLoading" class="caja-loading-state">
       <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
       <p>Sincronizando...</p>
@@ -16,67 +53,39 @@
       
       <ShiftOpen v-if="!isShiftOpen" />
 
-      <div v-else class="dashboard-container-inner"> <header class="dashboard-header">
-          <div class="dashboard-header-content">
-            <div class="dashboard-title-section">
-              <h1>Monitor de Caja</h1>
-              <p class="dashboard-subtitle">
-                Tienda: <strong>{{ nombreSucursalActual }}</strong> | 
-                Cajero: <strong>{{ currentShift?.cajero }}</strong>
-              </p>
-            </div>
-            
-            <div class="dashboard-actions">
-              <Button 
-                label="Simular" 
-                icon="pi pi-play"
-                @click="handleSimulacion"
-                outlined
-                size="small"
-              />
-              <div class="divider-vertical"></div>
-              <Button 
-                label="Cambiar Sede" 
-                icon="pi pi-refresh"
-                @click="cambiarSucursal"
-                text
-                size="small"
-              />
-              <Button
-                label="Cerrar Turno"
-                icon="pi pi-lock"
-                @click="handleCierreClick"
-                severity="danger"
-                text
-                size="small"
-              />
-            </div>
-          </div>
+      <div v-else class="dashboard-container-inner"> 
+        <header class="dashboard-header">
+           <div class="dashboard-header-content">
+             <div class="dashboard-title-section">
+               <h1>Monitor de Caja</h1>
+               <p class="dashboard-subtitle">
+                 Tienda: <strong>{{ nombreSucursalActual }}</strong> | 
+                 Cajero: <strong>{{ currentShift?.cajero }}</strong>
+               </p>
+             </div>
+             <div class="dashboard-actions">
+               <Button label="Simular" icon="pi pi-play" @click="handleSimulacion" outlined size="small" />
+               <div class="divider-vertical"></div>
+               <Button label="Cambiar Sede" icon="pi pi-refresh" @click="cambiarSucursal" text size="small" />
+               <Button label="Cerrar Turno" icon="pi pi-lock" @click="handleCierreClick" severity="danger" text size="small" />
+             </div>
+           </div>
         </header>
 
         <main class="dashboard-content">
-          
           <section class="grid-col-pending">
-            <YapeFeed 
-              :yapes="yapesPendientes" 
-              @pescar="handlePesca" 
-            />
+            <YapeFeed :yapes="yapesPendientes" @pescar="handlePesca" />
           </section>
 
           <section class="grid-col-history">
-             <SalesHistory :ventas="misVentas" />
+             <SalesHistory :ventas="movimientosTurno" />
           </section>
 
           <section class="grid-col-pos">
-             <div class="pos-panel-placeholder" style="background: white; height: 100%; padding: 1rem; border-radius: 8px;">
-                <h3>POS Panel</h3>
-                <p>Aquí irá el formulario de cobro.</p>
-             </div>
+            <POSPanel ref="posPanelRef" @transaction-completed="handleTransaccionCompletada" />
           </section>
-
         </main>
       </div>
-
     </div>
   </div>
 </template>
@@ -91,6 +100,7 @@ import ShiftOpen from '@/components/pos/ShiftOpen.vue';
 import YapeFeed from '@/components/pos/YapeFeed.vue'; 
 import SalesHistory from '@/components/pos/SalesHistory.vue'; 
 import SucursalSelector from '@/components/shared/SucursalSelector.vue';
+import POSPanel from '@/components/pos/POSPanel.vue';
 import Button from 'primevue/button';
 
 import { useAuth } from '@/composables/useAuth';
@@ -98,17 +108,40 @@ import { useSucursal } from '@/composables/useSucursal';
 import { useShift } from '@/composables/useShift'; 
 import { useYape } from '@/composables/useYape';
 import { simularDatos } from '@/utils/devSimulator';
+import { useMovements } from '@/composables/useMovements';
+import { useYapeMatcher } from '@/composables/useYapeMatcher';
+import { formatearHora } from '@/utils/dates';
 
 import '@/assets/dashboard.css';
+import { formatearHora } from '@/utils/dates';
 
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
+const posPanelRef = ref(null);
 
 const { user } = useAuth();
 const { sucursalActual, nombreSucursalActual, limpiarSucursal } = useSucursal();
 const { verificarTurnoActivo, cerrarTurno, isShiftOpen, currentShift } = useShift();
-const { escucharPendientes, escucharMisVentas, yapesPendientes, misVentas, reclamarYape, detenerTodo } = useYape();
+const {
+  escucharPendientes,
+  yapesPendientes,
+  detenerTodo
+} = useYape();
+const { 
+  escucharMovimientos,
+  movimientosTurno,
+  detenerEscuchaMovimientos
+} = useMovements();
+const { 
+    matcherState, 
+    vigilarYapesEntrantes, 
+    validarSeleccionManual, 
+    resetMatcher, 
+    cancelarEspera 
+} = useYapeMatcher();
+
+vigilarYapesEntrantes(yapesPendientes);
 
 const globalLoading = ref(true);
 
@@ -136,17 +169,17 @@ const iniciarDashboard = async () => {
         await verificarTurnoActivo();
         
         if (isShiftOpen.value) {
-            await Promise.all([
-                escucharPendientes(user.value.email),
-                escucharMisVentas(user.value.email, sucursalActual.value)
-            ]);
+            escucharPendientes(user.value.email);
+            escucharMovimientos();
         }
     } catch (error) {
-        console.error("Error dashboard:", error);
+      console.error("Error dashboard:", error);
     } finally {
-        globalLoading.value = false;
+      globalLoading.value = false;
     }
 };
+
+const handleTransaccionCompletada = () => { console.log("Transacción OK"); };
 
 /**
  * Iniciar el dashboard al montar el componente
@@ -162,7 +195,9 @@ watch([user, sucursalActual], () => {
 watch(isShiftOpen, (estaAbierto) => {
     if (estaAbierto) {
         escucharPendientes(user.value.email);
-        escucharMisVentas(user.value.email, sucursalActual.value);
+        escucharMovimientos();
+    } else {
+        detenerEscuchaMovimientos();
     }
 });
 
@@ -198,17 +233,36 @@ const handleCierreClick = async () => {
 
 /**
  * Utilitario de manejo de pesca de una transacción pendiente
- * @param yape - 
+ * @param {Object} yape - Objeto de transacción pendiente
  */
-const handlePesca = async (yape) => {
-    confirm.require({
-        message: `Confirmar S/ ${yape.amount} de ${yape.senderName}?`,
-        header: 'Confirmar Ingreso',
-        accept: async () => {
-            await reclamarYape(yape.id, sucursalActual.value, nombreSucursalActual.value);
-            toast.add({ severity: 'success', summary: 'Venta Registrada' });
-        }
-    });
+const handlePesca = (yape) => {
+  if (!posPanelRef.value) return;
+
+  const totalCarrito = posPanelRef.value.totalGeneral || 0;
+
+  const resultado = validarSeleccionManual(yape, totalCarrito);
+
+  if (resultado.valid && resultado.action === 'PRELLENAR') {
+    posPanelRef.value.prellenarCarrito(yape.amount);
+  }
+};
+
+/**
+ * Método para confirmar el match entre una transacción pendiente y una venta en POS
+ */
+const confirmarVinculo = async () => {
+    if (!posPanelRef.value || !matcherState.candidateYape) return;
+    
+    await posPanelRef.value.finalizarVentaYapeConfirmada(matcherState.candidateYape);
+    
+    resetMatcher();
+};
+
+/**
+ * Método para cancelar el proceso de vinculación manual y volver al estado de espera
+ */
+const cancelarVinculo = () => {
+    cancelarEspera();
 };
 
 /**
