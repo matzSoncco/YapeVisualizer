@@ -27,27 +27,47 @@
           <Column field="timestamp" header="Hora">
             <template #body="slotProps">
               <i class="pi pi-clock" style="margin-right: 0.5rem; color: var(--jet);"></i>
-              {{ formatTime(slotProps.data.timestamp) }}
+              {{ formatearHora(slotProps.data.timestamp) }}
             </template>
           </Column>
           
-          <Column field="senderName" header="Cliente">
+          <Column header="Cliente">
             <template #body="slotProps">
-              <span class="client-name">{{ slotProps.data.senderName }}</span>
-            </template>
-          </Column>
-          
-          <Column field="amount" header="Monto">
-            <template #body="slotProps">
-              <span class="amount-cell">
-                S/ {{ Number(slotProps.data.amount).toFixed(2) }}
+              <span v-if="slotProps.data.type === 'EXPENSE'" class="text-red-500 font-bold">
+                  GASTO OPERATIVO
+              </span>
+              <span v-else class="client-name">
+                  {{ slotProps.data.clientName || 'Cliente Eventual' }}
               </span>
             </template>
           </Column>
           
-          <Column header="Estado">
-            <template #body>
-              <Tag value="En Caja" severity="success" icon="pi pi-check" />
+          <Column field="totalAmount" header="Monto">
+            <template #body="slotProps">
+              <span class="amount-cell" :class="{'text-red-500': slotProps.data.type === 'EXPENSE'}">
+                S/ {{ Number(slotProps.data.totalAmount || slotProps.data.amount).toFixed(2) }}
+              </span>
+            </template>
+          </Column>
+          
+          <Column header="Método">
+            <template #body="slotProps">
+               <Tag v-if="slotProps.data.type === 'EXPENSE'" value="Salida" severity="danger" icon="pi pi-minus-circle" />
+               
+               <div v-else>
+                   <Tag 
+                        v-if="esPagoYape(slotProps.data)" 
+                        value="Yape" 
+                        severity="help" 
+                        icon="pi pi-qrcode" 
+                    />
+                   <Tag 
+                        v-else 
+                        value="Efectivo" 
+                        severity="success" 
+                        icon="pi pi-money-bill" 
+                    />
+               </div>
             </template>
           </Column>
         </DataTable>
@@ -61,33 +81,33 @@ import Card from 'primevue/card';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
-
 import { computed } from 'vue';
+import { formatearHora } from '@/utils/dates';
 
-/**
- * Propiedades del componente
- * @prop {Array} ventas - Lista de ventas confirmadas
- */
 const props = defineProps({
   ventas: { type: Array, required: true }
 });
 
 /**
- * Suma total de los montos de las ventas actuales
- * @type {import('vue').ComputedRef<number>}
+ * Cálculo del Total
+ * TODO: Mover a un composable o utilitario si fuera necesario
  */
 const total = computed(() => {
-  return props.ventas.reduce((sum, item) => sum + Number(item.amount), 0);
+  return props.ventas.reduce((sum, item) => {
+      const monto = Number(item.totalAmount || item.amount || 0);
+      if (item.type === 'EXPENSE') {
+          return sum - monto;
+      }
+      return sum + monto;
+  }, 0);
 });
 
 /**
- * Formatea un timestap de Firebase o un Date estándar a una cadena de hora legible
- * @param {Object|data|string} ts - Timestamp de Firebase o Date
- * @returns {string} Hora formateada (HH:MM)
+ * Identifica si es una venta por Yape o gasto operativo para estilos
+ * @param data - Objeto de venta o gasto operativo
  */
-const formatTime = (ts) => {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+const esPagoYape = (data) => {
+    if (!data.payments) return false;
+    return data.payments.some(p => p.method === 'YAPE');
 };
 </script>
