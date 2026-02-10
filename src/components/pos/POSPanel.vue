@@ -44,21 +44,37 @@
       </div>
 
       <div class="grid grid-cols-2 gap-2">
-        <Button severity="success" class="h-12 text-lg" :disabled="totalGeneral <= 0" :loading="loading" @click="procesarPago('CASH', null)">
-            <i class="pi pi-money-bill mr-2"></i> EFECTIVO
-        </Button>
-        
         <Button 
-            severity="help" 
-            class="h-12 text-lg relative" 
-            :disabled="totalGeneral <= 0" 
-            :loading="loading" 
-            @click="iniciarFlujoYape"
-        >
-            <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'" class="mr-2"></i> 
-            {{ matcherState.isListening ? 'ESPERANDO...' : 'YAPE' }}
-        </Button>
+        severity="success" 
+        class="h-12 text-lg" 
+        :disabled="totalGeneral <= 0 || matcherState.isLocked" 
+        :loading="loading" 
+        @click="procesarPago('CASH', null)"
+    >
+        <i class="pi pi-money-bill mr-2"></i> 
+        {{ matcherState.isLocked ? 'BLOQUEADO' : 'EFECTIVO' }}
+    </Button>
+    
+    <Button 
+        :severity="matcherState.isLocked ? 'help' : 'help'" 
+        class="h-12 text-lg relative" 
+        :disabled="totalGeneral <= 0" 
+        :loading="loading" 
+        @click="iniciarFlujoYape"
+    >
+        <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'" class="mr-2"></i> 
+        {{ matcherState.isListening ? 'ESPERANDO...' : 'YAPE' }}
+        <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="absolute -top-2 -right-2" />
+    </Button>
       </div>
+      <div v-if="matcherState.isLocked" class="text-center mt-2">
+    <Button 
+        label="Desvincular Yape para usar Efectivo" 
+        icon="pi pi-times" 
+        class="p-button-text p-button-sm text-red-400" 
+        @click="cancelarEspera" 
+    />
+</div>
     </div>
   </div>
 </template>
@@ -71,7 +87,6 @@ import { useMovements } from '@/composables/useMovements';
 import { useYape } from '@/composables/useYape';
 import { useYapeMatcher } from '@/composables/useYapeMatcher';
 
-// Composables
 const { suggestions, buscarProductos } = useProducts();
 const { registrarVenta } = useMovements();
 const { reclamarYape } = useYape();
