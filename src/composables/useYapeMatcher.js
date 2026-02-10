@@ -6,7 +6,8 @@ const matcherState = reactive({
     expectedAmount: 0,
     candidateYape: null,
     showModal: false,
-    matchType: null
+    matchType: null,
+    isLocked: false
 });
 
 export function useYapeMatcher() {
@@ -26,6 +27,7 @@ export function useYapeMatcher() {
         matcherState.expectedAmount = Number(montoTotal);
         matcherState.isListening = true;
         matcherState.candidateYape = null;
+        matcherState.isLocked = true;
         
         toast.add({ 
             severity: 'info', 
@@ -44,6 +46,7 @@ export function useYapeMatcher() {
         matcherState.expectedAmount = 0;
         matcherState.candidateYape = null;
         matcherState.showModal = false;
+        matcherState.isLocked = false;
     };
 
     /**
@@ -60,7 +63,7 @@ export function useYapeMatcher() {
                 matcherState.candidateYape = match;
                 matcherState.matchType = 'AUTO';
                 matcherState.showModal = true;
-                matcherState.isListening = false; 
+                matcherState.isListening = false;
             }
         }, { deep: true });
     };
@@ -72,6 +75,8 @@ export function useYapeMatcher() {
      */
     const validarSeleccionManual = (yape, montoCarrito) => {
         if (montoCarrito <= 0) {
+            matcherState.isLocked = true;
+            matcherState.candidateYape = yape;
             return { valid: true, action: 'PRELLENAR' };
         }
 
@@ -92,6 +97,7 @@ export function useYapeMatcher() {
         matcherState.matchType = 'MANUAL';
         matcherState.showModal = true;
         matcherState.isListening = false;
+        matcherState.isLocked = true;
 
         return { valid: true, action: 'CONFIRMAR' };
     };
@@ -104,6 +110,7 @@ export function useYapeMatcher() {
         matcherState.expectedAmount = 0;
         matcherState.candidateYape = null;
         matcherState.showModal = false;
+        matcherState.isLocked = false;
     };
 
     return {
