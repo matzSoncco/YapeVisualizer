@@ -25,6 +25,7 @@ import Dialog from 'primevue/dialog'
 import InputOtp from 'primevue/inputotp'
 import InputNumber from 'primevue/inputnumber'
 import Tab from 'primevue/tab'
+import AutoComplete from 'primevue/autocomplete'
 
 import 'primeicons/primeicons.css'
 
@@ -101,5 +102,6 @@ app.component('Dialog', Dialog)
 app.component('InputOtp', InputOtp)
 app.component('InputNumber', InputNumber)
 app.component('Tab', Tab)
+app.component('AutoComplete', AutoComplete)
 
 app.mount('#app')
