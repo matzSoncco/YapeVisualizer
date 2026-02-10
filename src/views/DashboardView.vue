@@ -113,7 +113,6 @@ import { useYapeMatcher } from '@/composables/useYapeMatcher';
 import { formatearHora } from '@/utils/dates';
 
 import '@/assets/dashboard.css';
-import { formatearHora } from '@/utils/dates';
 
 const router = useRouter();
 const toast = useToast();
@@ -263,6 +262,7 @@ const confirmarVinculo = async () => {
  */
 const cancelarVinculo = () => {
     cancelarEspera();
+    toast.add({ severity: 'info', summary: 'Vínculo cancelado', detail: 'Botones de pago liberados.' });
 };
 
 /**

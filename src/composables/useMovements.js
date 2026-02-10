@@ -1,10 +1,10 @@
 import { db } from "../firebaseConfig";
 import { 
-    collection, 
-    addDoc, 
-    doc, 
-    updateDoc, 
-    serverTimestamp, 
+    collection,
+    addDoc,
+    doc,
+    updateDoc,
+    serverTimestamp,
     increment,
     writeBatch,
     onSnapshot,
