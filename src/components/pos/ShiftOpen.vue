@@ -1,84 +1,76 @@
 <template>
-  <div class="flex flex-col items-center justify-center min-h-[70vh] p-4 bg-slate-50">
-    
-    <div class="mb-6 text-center">
-      <div class="bg-blue-600 text-white p-4 rounded-full inline-block mb-4 shadow-lg">
-        <i class="pi pi-lock-open" style="font-size: 2.5rem"></i>
-      </div>
-      <h1 class="text-3xl font-bold text-slate-800">Apertura de Caja</h1>
-      <p class="text-slate-500 mt-2">Inicia un nuevo turno para comenzar a vender.</p>
-    </div>
+  <div class="shift-open-container">
+    <div class="shift-split-layout">
+      
+      <aside class="shift-info-side">
+        <h1 class="shift-title">Apertura de Turno</h1>
+        <p class="shift-subtitle">Bienvenido al sistema. Por favor, verifica el efectivo físico antes de declarar el fondo inicial.</p>
+        
+        <footer class="shift-footer">
+          <div class="secure-badge">
+            <i class="pi pi-shield"></i>
+            <span>ENTORNO SEGURO</span>
+          </div>
+        </footer>
+      </aside>
 
-    <Card class="w-full max-w-md shadow-2xl border-t-4 border-blue-600">
-      <template #content>
-        <div class="flex flex-col gap-6 pt-4">
-          
-          <div class="flex flex-col gap-2">
-            <label for="cajero" class="font-semibold text-slate-700">Responsable del Turno</label>
+      <main class="shift-form-side">
+        <div class="shift-card">
+          <div class="input-group">
+            <label for="cajero">Responsable del Turno</label>
             <InputText 
               id="cajero" 
               v-model="nombreCajero" 
-              placeholder="Ej. Juan Pérez" 
-              class="w-full p-inputtext-lg"
-              :class="{'p-invalid': error && !nombreCajero}"
+              placeholder="Nombre del cajero" 
+              class="custom-input"
             />
           </div>
 
-          <div class="flex flex-col gap-2">
-            <label for="monto" class="font-semibold text-slate-700">Fondo Inicial de Caja</label>
-            <InputNumber 
-              id="monto" 
-              v-model="montoInicial" 
-              mode="currency" 
-              currency="PEN" 
-              locale="es-PE" 
-              placeholder="S/ 0.00"
-              class="w-full input-lg-currency"
-              :min="0"
-              inputClass="text-right text-xl font-bold text-blue-700"
-            />
-            <small class="text-slate-400">Dinero base en el cajón antes de la primera venta.</small>
+          <div class="input-group">
+            <label for="monto">Fondo Inicial</label>
+            <div class="currency-display">
+              <InputNumber 
+                id="monto" 
+                v-model="montoInicial" 
+                mode="decimal" 
+                :minFractionDigits="2"
+                class="currency-input-field"
+                inputClass="amount-input"
+                placeholder="0.00"
+              />
+            </div>
           </div>
 
-          <Button
-            label="VOLVER" 
-            icon="pi pi-arrow-left" 
-            text 
-            severity="secondary"
-            class="w-full mt-2 p-button-lg" 
-            @click="handleVolver"
-            :loading="loading"
-        />
-
-          <Button 
-            label="ABRIR TURNO" 
-            icon="pi pi-check-circle" 
-            class="w-full mt-2 p-button-lg" 
-            @click="handleAbrirTurno" 
-            :loading="loading"
-          />
-
+          <div class="shift-actions">
+            <Button 
+              label="ABRIR CAJA" 
+              icon="pi pi-check" 
+              class="btn-open" 
+              @click="handleAbrirTurno" 
+              :loading="loading"
+            />
+            <Button 
+              label="CANCELAR Y VOLVER" 
+              icon="pi pi-arrow-left" 
+              text 
+              class="btn-back"
+              @click="handleVolver"
+            />
+          </div>
         </div>
-      </template>
-    </Card>
+      </main>
 
-    <div class="mt-8 text-center text-sm text-slate-400">
-      <p>Sistema de Control de Caja v2.0</p>
-      <p>Asegúrate de contar el efectivo físico antes de abrir.</p>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useShift } from '@/composables/useShift';
-import { useAuth } from '@/composables/useAuth';
 import { useToast } from 'primevue/usetoast';
 import { useSucursal } from '@/composables/useSucursal';
 
 const { abrirTurno } = useShift();
-const { user } = useAuth();
 const { limpiarSucursal } = useSucursal();
 const toast = useToast();
 
@@ -118,3 +110,195 @@ const handleVolver = () => {
     limpiarSucursal();
 }
 </script>
+
+<style scoped>
+.shift-open-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bg-surface);
+  padding: 2rem;
+}
+
+.shift-split-layout {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  background: var(--bg-app);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  overflow: hidden; /* Para que las esquinas del aside no se salgan */
+  box-shadow: var(--shadow-pro);
+}
+
+/* PANEL IZQUIERDO (Oscuro y Sobrio) */
+.shift-info-side {
+  flex: 1;
+  background-color: var(--color-primary);
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.header-icon {
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.shift-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin-bottom: 1rem;
+}
+
+.shift-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.secure-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-accent);
+  margin-top: 2rem;
+  letter-spacing: 0.1em;
+}
+
+/* PANEL DERECHO (Limpio y Ágil) */
+.shift-form-side {
+  flex: 1.2;
+  padding: 3.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.shift-card {
+  width: 100%;
+}
+
+.input-group {
+  margin-bottom: 1.5rem;
+}
+
+.input-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.custom-input {
+  width: 100%;
+  border-radius: 8px !important;
+  border: 1.5px solid var(--color-border) !important;
+  padding: 0.75rem !important;
+}
+
+.currency-display {
+  display: flex;
+  align-items: center;
+  /* Quitamos el borde total y dejamos solo una línea inferior elegante */
+  border: none;
+  border-bottom: 2px solid var(--color-border); 
+  padding: 0.25rem 0;
+  transition: border-color 0.3s ease;
+}
+
+.currency-display:hover,
+.currency-display:focus-within {
+  border-bottom-color: var(--color-primary);
+}
+
+:deep(.amount-input) {
+  border: none !important;
+  background: transparent !important;
+  font-size: 2.2rem !important; /* Bajamos un pelín para que respire */
+  font-weight: 800 !important;
+  color: var(--color-primary) !important;
+  padding: 0 !important;
+  box-shadow: none !important; /* Adiós al resplandor azul de PrimeVue */
+  outline: none !important;
+}
+
+/* 2. Suavizar los inputs normales (Responsable) */
+.custom-input {
+  width: 100%;
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border) !important; /* Línea más fina (1px) */
+  padding: 0.75rem !important;
+  transition: all 0.2s ease !important;
+  background: var(--bg-app) !important;
+}
+
+/* Hover casi invisible, solo cambia sutilmente el tono del borde */
+.custom-input:hover {
+  border-color: var(--color-text-muted) !important;
+}
+
+/* Focus elegante: sin grosor extra, solo cambia el color */
+.custom-input:focus {
+  border-color: var(--color-primary) !important;
+  box-shadow: none !important; /* Importante para que no se vea tosco */
+  outline: none !important;
+}
+
+.shift-actions {
+  margin-top: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* 3. Ajuste de los botones para que no se vean pesados */
+.btn-open {
+  background: var(--color-primary) !important;
+  color: var(--color-accent) !important;
+  border: none !important;
+  font-weight: 800 !important;
+  padding: 1rem !important;
+  border-radius: 8px !important;
+  transition: opacity 0.2s !important;
+}
+
+.btn-open:hover {
+  opacity: 0.9; /* En lugar de cambiar color o borde, solo bajamos opacidad */
+}
+
+.btn-back {
+  font-weight: 700 !important;
+  color: var(--color-text-muted) !important;
+  margin-top: 0.5rem;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .shift-split-layout {
+    flex-direction: column;
+    margin: 1rem;
+  }
+  .shift-info-side {
+    padding: 2rem;
+  }
+  .shift-form-side {
+    padding: 2rem;
+  }
+}
+</style>
