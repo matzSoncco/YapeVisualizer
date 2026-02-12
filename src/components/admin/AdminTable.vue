@@ -95,6 +95,11 @@
 
 <script setup>
 import { formatearFecha } from '@/utils/dates';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Button from 'primevue/button';
+import Tag from 'primevue/tag';
+import Card from 'primevue/card';
 
 /**
  * Componente AdminTable
