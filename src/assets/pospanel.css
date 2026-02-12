@@ -1,0 +1,397 @@
+/* CONTENEDOR PRINCIPAL */
+.pos-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+
+/* HEADER - BÚSQUEDA Y PRECIO */
+.pos-header {
+  background: #fafbfc;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.search-section {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.product-search {
+  flex: 1;
+}
+
+.product-search-input {
+  width: 100%;
+  font-size: 0.9375rem;
+}
+
+.product-qty {
+  width: 120px;
+}
+
+.qty-input {
+  width: 3rem;
+  text-align: center;
+  font-weight: 600;
+  color: var(--chinese-black);
+}
+
+.price-section {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.price-input-wrapper {
+  flex: 1;
+  position: relative;
+}
+
+.currency-symbol {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--coffee);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  z-index: 1;
+}
+
+.product-price {
+  width: 100%;
+}
+
+.price-input {
+  padding-left: 2rem;
+  font-weight: 700;
+  color: var(--jet);
+  font-size: 0.9375rem;
+}
+
+.add-btn {
+  width: 3rem;
+  height: 3rem;
+  background: var(--dark-jungle-green);
+  border-color: var(--dark-jungle-green);
+  color: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.add-btn:hover:not(:disabled) {
+  background: var(--chinese-black);
+  border-color: var(--chinese-black);
+  transform: scale(1.05);
+}
+
+.add-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* CARRITO */
+.pos-cart {
+  flex: 1;
+  overflow-y: auto;
+  background: #ffffff;
+  position: relative;
+}
+
+/* Scrollbar personalizado */
+.pos-cart::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pos-cart::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.pos-cart::-webkit-scrollbar-thumb {
+  background: #9ca3af;
+  border-radius: 3px;
+}
+
+.pos-cart::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* CARRITO VACÍO */
+.empty-cart {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+}
+
+.empty-icon {
+  color: #d1d5db;
+  margin-bottom: 1rem;
+}
+
+.empty-icon i {
+  font-size: 3rem;
+}
+
+.empty-icon p {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  color: #9ca3af;
+}
+
+.quick-sale-section {
+  width: 100%;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.quick-sale-title {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.quick-sale-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.quick-amount {
+  flex: 1;
+}
+
+.quick-amount-input {
+  text-align: center;
+  background: #fef3c7;
+  border-color: #fde68a;
+  font-weight: 600;
+}
+
+/* TABLA DE ITEMS */
+.cart-table {
+  width: 100%;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.cart-item {
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s ease;
+}
+
+.cart-item:hover {
+  background: #fafbfc;
+}
+
+.item-qty {
+  padding: 0.5rem;
+  text-align: center;
+  color: #3b82f6;
+  font-weight: 700;
+  font-size: 1rem;
+  width: 60px;
+}
+
+.item-details {
+  padding: 0.5rem;
+}
+
+.item-name {
+  color: var(--chinese-black);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.item-price {
+  font-size: 0.625rem;
+  color: #9ca3af;
+}
+
+.item-subtotal {
+  padding: 0.5rem;
+  text-align: right;
+  font-weight: 700;
+  color: var(--jet);
+  font-size: 0.9375rem;
+}
+
+.item-remove {
+  padding: 0.5rem;
+  text-align: center;
+  width: 50px;
+}
+
+.item-remove i {
+  color: #fca5a5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.25rem;
+}
+
+.item-remove i:hover {
+  color: #ef4444;
+  transform: scale(1.2);
+}
+
+/* FOOTER - TOTAL Y PAGOS */
+.pos-footer {
+  background: var(--chinese-black);
+  color: #ffffff;
+  padding: 1rem;
+  box-shadow: 0 -4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.total-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--jet);
+  padding-bottom: 0.5rem;
+}
+
+.total-label {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+}
+
+.total-amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: -0.02em;
+}
+
+/* BOTONES DE PAGO */
+.payment-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.payment-btn {
+  height: 3rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.payment-btn i {
+  margin-right: 0.5rem;
+}
+
+.cash-btn {
+  background: #22c55e;
+  border-color: #22c55e;
+  color: #ffffff;
+}
+
+.cash-btn:hover:not(:disabled) {
+  background: #16a34a;
+  border-color: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+}
+
+.cash-btn:disabled {
+  background: #6b7280;
+  border-color: #6b7280;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.yape-btn {
+  background: #9333ea;
+  border-color: #9333ea;
+  color: #ffffff;
+}
+
+.yape-btn:hover:not(:disabled) {
+  background: #7e22ce;
+  border-color: #7e22ce;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(147, 51, 234, 0.3);
+}
+
+.yape-btn:disabled {
+  background: #6b7280;
+  border-color: #6b7280;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.yape-badge {
+  position: absolute;
+  top: -0.5rem;
+  right: -0.5rem;
+}
+
+/* SECCIÓN DE DESBLOQUEO */
+.unlock-section {
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.unlock-btn {
+  background: transparent;
+  border: none;
+  color: #fca5a5;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.unlock-btn:hover {
+  background: rgba(252, 165, 165, 0.1);
+  color: #ef4444;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .pos-header {
+    padding: 0.75rem;
+  }
+
+  .search-section {
+    flex-direction: column;
+  }
+
+  .product-qty {
+    width: 100%;
+  }
+
+  .total-amount {
+    font-size: 1.5rem;
+  }
+
+  .payment-btn {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .payment-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .total-amount {
+    font-size: 1.75rem;
+  }
+}
