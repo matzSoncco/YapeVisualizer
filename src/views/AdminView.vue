@@ -69,15 +69,14 @@
         <TabPanels>
             
             <TabPanel value="stats">
-                <div class="p-4 text-center text-gray-500 border border-dashed rounded">
-                    Aquí irán las KPI Cards (AdminStats.vue)
+                <AdminStats :kpis="kpis" />
+                <div class="mt-4">
+                  <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
                 </div>
             </TabPanel>
 
             <TabPanel value="charts">
-                <div class="p-4 text-center text-gray-500 border border-dashed rounded">
-                    Aquí irán los Gráficos (AdminCharts.vue)
-                </div>
+                <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
             </TabPanel>
 
             <TabPanel value="table">
@@ -115,7 +114,9 @@ import Tab from 'primevue/tab';
 import TabPanels from 'primevue/tabpanels';
 import TabPanel from 'primevue/tabpanel';
 
-import AdminTable from '@/components/admin/AdminTable.vue'; 
+import AdminTable from '@/components/admin/AdminTable.vue';
+import AdminStats from '@/components/admin/AdminStats.vue';
+import AdminCharts from '@/components/admin/AdminCharts.vue';
 import '@/assets/admin.css';
 
 const router = useRouter();
