@@ -1,80 +1,135 @@
 <template>
-  <div class="h-full flex flex-col bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-    <div class="bg-slate-50 p-3 border-b border-slate-200">
-         <div class="flex gap-2 mb-2">
-            <AutoComplete v-model="prodName" :suggestions="suggestions" @complete="search" @item-select="onProductSelect" optionLabel="name" placeholder="Buscar..." class="w-full input-sh" inputClass="w-full" ref="mainInput" />
-            <InputNumber v-model="prodQty" :min="1" showButtons buttonLayout="horizontal" inputClass="w-12 text-center" />
-         </div>
-         <div class="flex gap-2">
-             <div class="flex-grow relative">
-                <span class="absolute left-3 top-2 text-slate-400 font-bold">S/</span>
-                <InputNumber v-model="prodPrice" mode="currency" currency="PEN" locale="es-PE" placeholder="Precio" class="w-full" inputClass="pl-8 font-bold text-slate-700" :min="0" @keyup.enter="agregarAlCarrito" />
-             </div>
-             <Button icon="pi pi-plus" class="w-12" @click="agregarAlCarrito" :disabled="!puedeAgregar" />
-         </div>
-    </div>
-
-    <div class="flex-grow overflow-y-auto bg-white custom-scrollbar relative">
-        <div v-if="cart.length === 0" class="h-full flex flex-col items-center justify-center text-center p-4">
-            <div class="text-slate-300 mb-4"><i class="pi pi-shopping-cart text-5xl"></i><p class="text-sm mt-2">Carrito vacío</p></div>
-            <div class="w-full border-t border-slate-100 pt-4 mt-2">
-                <p class="text-xs text-slate-400 mb-2 uppercase font-bold">Venta Rápida</p>
-                <div class="flex gap-2">
-                    <InputNumber v-model="quickAmount" mode="currency" currency="PEN" locale="es-PE" placeholder="Monto Total" class="w-full" inputClass="text-center bg-yellow-50 border-yellow-200" />
-                    <Button icon="pi pi-check" severity="warning" :disabled="!quickAmount || quickAmount <= 0" @click="procesarVentaRapida" />
-                </div>
-            </div>
+  <div class="pos-container">
+    <div class="pos-header">
+      <div class="search-section">
+        <AutoComplete 
+          v-model="prodName" 
+          :suggestions="suggestions" 
+          @complete="search" 
+          @item-select="onProductSelect" 
+          optionLabel="name" 
+          placeholder="Buscar producto..." 
+          class="product-search" 
+          inputClass="product-search-input" 
+          ref="mainInput" 
+        />
+        <InputNumber 
+          v-model="prodQty" 
+          :min="1" 
+          showButtons 
+          buttonLayout="horizontal" 
+          inputClass="qty-input" 
+          class="product-qty"
+        />
+      </div>
+      <div class="price-section">
+        <div class="price-input-wrapper">
+          <span class="currency-symbol">S/</span>
+          <InputNumber 
+            v-model="prodPrice" 
+            mode="currency" 
+            currency="PEN" 
+            locale="es-PE" 
+            placeholder="Precio" 
+            class="product-price" 
+            inputClass="price-input" 
+            :min="0" 
+            @keyup.enter="agregarAlCarrito" 
+          />
         </div>
-        <table v-else class="w-full text-sm text-left">
-             <tbody>
-                <tr v-for="(item, index) in cart" :key="index" class="border-b border-slate-50">
-                    <td class="p-2 text-center text-blue-600 font-bold">{{ item.qty }}</td>
-                    <td class="p-2"><div>{{ item.name }}</div><div class="text-[10px] text-slate-400">{{ item.price.toFixed(2) }}</div></td>
-                    <td class="p-2 text-right font-bold">{{ item.subtotal.toFixed(2) }}</td>
-                    <td class="p-2 text-center"><i class="pi pi-times text-red-300 cursor-pointer" @click="removerItem(index)"></i></td>
-                </tr>
-             </tbody>
-        </table>
+        <Button 
+          icon="pi pi-plus" 
+          class="add-btn" 
+          @click="agregarAlCarrito" 
+          :disabled="!puedeAgregar" 
+        />
+      </div>
     </div>
 
-    <div class="bg-slate-900 text-white p-4 shadow-inner-top">
-      <div class="flex justify-between items-end mb-4 border-b border-slate-700 pb-2">
-        <span class="text-slate-400 text-xs uppercase tracking-wider">Total a Pagar</span>
-        <span class="text-3xl font-bold text-green-400 tracking-tight">S/ {{ totalGeneral.toFixed(2) }}</span>
+    <div class="pos-cart">
+      <div v-if="cart.length === 0" class="empty-cart">
+        <div class="empty-icon">
+          <i class="pi pi-shopping-cart"></i>
+          <p>Carrito vacío</p>
+        </div>
+        <div class="quick-sale-section">
+          <p class="quick-sale-title">Venta Rápida</p>
+          <div class="quick-sale-input">
+            <InputNumber 
+              v-model="quickAmount" 
+              mode="currency" 
+              currency="PEN" 
+              locale="es-PE" 
+              placeholder="Monto Total" 
+              class="quick-amount" 
+              inputClass="quick-amount-input" 
+            />
+            <Button 
+              icon="pi pi-check" 
+              severity="warning" 
+              :disabled="!quickAmount || quickAmount <= 0" 
+              @click="procesarVentaRapida" 
+            />
+          </div>
+        </div>
+      </div>
+      
+      <table v-else class="cart-table">
+        <tbody>
+          <tr v-for="(item, index) in cart" :key="index" class="cart-item">
+            <td class="item-qty">{{ item.qty }}</td>
+            <td class="item-details">
+              <div class="item-name">{{ item.name }}</div>
+              <div class="item-price">{{ item.price.toFixed(2) }}</div>
+            </td>
+            <td class="item-subtotal">{{ item.subtotal.toFixed(2) }}</td>
+            <td class="item-remove">
+              <i class="pi pi-times" @click="removerItem(index)"></i>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pos-footer">
+      <div class="total-section">
+        <span class="total-label">Total a Pagar</span>
+        <span class="total-amount">S/ {{ totalGeneral.toFixed(2) }}</span>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
+      <div class="payment-buttons">
         <Button 
-        severity="success" 
-        class="h-12 text-lg" 
-        :disabled="totalGeneral <= 0 || matcherState.isLocked" 
-        :loading="loading" 
-        @click="procesarPago('CASH', null)"
-    >
-        <i class="pi pi-money-bill mr-2"></i> 
-        {{ matcherState.isLocked ? 'BLOQUEADO' : 'EFECTIVO' }}
-    </Button>
-    
-    <Button 
-        :severity="matcherState.isLocked ? 'help' : 'help'" 
-        class="h-12 text-lg relative" 
-        :disabled="totalGeneral <= 0" 
-        :loading="loading" 
-        @click="iniciarFlujoYape"
-    >
-        <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'" class="mr-2"></i> 
-        {{ matcherState.isListening ? 'ESPERANDO...' : 'YAPE' }}
-        <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="absolute -top-2 -right-2" />
-    </Button>
+          severity="success" 
+          class="payment-btn cash-btn" 
+          :disabled="totalGeneral <= 0 || matcherState.isLocked" 
+          :loading="loading" 
+          @click="procesarPago('CASH', null)"
+        >
+          <i class="pi pi-money-bill"></i> 
+          {{ matcherState.isLocked ? 'BLOQUEADO' : 'EFECTIVO' }}
+        </Button>
+        
+        <Button 
+          severity="help" 
+          class="payment-btn yape-btn" 
+          :disabled="totalGeneral <= 0" 
+          :loading="loading" 
+          @click="iniciarFlujoYape"
+        >
+          <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i> 
+          {{ matcherState.isListening ? 'ESPERANDO...' : 'YAPE' }}
+          <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="yape-badge" />
+        </Button>
       </div>
-      <div v-if="matcherState.isLocked" class="text-center mt-2">
-    <Button 
-        label="Desvincular Yape para usar Efectivo" 
-        icon="pi pi-times" 
-        class="p-button-text p-button-sm text-red-400" 
-        @click="cancelarEspera" 
-    />
-</div>
+      
+      <div v-if="matcherState.isLocked" class="unlock-section">
+        <Button 
+          label="Desvincular Yape para usar Efectivo" 
+          icon="pi pi-times" 
+          class="unlock-btn" 
+          @click="cancelarEspera" 
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -86,6 +141,7 @@ import { useProducts } from '@/composables/useProducts';
 import { useMovements } from '@/composables/useMovements';
 import { useYape } from '@/composables/useYape';
 import { useYapeMatcher } from '@/composables/useYapeMatcher';
+import '@/assets/pospanel.css';
 
 const { suggestions, buscarProductos } = useProducts();
 const { registrarVenta } = useMovements();
