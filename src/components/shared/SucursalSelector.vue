@@ -243,28 +243,86 @@ const verificarPin = async () => {
   box-shadow: 0 0 15px rgba(250, 204, 21, 0.2); 
 }
 
-/* PIN MODAL */
+/* MODAL DE SEGURIDAD (PIN) */
+:deep(.custom-pin-dialog) {
+  border-radius: 16px !important;
+  border: none !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+:deep(.custom-pin-dialog .p-dialog-header) {
+  background: var(--bg-surface);
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
 .pin-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
   padding: 1rem 0;
-  text-align: center;
 }
 
 .pin-instructions {
   font-size: 0.85rem;
   color: var(--color-text-muted);
-  margin-bottom: 1.5rem;
+  font-weight: 600;
+  margin: 0;
 }
 
+/* Estilo para el InputOtp de PrimeVue */
 .pin-input-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
+  padding: 0.5rem;
+}
+
+:deep(.p-inputotp) {
+  gap: 0.75rem;
+}
+
+:deep(.p-inputotp-input) {
+  width: 3.5rem !important;
+  height: 4.5rem !important;
+  font-size: 2rem !important;
+  font-weight: 900 !important;
+  border: 2px solid var(--color-border) !important;
+  border-radius: 12px !important;
+  background: var(--bg-surface) !important;
+  color: var(--color-primary) !important;
+  transition: all 0.2s ease;
+}
+
+:deep(.p-inputotp-input:focus) {
+  border-color: var(--color-accent) !important; /* El toque amarillo de seguridad */
+  box-shadow: 0 0 0 4px var(--color-accent-soft) !important;
+  transform: translateY(-2px);
 }
 
 .pin-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 1rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.pin-actions .p-button {
+  flex: 1;
+  font-weight: 800 !important;
+  height: 48px;
+  border-radius: 10px;
+}
+
+/* Botón principal con el color de la app */
+.pin-actions .p-button:not(.p-button-secondary) {
+  background: var(--color-primary) !important;
+  color: var(--color-accent) !important;
+  border: none !important;
+}
+
+.pin-actions .p-button-secondary {
+  color: var(--color-text-muted) !important;
 }
 
 .loading-state {
