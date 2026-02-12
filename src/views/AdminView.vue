@@ -48,7 +48,7 @@
             <Button
               label="Actualizar Datos"
               icon="pi pi-refresh"
-              @click="buscarCuadres"
+              @click="handleSearch"
               :loading="loadingReportes"
               class="w-full md:w-auto"
             />
@@ -100,8 +100,15 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
+import { useAdmin } from '@/composables/useAdmin';
 import { useToast } from 'primevue/usetoast';
 
+import Card from 'primevue/card';
+import Button from 'primevue/button';
+import DatePicker from 'primevue/datepicker';
+import Select from 'primevue/select';
+import Avatar from 'primevue/avatar';
+import Menu from 'primevue/menu';
 import Tabs from 'primevue/tabs';
 import TabList from 'primevue/tablist';
 import Tab from 'primevue/tab';
@@ -110,29 +117,19 @@ import TabPanel from 'primevue/tabpanel';
 
 import AdminTable from '@/components/admin/AdminTable.vue'; 
 import '@/assets/admin.css';
-import { 
-  collectionGroup,
-  query, 
-  where, 
-  getDocs, 
-  orderBy, 
-  Timestamp 
-} from "firebase/firestore";
-import { db } from '@/firebaseConfig.js';
 
 const router = useRouter();
 const toast = useToast();
 const { user, logOut } = useAuth();
 const { sucursales, limpiarSucursal } = useSucursal();
+const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } = useAdmin();
 
 const userMenu = ref();
-const reportes = ref([]);
 const filters = ref({
   startDate: new Date(),
   endDate: new Date(),
   branchId: ''
 });
-const loadingReportes = ref(false);
 
 const userName = computed(() => user.value?.displayName || 'Admin');
 const userInitial = computed(() => (userName.value || 'A').charAt(0).toUpperCase());
@@ -164,82 +161,8 @@ const handleLogout = async () => {
   router.push('/');
 };
 
-/**
- * Función para buscar los cuadres en Firestore según los filtros seleccionados
- * Manejo de errores y notificaciones con PrimeVue Toast
- */
-const buscarCuadres = async () => {
-  loadingReportes.value = true;
-  reportes.value = [];
-
-  try {
-    const start = new Date(filters.value.startDate);
-    start.setHours(0, 0, 0, 0);
-    
-    const end = new Date(filters.value.endDate);
-    end.setHours(23, 59, 59, 999);
-
-    const cuadresRef = collectionGroup(db, 'shifts');
-    
-    const constraints = [
-      where('status', '==', 'CLOSED'),
-      where('timestampCierre', '>=', Timestamp.fromDate(start)),
-      where('timestampCierre', '<=', Timestamp.fromDate(end)),
-      orderBy('timestampCierre', 'desc')
-    ];
-
-    if (filters.value.branchId) {
-       constraints.push(where('sucursalId', '==', filters.value.branchId));
-    }
-
-    const q = query(cuadresRef, ...constraints);
-
-    const snapshot = await getDocs(q);
-
-    if (snapshot.empty) {
-      toast.add({ severity: 'info', summary: 'Sin resultados', detail: 'No hay cierres en este rango.' });
-    }
-
-    /**
-     * Mapea documentos obtenidos para extraer la información relevante y formatearla
-     * - Calculo de diferencia entre transacción y efectivo
-     * - Determinación del estado (Cuadrado/Descuadrado)
-     */
-    reportes.value = snapshot.docs.map(doc => {
-      const data = doc.data();
-      const mYape = Number(data.totalYape || 0);
-      const mEfectivo = Number(data.audit?.declaredCash || 0);
-      const diff = Number(data.audit?.difference || 0);
-      const estaCuadrado = data.audit?.isBalanced;
-
-      return {
-        id: doc.id,
-        fecha: data.timestampCierre?.toDate() || new Date(),
-        sedeNombre: data.sedeNombre || 'Desconocida',
-        cajero: data.cajero || 'Desconocido',
-        montoYape: mYape,
-        montoEfectivo: mEfectivo,
-        totalIngresosDia: Number(data.totalIngresosDia || 0),
-        diferencia: diff,
-        estado: estaCuadrado ? 'Cuadrado' : 'Descuadrado'
-      };
-    });
-    
-    if (!snapshot.empty) {
-       toast.add({ severity: 'success', summary: 'Datos actualizados', detail: `${snapshot.size} reportes encontrados`, life: 3000});
-    }
-
-  } catch (error) {
-    console.error("Error buscando cuadres:", error);
-    
-    if (error.message.includes('requires an index')) {
-      toast.add({ severity: 'warn', summary: 'Falta Índice', detail: 'Revisa la consola (F12) y haz clic en el enlace de Firebase.', life: 10000 });
-    } else {
-      toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los reportes' });
-    }
-  } finally {
-    loadingReportes.value = false;
-  }
+const handleSearch = () => {
+    buscarCuadres(filters.value);
 };
 
 /**
