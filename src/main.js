@@ -26,6 +26,7 @@ import InputOtp from 'primevue/inputotp'
 import InputNumber from 'primevue/inputnumber'
 import Tab from 'primevue/tab'
 import AutoComplete from 'primevue/autocomplete'
+import Tooltip from 'primevue/tooltip'
 
 import 'primeicons/primeicons.css'
 
@@ -85,6 +86,7 @@ app.use(PrimeVue, {
 })
 app.use(ToastService)
 app.use(ConfirmationService)
+app.directive('tooltip', Tooltip);
 app.component('DataTable', DataTable);
 app.component('Column', Column);
 app.component('Badge', Badge);
