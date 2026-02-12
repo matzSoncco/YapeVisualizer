@@ -148,6 +148,8 @@ const sedeOptions = computed(() => [
 const userMenuItems = computed(() => [
   { label: 'Mi Perfil', icon: 'pi pi-user', command: () => router.push('/profile') },
   { separator: true },
+  { label: 'Volver al Selector de Sede', icon: 'pi pi-arrow-left', command: () => router.push('/dashboard') },
+  { separator: true },
   { label: 'Cerrar Sesión', icon: 'pi pi-sign-out', command: handleLogout }
 ]);
 
@@ -177,7 +179,7 @@ const buscarCuadres = async () => {
     const end = new Date(filters.value.endDate);
     end.setHours(23, 59, 59, 999);
 
-    const cuadresRef = collectionGroup(db, 'cuadres');
+    const cuadresRef = collectionGroup(db, 'shifts');
     
     const constraints = [
       where('status', '==', 'CLOSED'),
@@ -206,21 +208,19 @@ const buscarCuadres = async () => {
     reportes.value = snapshot.docs.map(doc => {
       const data = doc.data();
       const mYape = Number(data.totalYape || 0);
-      const mEfectivo = Number(data.totalEfectivo || 0);
-      const diff = Number(data.diferencia || 0);
-
-      const estaCuadrado = Math.abs(diff) < 0.1;
+      const mEfectivo = Number(data.audit?.declaredCash || 0);
+      const diff = Number(data.audit?.difference || 0);
+      const estaCuadrado = data.audit?.isBalanced;
 
       return {
         id: doc.id,
         fecha: data.timestampCierre?.toDate() || new Date(),
         sedeNombre: data.sedeNombre || 'Desconocida',
-        
+        cajero: data.cajero || 'Desconocido',
         montoYape: mYape,
         montoEfectivo: mEfectivo,
-        
+        totalIngresosDia: Number(data.totalIngresosDia || 0),
         diferencia: diff,
-        
         estado: estaCuadrado ? 'Cuadrado' : 'Descuadrado'
       };
     });
