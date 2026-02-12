@@ -9,36 +9,53 @@
         :rows="10"
         responsiveLayout="scroll"
       >
-        <Column field="fecha" header="Fecha">
+        <Column field="fecha" header="Fecha" sortable>
           <template #body="slotProps">
             {{ formatearFecha(slotProps.data.fecha) }}
           </template>
         </Column>
 
-        <Column field="sedeNombre" header="Sede">
+        <Column field="sedeNombre" header="Sede" sortable>
           <template #body="slotProps">
             <strong>{{ slotProps.data.sedeNombre }}</strong>
           </template>
         </Column>
 
-        <Column field="montoYape" header="Total Yape">
+        <Column field="cajero" header="Cajero">
           <template #body="slotProps">
-            <span class="text-green-600 font-medium">
-              S/ {{ Number(slotProps.data.montoYape).toFixed(2) }}
+            <span class="capitalize">{{ slotProps.data.cajero || '---' }}</span>
+          </template>
+        </Column>
+
+        <Column field="totalIngresosDia" header="Ingreso Total">
+          <template #body="slotProps">
+            <span class="font-bold text-slate-700">
+              S/ {{ Number(slotProps.data.totalIngresosDia || 0).toFixed(2) }}
             </span>
           </template>
         </Column>
 
-        <Column field="montoEfectivo" header="Total Efectivo">
+        <Column field="montoYape" header="Total Yape" class="text-right">
           <template #body="slotProps">
-            S/ {{ Number(slotProps.data.montoEfectivo).toFixed(2) }}
+            <span class="text-purple-700 font-bold">
+              S/ {{ Number(slotProps.data.montoYape || 0).toFixed(2) }}
+            </span>
+          </template>
+        </Column>
+
+        <Column field="montoEfectivo" header="Efectivo Entregado">
+          <template #body="slotProps">
+            S/ {{ Number(slotProps.data.montoEfectivo || 0).toFixed(2) }}
           </template>
         </Column>
 
         <Column field="diferencia" header="Diferencia">
           <template #body="slotProps">
-            <span :class="slotProps.data.diferencia < 0 ? 'text-red-500 font-bold' : 'text-green-600'">
-              S/ {{ Number(slotProps.data.diferencia).toFixed(2) }}
+            <span :class="
+              slotProps.data.diferencia < -0.5 ? 'text-red-500 font-bold' : 
+              (slotProps.data.diferencia > 0.5 ? 'text-blue-500 font-bold' : 'text-green-600 font-medium')
+            ">
+              S/ {{ Number(slotProps.data.diferencia || 0).toFixed(2) }}
             </span>
           </template>
         </Column>
@@ -47,19 +64,20 @@
           <template #body="slotProps">
             <Tag 
               :value="slotProps.data.estado"
-              :severity="slotProps.data.estado === 'Cuadrado' ? 'success' : 'warning'"
+              :severity="slotProps.data.estado === 'Cuadrado' ? 'success' : 'danger'"
             />
           </template>
         </Column>
 
-        <Column header="Acciones">
-          <template #body>
+        <Column header="Detalle">
+          <template #body="slotProps">
             <Button
               icon="pi pi-eye"
               text
               rounded
               severity="secondary"
-              @click="$emit('ver-detalle')"
+              v-tooltip.top="'Ver Auditoría Completa'"
+              @click="$emit('ver-detalle', slotProps.data)"
             />
           </template>
         </Column>
