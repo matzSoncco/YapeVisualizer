@@ -1,0 +1,94 @@
+/* src/assets/dashboard.css */
+
+.pos-grid-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-app);
+    overflow: hidden;
+}
+
+/* NAVBAR SUPERIOR */
+.pos-navbar {
+    height: 50px;
+    background: var(--color-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+    color: white;
+    position: relative;
+    z-index: 20;
+}
+
+.brand-area { display: flex; align-items: center; gap: 0.8rem; font-size: 0.9rem; font-weight: 700; }
+.divider { height: 16px; width: 1px; background: rgba(255,255,255,0.2); }
+.location-tag { color: var(--color-accent); font-size: 0.8rem; }
+
+.actions-area { display: flex; align-items: center; gap: 0.5rem; }
+.btn-nav-ghost { 
+    color: rgba(255,255,255,0.7) !important; 
+    font-size: 0.8rem !important; 
+}
+.btn-nav-ghost:hover { 
+    color: #fff !important; 
+    background: rgba(255,255,255,0.1) !important; 
+}
+
+/* LA CINTA DE NOTIFICACIONES (YAPE FEED) */
+.top-feed-bar {
+    height: 70px; 
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+    z-index: 15;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* EL ESCENARIO PRINCIPAL: INVERSIÓN DE PROPORCIONES */
+.pos-main-stage {
+    flex: 1;
+    display: flex; 
+    overflow: hidden;
+}
+
+/* POSPanel: Ahora es el panel que ocupa "lo necesario" */
+.stage-left {
+    width: 420px; /* Ancho suficiente para el formulario y botones sin verse apretado */
+    border-right: 1px solid var(--color-border);
+    overflow: hidden; 
+    background: var(--bg-app);
+    flex-shrink: 0; /* Evita que el historial lo aplaste */
+}
+
+/* SalesHistory: Ahora es el panel "maestro" que crece */
+.stage-right {
+    flex: 1; /* Ocupa todo el resto del ancho de la pantalla */
+    background: var(--bg-surface);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* REGLA DE ORO PARA EL CONTENIDO INTERNO */
+/* Esto asegura que los componentes que inyectas ocupen el 100% de alto de sus stages */
+.stage-left > *, .stage-right > * {
+    height: 100%;
+}
+
+/* Responsive: En tablets, el POS arriba y el Historial abajo */
+@media (max-width: 1024px) {
+    .pos-main-stage { 
+        flex-direction: column; 
+    }
+    .stage-left { 
+        width: 100%; 
+        height: auto; /* El POS se adapta a su contenido arriba */
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .stage-right { 
+        width: 100%; 
+        flex: 1; /* El historial toma el resto del alto */
+    }
+}

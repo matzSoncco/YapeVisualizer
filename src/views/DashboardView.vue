@@ -6,84 +6,71 @@
     <Dialog 
         v-model:visible="matcherState.showModal" 
         modal 
-        header="Confirmar Pago Yape" 
+        header="Validación de Pago" 
         :style="{ width: '400px' }"
         :closable="false"
+        class="custom-confirm-dialog"
     >
-        <div class="yape-confirm-modal">
-            <div class="confirm-icon-section">
-                <i class="pi pi-check-circle"></i>
+        <div class="confirm-body">
+            <header class="confirm-status">
+                <i class="pi pi-check-circle pulse-green"></i>
                 <h3>¡Pago Detectado!</h3>
-                <p v-if="matcherState.matchType === 'AUTO'">Coincidencia automática</p>
-                <p v-else>Selección manual</p>
-            </div>
+                <span class="match-tag">{{ matcherState.matchType === 'AUTO' ? 'Automático' : 'Manual' }}</span>
+            </header>
 
-            <div class="confirm-details">
-                <div class="detail-row">
-                    <span class="detail-label">Cliente:</span>
-                    <span class="detail-value">{{ matcherState.candidateYape?.senderName }}</span>
+            <div class="confirm-data-card">
+                <div class="data-row">
+                  <span class="lbl">Cliente:</span>
+                  <span class="val">{{ matcherState.candidateYape?.senderName }}</span>
                 </div>
-                <div class="detail-row">
-                    <span class="detail-label">Monto:</span>
-                    <span class="detail-amount">S/ {{ Number(matcherState.candidateYape?.amount).toFixed(2) }}</span>
-                </div>
-                 <div class="detail-row">
-                    <span class="detail-label">Hora:</span>
-                    <span class="detail-time">{{ formatearHora(matcherState.candidateYape?.timestamp) }}</span>
+                <div class="data-row total-row">
+                  <span class="lbl">Monto:</span>
+                  <span class="val-amount">S/ {{ Number(matcherState.candidateYape?.amount).toFixed(2) }}</span>
                 </div>
             </div>
 
-            <div class="confirm-actions">
-                <Button label="Cancelar" severity="secondary" text class="cancel-btn" @click="cancelarVinculo" />
-                <Button label="CONFIRMAR VENTA" severity="help" class="confirm-btn" @click="confirmarVinculo" icon="pi pi-check" autofocus />
+            <div class="confirm-btns">
+                <Button label="DESCARTAR" severity="secondary" text @click="cancelarVinculo" class="flex-1" />
+                <Button label="CONFIRMAR VENTA" @click="confirmarVinculo" icon="pi pi-bolt" class="flex-1 btn-confirm-yape" />
             </div>
         </div>
     </Dialog>
 
-    <div v-if="globalLoading" class="caja-loading-state">
-      <i class="pi pi-spin pi-spinner" style="font-size: 2rem"></i>
-      <p>Sincronizando...</p>
-    </div>
-
-    <div v-else-if="!sucursalActual">
+    <div v-if="!sucursalActual">
       <SucursalSelector />
     </div>
 
-    <div v-else class="dashboard-layout">
-      
+    <div v-else class="pos-layout-wrapper">
       <ShiftOpen v-if="!isShiftOpen" />
 
-      <div v-else class="dashboard-container-inner"> 
-        <header class="dashboard-header">
-           <div class="dashboard-header-content">
-             <div class="dashboard-title-section">
-               <h1>Monitor de Caja</h1>
-               <p class="dashboard-subtitle">
-                 Tienda: <strong>{{ nombreSucursalActual }}</strong> | 
-                 Cajero: <strong>{{ currentShift?.cajero }}</strong>
-               </p>
-             </div>
-             <div class="dashboard-actions">
-               <Button label="Simular" icon="pi pi-play" @click="handleSimulacion" outlined size="small" />
-               <div class="divider-vertical"></div>
-               <Button label="Cambiar Sede" icon="pi pi-refresh" @click="cambiarSucursal" text size="small" />
-               <Button label="Cerrar Turno" icon="pi pi-lock" @click="handleCierreClick" severity="danger" text size="small" />
-             </div>
+      <div v-else class="pos-grid-container"> 
+        <header class="pos-navbar">
+           <div class="brand-area">
+             <i class="pi pi-wallet"></i>
+             <span class="brand-text">Monitor</span>
+             <div class="divider"></div>
+             <span class="location-tag">{{ nombreSucursalActual }}</span>
+           </div>
+           
+           <div class="actions-area">
+             <Button label="Simular" icon="pi pi-bolt" @click="handleSimulacion" text size="small" class="btn-nav-ghost" />
+             <Button label="Sede" icon="pi pi-sync" @click="cambiarSucursal" text size="small" class="btn-nav-ghost" />
+             <div class="divider"></div>
+             <Button label="Cerrar Turno" icon="pi pi-power-off" @click="handleCierreClick" text severity="danger" size="small" class="btn-nav-danger" />
            </div>
         </header>
 
-        <main class="dashboard-content">
-          <section class="grid-col-pending">
-            <YapeFeed :yapes="yapesPendientes" @pescar="handlePesca" />
-          </section>
+        <section class="top-feed-bar">
+           <YapeFeed :yapes="yapesPendientes" @pescar="handlePesca" />
+        </section>
 
-          <section class="grid-col-history">
-             <SalesHistory :ventas="movimientosTurno" />
-          </section>
-
-          <section class="grid-col-pos">
+        <main class="pos-main-stage">
+          <div class="stage-left">
             <POSPanel ref="posPanelRef" @transaction-completed="handleTransaccionCompletada" />
-          </section>
+          </div>
+          <div class="stage-right">
+             <SalesHistory :ventas="movimientosTurno" />
+          </div>
         </main>
       </div>
     </div>
@@ -276,89 +263,86 @@ const handleSimulacion = () => {
 </script>
 
 <style scoped>
-/* MODAL DE CONFIRMACIÓN YAPE */
-.yape-confirm-modal {
+/* Estilos específicos del Modal de Confirmación para que no rompa el ADN */
+.confirm-body {
+  padding: 1rem 0;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding: 1rem 0;
 }
 
-.confirm-icon-section {
+.confirm-status {
   text-align: center;
 }
 
-.confirm-icon-section i {
+.confirm-status i {
   font-size: 3.5rem;
-  color: #9333ea;
-  margin-bottom: 0.75rem;
+  color: #22c55e;
+  margin-bottom: 0.5rem;
   display: block;
 }
 
-.confirm-icon-section h3 {
+.confirm-status h3 {
   font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--chinese-black);
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+.match-tag {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: var(--color-accent-soft);
+  color: #854d0e;
+  padding: 2px 10px;
+  border-radius: 100px;
+}
+
+.confirm-data-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 0.5rem;
 }
 
-.confirm-icon-section p {
-  font-size: 0.875rem;
-  color: #6b7280;
+.total-row {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border);
 }
 
-.confirm-details {
-  background: #faf5ff;
-  padding: 1.25rem;
-  border-radius: 8px;
-  border: 1px solid #e9d5ff;
-}
+.lbl { color: var(--color-text-muted); font-size: 0.9rem; }
+.val { font-weight: 700; color: var(--color-primary); }
+.val-amount { font-weight: 900; font-size: 1.5rem; color: var(--color-primary); }
 
-.detail-row {
+.confirm-btns {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
+  gap: 1rem;
 }
 
-.detail-row:last-child {
-  margin-bottom: 0;
+.btn-confirm-yape {
+  background: var(--color-primary) !important;
+  color: var(--color-accent) !important;
+  border: none !important;
+  font-weight: 800 !important;
 }
 
-.detail-label {
-  color: #6b7280;
-  font-size: 0.9375rem;
+.pulse-green {
+  animation: pulse-border 2s infinite;
+  border-radius: 50%;
 }
 
-.detail-value {
-  font-weight: 700;
-  color: var(--chinese-black);
-  font-size: 0.9375rem;
+@keyframes pulse-border {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
-.detail-amount {
-  font-weight: 700;
-  color: #9333ea;
-  font-size: 1.125rem;
-}
-
-.detail-time {
-  font-family: 'Courier New', monospace;
-  color: var(--jet);
-  font-size: 0.875rem;
-}
-
-.confirm-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.cancel-btn {
-  flex: 1;
-}
-
-.confirm-btn {
-  flex: 1;
-}
+.flex-1 { flex: 1; }
 </style>

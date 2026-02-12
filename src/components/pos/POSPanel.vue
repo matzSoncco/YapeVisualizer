@@ -1,7 +1,8 @@
 <template>
-  <div class="pos-container">
-    <div class="pos-header">
-      <div class="search-section">
+  <div class="pos-main-container">
+    
+    <header class="pos-input-area">
+      <div class="input-level main-search">
         <AutoComplete 
           v-model="prodName" 
           :suggestions="suggestions" 
@@ -9,128 +10,115 @@
           @item-select="onProductSelect" 
           optionLabel="name" 
           placeholder="Buscar producto..." 
-          class="product-search" 
-          inputClass="product-search-input" 
+          class="full-width-search" 
           ref="mainInput" 
         />
-        <InputNumber 
-          v-model="prodQty" 
-          :min="1" 
-          showButtons 
-          buttonLayout="horizontal" 
-          inputClass="qty-input" 
-          class="product-qty"
-        />
       </div>
-      <div class="price-section">
-        <div class="price-input-wrapper">
-          <span class="currency-symbol">S/</span>
+
+      <div class="input-level details-row">
+        <div class="detail-field qty-group">
+          <label>Cant.</label>
           <InputNumber 
-            v-model="prodPrice" 
-            mode="currency" 
-            currency="PEN" 
-            locale="es-PE" 
-            placeholder="Precio" 
-            class="product-price" 
-            inputClass="price-input" 
-            :min="0" 
-            @keyup.enter="agregarAlCarrito" 
+            v-model="prodQty" 
+            :min="1" 
+            class="compact-qty"
+            inputClass="qty-field-inner"
           />
         </div>
-        <Button 
-          icon="pi pi-plus" 
-          class="add-btn" 
-          @click="agregarAlCarrito" 
-          :disabled="!puedeAgregar" 
-        />
-      </div>
-    </div>
 
-    <div class="pos-cart">
-      <div v-if="cart.length === 0" class="empty-cart">
-        <div class="empty-icon">
-          <i class="pi pi-shopping-cart"></i>
-          <p>Carrito vacío</p>
-        </div>
-        <div class="quick-sale-section">
-          <p class="quick-sale-title">Venta Rápida</p>
-          <div class="quick-sale-input">
+        <div class="detail-field price-group">
+          <label>Precio Unitario</label>
+          <div class="price-input-wrapper">
+            <span class="currency">S/</span>
             <InputNumber 
-              v-model="quickAmount" 
-              mode="currency" 
-              currency="PEN" 
-              locale="es-PE" 
-              placeholder="Monto Total" 
-              class="quick-amount" 
-              inputClass="quick-amount-input" 
-            />
-            <Button 
-              icon="pi pi-check" 
-              severity="warning" 
-              :disabled="!quickAmount || quickAmount <= 0" 
-              @click="procesarVentaRapida" 
+              v-model="prodPrice" 
+              mode="decimal" 
+              :minFractionDigits="2" 
+              placeholder="0.00" 
+              class="compact-price" 
+              inputClass="price-field-inner"
+              @keyup.enter="agregarAlCarrito" 
             />
           </div>
         </div>
-      </div>
-      
-      <table v-else class="cart-table">
-        <tbody>
-          <tr v-for="(item, index) in cart" :key="index" class="cart-item">
-            <td class="item-qty">{{ item.qty }}</td>
-            <td class="item-details">
-              <div class="item-name">{{ item.name }}</div>
-              <div class="item-price">{{ item.price.toFixed(2) }}</div>
-            </td>
-            <td class="item-subtotal">{{ item.subtotal.toFixed(2) }}</td>
-            <td class="item-remove">
-              <i class="pi pi-times" @click="removerItem(index)"></i>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
 
-    <div class="pos-footer">
-      <div class="total-section">
-        <span class="total-label">Total a Pagar</span>
-        <span class="total-amount">S/ {{ totalGeneral.toFixed(2) }}</span>
-      </div>
-
-      <div class="payment-buttons">
         <Button 
-          severity="success" 
-          class="payment-btn cash-btn" 
-          :disabled="totalGeneral <= 0 || matcherState.isLocked" 
-          :loading="loading" 
-          @click="procesarPago('CASH', null)"
-        >
-          <i class="pi pi-money-bill"></i> 
-          {{ matcherState.isLocked ? 'BLOQUEADO' : 'EFECTIVO' }}
-        </Button>
-        
-        <Button 
-          severity="help" 
-          class="payment-btn yape-btn" 
-          :disabled="totalGeneral <= 0" 
-          :loading="loading" 
-          @click="iniciarFlujoYape"
-        >
-          <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i> 
-          {{ matcherState.isListening ? 'ESPERANDO...' : 'YAPE' }}
-          <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="yape-badge" />
-        </Button>
-      </div>
-      
-      <div v-if="matcherState.isLocked" class="unlock-section">
-        <Button 
-          label="Desvincular Yape para usar Efectivo" 
-          icon="pi pi-times" 
-          class="unlock-btn" 
-          @click="cancelarEspera" 
+          icon="pi pi-plus" 
+          label="ADD"
+          @click="agregarAlCarrito" 
+          :disabled="!puedeAgregar" 
+          class="btn-add-line"
         />
       </div>
-    </div>
+    </header>
+
+    <main class="pos-cart-area custom-scrollbar">
+      <div v-if="cart.length === 0" class="cart-empty-state">
+        <div class="empty-info">
+          <i class="pi pi-shopping-cart"></i>
+          <p>Carrito disponible</p>
+        </div>
+        <div class="quick-access">
+          <span class="quick-label">Venta Directa</span>
+          <div class="quick-row">
+            <InputNumber v-model="quickAmount" mode="currency" currency="PEN" placeholder="Monto" class="flex-1" />
+            <Button icon="pi pi-bolt" severity="warning" @click="procesarVentaRapida" :disabled="!quickAmount" />
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="cart-table-wrapper">
+        <table class="cart-table">
+          <thead>
+            <tr>
+              <th class="th-qty">#</th>
+              <th class="th-desc">Producto</th>
+              <th class="th-total">Subtotal</th>
+              <th class="th-action"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(item, index) in cart" :key="index" class="cart-item-row">
+              <td class="td-qty">{{ item.qty }}</td>
+              <td class="td-desc">
+                <span class="item-name">{{ item.name }}</span>
+                <span class="item-unit">S/ {{ item.price.toFixed(2) }} u.</span>
+              </td>
+              <td class="td-total">S/ {{ item.subtotal.toFixed(2) }}</td>
+              <td class="td-action">
+                <Button 
+                  icon="pi pi-trash" 
+                  severity="danger" 
+                  text 
+                  rounded 
+                  class="btn-remove-item" 
+                  @click="removerItem(index)" 
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <footer class="pos-footer-area">
+      <div class="summary-line">
+        <span class="summary-lbl">TOTAL A COBRAR</span>
+        <span class="summary-val">S/ {{ totalGeneral.toFixed(2) }}</span>
+      </div>
+
+      <div class="payment-grid">
+        <button class="pay-btn-custom cash-bg" @click="procesarPago('CASH', null)" :disabled="totalGeneral <= 0 || matcherState.isLocked">
+          <i class="pi pi-money-bill"></i>
+          <span>EFECTIVO</span>
+        </button>
+        <button class="pay-btn-custom yape-bg" @click="iniciarFlujoYape" :disabled="totalGeneral <= 0">
+          <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
+          <span>YAPE / PLIN</span>
+          <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
+        </button>
+      </div>
+    </footer>
   </div>
 </template>
 
@@ -141,7 +129,6 @@ import { useProducts } from '@/composables/useProducts';
 import { useMovements } from '@/composables/useMovements';
 import { useYape } from '@/composables/useYape';
 import { useYapeMatcher } from '@/composables/useYapeMatcher';
-import '@/assets/pospanel.css';
 
 const { suggestions, buscarProductos } = useProducts();
 const { registrarVenta } = useMovements();
@@ -306,8 +293,324 @@ defineExpose({
 </script>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-.input-sh :deep(input) { padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.shadow-inner-top { box-shadow: inset 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+.pos-main-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-app);
+}
+
+/* HEADER: LAYOUT COMPACTO */
+.pos-input-area {
+  padding: 1rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+:deep(.full-width-search), :deep(.full-width-search .p-autocomplete-input) {
+  width: 100% !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+/* ESTADO VACÍO: LAYOUT DIVIDIDO (Tipo Apertura de Caja) */
+.cart-empty-state {
+  height: 100%;
+  display: flex;
+  align-items: center; /* Centrado vertical */
+  justify-content: center;
+  padding: 1.5rem;
+  gap: 2rem; /* Espacio entre el icono y el form */
+  background-color: var(--bg-app);
+}
+
+.empty-info {
+  flex: 0 0 auto;
+  text-align: center;
+  color: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+.empty-info i {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.empty-info p {
+  font-weight: 800;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.quick-access {
+  flex: 1; /* El form toma el resto del espacio */
+  max-width: 220px;
+  padding: 1.25rem;
+  background: var(--bg-surface);
+  border-left: 2px solid var(--color-accent); /* Línea de acento a la izquierda */
+  border-radius: 4px 12px 12px 4px;
+}
+
+.quick-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.quick-row {
+  display: flex;
+  flex-direction: column; /* En columna se ve más limpio en este layout */
+  gap: 0.5rem;
+}
+
+/* Ajuste de inputs para que calcen en la columna */
+:deep(.quick-row .p-inputnumber),
+:deep(.quick-row .p-inputnumber-input) {
+  width: 100% !important;
+  height: 38px !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  border-radius: 6px !important;
+}
+
+:deep(.quick-row .p-button) {
+  width: 100% !important; /* Botón ancho para confirmar rápido */
+  height: 38px !important;
+  border-radius: 6px !important;
+}
+
+.details-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.detail-field label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+.qty-group { flex: 0 0 100px; }
+.price-group { flex: 1; }
+
+:deep(.compact-qty), :deep(.compact-qty .p-inputnumber-input) {
+  height: 36px !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+
+.price-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 0 0.5rem;
+  height: 36px;
+}
+
+.currency { font-weight: 700; color: var(--color-text-muted); font-size: 0.8rem; margin-right: 4px; }
+
+:deep(.price-field-inner) {
+  border: none !important;
+  font-weight: 800 !important;
+  width: 100% !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.btn-add-line {
+  height: 36px !important;
+  background: var(--color-primary) !important;
+  border: none !important;
+  font-weight: 800 !important;
+  padding: 0 1rem !important;
+}
+
+/* CARRITO: ESTILOS RECUPERADOS */
+.pos-cart-area {
+  flex: 1;
+  overflow-y: auto;
+  background: white;
+}
+
+.cart-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cart-table thead th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface);
+  color: var(--color-text-muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cart-item-row {
+  border-bottom: 1px solid var(--bg-surface);
+  transition: all 0.2s;
+}
+
+.cart-item-row:hover {
+  background: var(--bg-surface);
+}
+
+.td-qty {
+  padding: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  text-align: center;
+  width: 50px;
+}
+
+.td-desc {
+  padding: 0.5rem 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-name {
+  font-weight: 700;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+}
+
+.item-unit {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.td-total {
+  padding: 1rem;
+  font-weight: 800;
+  text-align: right;
+  width: 100px;
+}
+
+.td-action {
+  padding: 0.5rem 1rem;
+  text-align: center;
+  width: 60px;
+}
+
+:deep(.btn-remove-item) {
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* FOOTER REFINADO Y NO INVASIVO */
+.pos-footer-area {
+  padding: 1rem 1.25rem;
+  background: white; /* Cambiamos el fondo oscuro por blanco */
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Alineado al centro para reducir altura */
+  margin-bottom: 1rem;
+}
+
+.summary-lbl {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  letter-spacing: 0.05em;
+}
+
+.summary-val {
+  font-size: 1.75rem; /* Reducimos de 2.25rem a 1.75rem */
+  font-weight: 900;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
+}
+
+.payment-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.pay-btn-custom {
+  border: 1px solid var(--color-border); /* Borde fino en lugar de bloque sólido */
+  height: 44px; /* Reducimos altura de 54px a 44px */
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem; /* Icono y texto al lado, no uno sobre otro */
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  color: var(--color-primary);
+  position: relative;
+}
+
+/* Estilo para Efectivo: Sutil pero claro */
+.cash-bg {
+  border-color: #22c55e;
+  color: #15803d;
+}
+.cash-bg:hover:not(:disabled) {
+  background: #f0fdf4;
+}
+
+/* Estilo para Yape: Sutil pero claro */
+.yape-bg {
+  border-color: #7c3aed;
+  color: #6d28d9;
+}
+.yape-bg:hover:not(:disabled) {
+  background: #f5f3ff;
+}
+
+/* Estados activos/esperando */
+.yape-bg i.pi-spin {
+  color: #7c3aed;
+}
+
+.pay-btn-custom:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.pay-btn-custom i {
+  font-size: 1rem;
+}
+
+.lock-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+}
+
+/* Sección de desvinculación más discreta */
+.unlock-footer {
+  text-align: center;
+  margin-top: 0.75rem;
+}
 </style>
