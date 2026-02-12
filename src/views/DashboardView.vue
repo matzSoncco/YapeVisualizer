@@ -10,32 +10,32 @@
         :style="{ width: '400px' }"
         :closable="false"
     >
-        <div class="flex flex-col items-center gap-4 pt-2">
-            <div class="text-center">
-                <i class="pi pi-check-circle text-5xl text-purple-600 mb-2"></i>
-                <h3 class="font-bold text-xl text-slate-800">¡Pago Detectado!</h3>
-                <p class="text-slate-500 text-sm" v-if="matcherState.matchType === 'AUTO'">Coincidencia automática</p>
-                <p class="text-slate-500 text-sm" v-else>Selección manual</p>
+        <div class="yape-confirm-modal">
+            <div class="confirm-icon-section">
+                <i class="pi pi-check-circle"></i>
+                <h3>¡Pago Detectado!</h3>
+                <p v-if="matcherState.matchType === 'AUTO'">Coincidencia automática</p>
+                <p v-else>Selección manual</p>
             </div>
 
-            <div class="w-full bg-purple-50 p-4 rounded-lg border border-purple-100">
-                <div class="flex justify-between mb-2">
-                    <span class="text-slate-500">Cliente:</span>
-                    <span class="font-bold text-slate-800">{{ matcherState.candidateYape?.senderName }}</span>
+            <div class="confirm-details">
+                <div class="detail-row">
+                    <span class="detail-label">Cliente:</span>
+                    <span class="detail-value">{{ matcherState.candidateYape?.senderName }}</span>
                 </div>
-                <div class="flex justify-between mb-2">
-                    <span class="text-slate-500">Monto:</span>
-                    <span class="font-bold text-purple-700 text-lg">S/ {{ Number(matcherState.candidateYape?.amount).toFixed(2) }}</span>
+                <div class="detail-row">
+                    <span class="detail-label">Monto:</span>
+                    <span class="detail-amount">S/ {{ Number(matcherState.candidateYape?.amount).toFixed(2) }}</span>
                 </div>
-                 <div class="flex justify-between">
-                    <span class="text-slate-500">Hora:</span>
-                    <span class="font-mono text-slate-600">{{ formatearHora(matcherState.candidateYape?.timestamp) }}</span>
+                 <div class="detail-row">
+                    <span class="detail-label">Hora:</span>
+                    <span class="detail-time">{{ formatearHora(matcherState.candidateYape?.timestamp) }}</span>
                 </div>
             </div>
 
-            <div class="flex gap-2 w-full mt-2">
-                <Button label="Cancelar" severity="secondary" text class="flex-1" @click="cancelarVinculo" />
-                <Button label="CONFIRMAR VENTA" severity="help" class="flex-1" @click="confirmarVinculo" icon="pi pi-check" autofocus />
+            <div class="confirm-actions">
+                <Button label="Cancelar" severity="secondary" text class="cancel-btn" @click="cancelarVinculo" />
+                <Button label="CONFIRMAR VENTA" severity="help" class="confirm-btn" @click="confirmarVinculo" icon="pi pi-check" autofocus />
             </div>
         </div>
     </Dialog>
@@ -213,16 +213,18 @@ const cambiarSucursal = () => {
  * TODO: Usar logica de cierre programado en useShift para cerrar correctamente con auditoría
  */
 const handleCierreClick = async () => {
+    const montoDeclarado = prompt("Cierre de Caja: ¿Cuánto efectivo físico hay en caja?");
+    
+    if (montoDeclarado === null) return;
+
     confirm.require({
-        message: '¿Seguro que deseas cerrar el turno actual?',
-        header: 'Cerrar Caja',
-        icon: 'pi pi-exclamation-triangle',
-        acceptClass: 'p-button-danger',
+        message: `Estás declarando S/ ${montoDeclarado}. ¿Confirmas el cierre de turno?`,
+        header: 'Confirmar Arqueo',
         accept: async () => {
              try {
-                await cerrarTurno(0, nombreSucursalActual.value);
+                await cerrarTurno(Number(montoDeclarado), nombreSucursalActual.value);
                 detenerTodo();
-                toast.add({ severity: 'success', summary: 'Turno Cerrado' });
+                toast.add({ severity: 'success', summary: 'Turno Cerrado Correctamente' });
              } catch (e) {
                 toast.add({ severity: 'error', summary: 'Error', detail: e.message });
              }
@@ -272,3 +274,91 @@ const handleSimulacion = () => {
     if (user.value?.email) simularDatos(user.value.email);
 };
 </script>
+
+<style scoped>
+/* MODAL DE CONFIRMACIÓN YAPE */
+.yape-confirm-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.confirm-icon-section {
+  text-align: center;
+}
+
+.confirm-icon-section i {
+  font-size: 3.5rem;
+  color: #9333ea;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.confirm-icon-section h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--chinese-black);
+  margin-bottom: 0.5rem;
+}
+
+.confirm-icon-section p {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.confirm-details {
+  background: #faf5ff;
+  padding: 1.25rem;
+  border-radius: 8px;
+  border: 1px solid #e9d5ff;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-label {
+  color: #6b7280;
+  font-size: 0.9375rem;
+}
+
+.detail-value {
+  font-weight: 700;
+  color: var(--chinese-black);
+  font-size: 0.9375rem;
+}
+
+.detail-amount {
+  font-weight: 700;
+  color: #9333ea;
+  font-size: 1.125rem;
+}
+
+.detail-time {
+  font-family: 'Courier New', monospace;
+  color: var(--jet);
+  font-size: 0.875rem;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.cancel-btn {
+  flex: 1;
+}
+
+.confirm-btn {
+  flex: 1;
+}
+</style>
