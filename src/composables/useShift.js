@@ -8,6 +8,7 @@ import {
     query,
     where,
     getDocs,
+    getDoc,
     limit,
     serverTimestamp,
 } from "firebase/firestore";
@@ -91,42 +92,54 @@ export function useShift() {
      * @param {string} nombreSucursal - Nombre de la sucursal (valioso para Admin)
      */
     const cerrarTurno = async (efectivoRealDeclarado, nombreSucursal) => {
-        const shift = store.currentShift;
-        if (!shift?.id) throw new Error("No hay turno activo para cerrar");
+        const localShift = store.currentShift;
+        const currentSucursalId = store.sucursalActual;
+
+        if (!localShift?.id) throw new Error("No hay turno activo para cerrar");
+        if (!currentSucursalId) throw new Error("No se detectó la sucursal activa");
 
         try {
-            const stats = shift.stats || {
-                fund: 0,
-                totalCashSales: 0,
-                totalYapeSales: 0,
-                totalExpenses: 0,
-                totalTransactions: 0
-            };
-            const efectivoTeorico = stats.fund + stats.totalCashSales - stats.totalExpenses;
-            const diferencia = Number(efectivoRealDeclarado) - efectivoTeorico;
+            const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', currentSucursalId, 'shifts', localShift.id);
+            const shiftSnap = await getDoc(shiftRef);
+            
+            if (!shiftSnap.exists()) {
+                throw new Error("El turno no existe en la base de datos");
+            }
+
+            const freshData = shiftSnap.data();
+            const stats = freshData.stats || {};
+
+            const fnd = Number(stats.fund || 0);
+            const cash = Number(stats.totalCashSales || 0);
+            const yape = Number(stats.totalYapeSales || 0);
+            const exp = Number(stats.totalExpenses || 0);
+            const declarado = Number(efectivoRealDeclarado) || 0;
+
+            const efectivoTeorico = fnd + cash - exp;
+            const diferencia = declarado - efectivoTeorico;            
 
             const cierreData = {
                 status: 'CLOSED',
                 fechaCierre: new Date().toISOString(),
                 timestampCierre: serverTimestamp(),
 
-                sucursalId: sucursalId.value,
+                sucursalId: currentSucursalId,
                 sedeNombre: nombreSucursal || 'Sucursal Desconocida',
 
                 audit: {
-                    fund: stats.fund,
+                    fund: fnd,
                     totalSystemCash: efectivoTeorico,
                     declaredCash: Number(efectivoRealDeclarado),
                     difference: diferencia,
                     isBalanced: Math.abs(diferencia) < 0.5
                 },
 
-                totalIngresosDia: (stats.totalCashSales + stats.totalYapeSales),
-                totalYape: stats.totalYapeSales,
+                totalIngresosDia: cash + yape,
+                totalYape: yape,
+                totalEfectivoFinal: cash
             };
 
-            const shiftsRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts', session.id);
-            await updateDoc(shiftsRef, cierreData);
+            await updateDoc(shiftRef, cierreData);
 
             setCurrentShift(null);
 
