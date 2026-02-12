@@ -1,116 +1,36 @@
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
 :root {
-  --chinese-black: #0c1519;
-  --dark-jungle-green: #162127;
-  --jet: #3a3534;
-  --coffee: #724b39;
-  --antique-brass: #cf9d7b;
-}
-
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html,
-body,
-#app {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #fafbfc;
-  color: var(--chinese-black);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-#app {
-  min-height: 100vh;
-}
-
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-  padding: 1.5rem;
-}
-
-.login-card {
-  width: 100%;
-  max-width: 420px;
-  background: #ffffff;
-  box-shadow: 
-    0 4px 24px rgba(12, 21, 25, 0.08),
-    0 1px 3px rgba(0, 0, 0, 0.05);
-  border-radius: 16px;
-  border: 1px solid #e5e7eb;
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.login-logo {
-  width: 68px;
-  height: 68px;
-  margin: 0 auto 1.25rem;
-  background: var(--dark-jungle-green);
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 1.875rem;
-  box-shadow: 0 8px 24px rgba(22, 33, 39, 0.25);
-}
-
-.login-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: var(--chinese-black);
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.01em;
-}
-
-.login-subtitle {
-  font-size: 0.9375rem;
-  color: var(--jet);
-  line-height: 1.6;
-  font-weight: 400;
-}
-
-.login-footer {
-  margin-top: 1.75rem;
-  padding-top: 1.75rem;
-  border-top: 1px solid #e5e7eb;
-  text-align: center;
-  font-size: 0.8125rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-@media (max-width: 768px) {
-  .login-title {
-    font-size: 1.5rem;
-  }
+  /* Fondos y Superficies */
+  --bg-app: #ffffff;
+  --bg-surface: #f8fafc;
   
-  .login-logo {
-    width: 60px;
-    height: 60px;
-    font-size: 1.625rem;
-  }
+  /* Colores de Marca (Agilidad Moderna) */
+  --color-primary: #0f172a;
+  --color-accent: #facc15;
+  --color-accent-soft: #fefce8;
+  
+  /* Semántica (Líneas y Bordes) */
+  --color-border: #e2e8f0;
+  --color-text-main: #1e293b;
+  --color-text-muted: #64748b;
+  
+  /* Estados */
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  
+  /* Sombras y Radios */
+  --shadow-flat: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-pro: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+  --radius-lg: 12px;
+  --radius-xl: 20px;
+}
+
+/* Reset y Base */
+body {
+  font-family: 'Nunito', sans-serif;
+  background-color: var(--bg-app);
+  color: var(--color-text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
