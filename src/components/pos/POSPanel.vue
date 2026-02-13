@@ -128,6 +128,7 @@ import { useProducts } from '@/composables/useProducts';
 import { useMovements } from '@/composables/useMovements';
 import { useYape } from '@/composables/useYape';
 import { useYapeMatcher } from '@/composables/useYapeMatcher';
+import { store, cartStorageKey } from '@/store'
 import "@/assets/pospanel.css";
 
 const { suggestions, buscarProductos } = useProducts();
@@ -144,19 +145,36 @@ const prodQty = ref(1);
 const prodPrice = ref(null);
 
 /**
- * Persistencia de datos en localStorage
- * Watch para guardar el carrito cada vez que cambie
+ * 
  */
-onMounted(() => {
-    const backup = localStorage.getItem('pos_cart_backup');
-    if (backup) {
-        try { cart.value = JSON.parse(backup); } catch (e) { localStorage.removeItem('pos_cart_backup'); }
-    }
-});
+watch(cartStorageKey, (newKey) => {
+  cart.value = [];
+  if (!newKey) return;
 
-watch(cart, (val) => {
-    localStorage.setItem('pos_cart_backup', JSON.stringify(val));
-    if (val.length > 0) quickAmount.value = null;
+  const backup = localStorage.getItem(newKey);
+  if (backup) {
+    try {
+      cart.value = JSON.parse(backup);
+    } catch (e) {
+      console.error("Error recuperando carrito:", e);
+      localStorage.removeItem(newKey);
+    }
+  }
+}, { immediate: true });
+
+/**
+ * 
+ */
+watch(cart, (newVal) => {
+  const key = cartStorageKey.value;
+  if(key) {
+    if (newVal.length > 0) {
+      localStorage.setItem(key, JSON.stringify(newVal));
+      quickAmount.value = null;
+    } else {
+      localStorage.removeItem(key);
+    }
+  }
 }, { deep: true });
 
 /**
@@ -274,7 +292,6 @@ const procesarPago = async (method, yapeConfirmado = null) => {
 
         cart.value = [];
         quickAmount.value = null;
-        localStorage.removeItem('pos_cart_backup');
         
         toast.add({ severity: 'success', summary: 'Venta Registrada', life: 2000 });
 
