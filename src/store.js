@@ -100,3 +100,13 @@ export const setCurrentShift = (data) => {
 export const setAdminAuth = (value) => {
     store.isAdminAuthenticated = value;
 };
+
+/**
+ * Llave dinámica para la persistencia del carrito basada en la sucursal actual
+ * Retorna null si no hay sucursal seleccionada o es admin global
+ */
+export const cartStorageKey = computed (() =>{
+    const sId = store.sucursalActual;
+    if (!sId || !sId === "ADMIN") return null;
+    return `post_cart_${sId}`;
+})
