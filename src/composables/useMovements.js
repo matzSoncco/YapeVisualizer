@@ -1,9 +1,7 @@
 import { db } from "../firebaseConfig";
 import { 
     collection,
-    addDoc,
     doc,
-    updateDoc,
     serverTimestamp,
     increment,
     writeBatch,
@@ -12,9 +10,9 @@ import {
     orderBy
 } from "firebase/firestore";
 import { useAuth } from './useAuth';
-import { store } from '../store';
+import { isShiftOpen, store } from '../store';
 import { useProducts } from "./useProducts";
-import { ref } from 'vue';
+import { ref, reactive } from 'vue';
 
 export function useMovements() {
     const { actualizarCatalogo } = useProducts();
@@ -119,28 +117,54 @@ export function useMovements() {
         }
     };
 
+    const expenseState = reactive({
+        isOpen: false,
+        description: '',
+        amount: null,
+        loading: false
+    })
+
     /**
      * Registra un gasto como un nuevo movimiento en el turno activo
-     * @param {int} amount - Monto del gasto realizado
-     * @param {string} description - Descripción del gasto
      */
-    const registrarGasto = async (amount, description) => {
-         const shiftId = store.currentShift.id;
-         const sucursalId = store.sucursalActual;
-         const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId, 'shifts', shiftId);
-         const movementsRef = collection(shiftRef, 'movements');
+    const registrarGasto = async () => {
+        if (!store.currentShift?.id) return;
+        if (!expenseState.description || !expenseState.amount) {
+            throw new Error("Datos incompletos");
+        }
 
-         await addDoc(movementsRef, {
-             type: 'EXPENSE',
-             amount: Number(amount),
-             description,
-             timestamp: serverTimestamp()
-         });
+        expenseState.loading = true;
+        const shiftId = store.currentShift.id;
+        const sucursalId = store.sucursalActual;
+        const batch = writeBatch(db)
 
-         await updateDoc(shiftRef, {
-             'stats.totalExpenses': increment(Number(amount)),
-             'stats.totalTransactions': increment(1)
-         });
+        try {
+            const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId, 'shifts', shiftId);
+            const newMovRef = doc(collection(shiftRef, 'movements'));
+
+            batch.set(newMovRef, {
+                type: 'EXPENSE',
+                amount: Number(expenseState.amount),
+                description: expenseState.description,
+                timestamp: serverTimestamp()
+            });
+
+            batch.update(shiftRef, {
+                'stats.totalExpenses': increment(Number(expenseState.amount)),
+                'stats.totalTransactions': increment(1)
+            });
+
+            await batch.commit();
+
+            expenseState.isOpen = false;
+            expenseState.description = '';
+            expenseState.amount = null;
+        } catch (error) {
+            console.error("Error atomic gasto:", error);
+            throw error;
+        } finally {
+            expenseState.loading = false;
+        }
     };
 
     return {
@@ -148,6 +172,7 @@ export function useMovements() {
         escucharMovimientos,
         detenerEscuchaMovimientos,
         registrarVenta,
+        expenseState,
         registrarGasto
     };
 }

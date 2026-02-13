@@ -1,4 +1,4 @@
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import { db } from "../firebaseConfig";
 import {
     collection,
@@ -86,17 +86,27 @@ export function useShift() {
         }
     };
 
+    const arqueoState = reactive({
+        isOpen: false,
+        monto: null,
+        loading: false
+    })
+
+    const abrirArqueo = () => {
+        arqueoState.monto = null;
+        arqueoState.isOpen = true;
+    };
+
     /**
      * Cierra el turno actual
-     * @param {number} efectivoRealDeclarado - Monto que el cajero dice tener en efectivo al cerrar
-     * @param {string} nombreSucursal - Nombre de la sucursal (valioso para Admin)
      */
-    const cerrarTurno = async (efectivoRealDeclarado, nombreSucursal) => {
+    const cerrarTurno = async () => {
         const localShift = store.currentShift;
         const currentSucursalId = store.sucursalActual;
 
-        if (!localShift?.id) throw new Error("No hay turno activo para cerrar");
-        if (!currentSucursalId) throw new Error("No se detectó la sucursal activa");
+        if (!localShift?.id || !currentSucursalId) throw new Error("Contexto inválido para cierre");
+
+        arqueoState.loading = true;
 
         try {
             const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', currentSucursalId, 'shifts', localShift.id);
@@ -113,23 +123,24 @@ export function useShift() {
             const cash = Number(stats.totalCashSales || 0);
             const yape = Number(stats.totalYapeSales || 0);
             const exp = Number(stats.totalExpenses || 0);
-            const declarado = Number(efectivoRealDeclarado) || 0;
 
+            const declarado = Number(arqueoState.monto) || 0;
             const efectivoTeorico = fnd + cash - exp;
-            const diferencia = declarado - efectivoTeorico;            
+            const diferencia = declarado - efectivoTeorico;
+            
+            const nombreSede = store.sucursales.find(s => s.id === currentSucursalId)?.nombre || 'Sucursal';
 
             const cierreData = {
                 status: 'CLOSED',
                 fechaCierre: new Date().toISOString(),
                 timestampCierre: serverTimestamp(),
-
                 sucursalId: currentSucursalId,
-                sedeNombre: nombreSucursal || 'Sucursal Desconocida',
+                sedeNombre: nombreSede,
 
                 audit: {
                     fund: fnd,
                     totalSystemCash: efectivoTeorico,
-                    declaredCash: Number(efectivoRealDeclarado),
+                    declaredCash: Number(arqueoState.monto),
                     difference: diferencia,
                     isBalanced: Math.abs(diferencia) < 0.5
                 },
@@ -142,11 +153,14 @@ export function useShift() {
             await updateDoc(shiftRef, cierreData);
 
             setCurrentShift(null);
+            arqueoState.isOpen = false;
 
             return cierreData;
         } catch (error) {
             console.error("Error al cerrar turno:", error);
             throw error;
+        } finally {
+            arqueoState.loading = false;
         }
     };
 
@@ -155,6 +169,8 @@ export function useShift() {
         isShiftOpen,
         verificarTurnoActivo,
         abrirTurno,
+        arqueoState,
+        abrirArqueo,
         cerrarTurno
     };
 }

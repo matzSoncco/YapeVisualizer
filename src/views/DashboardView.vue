@@ -3,12 +3,12 @@
     <Toast />
     <ConfirmDialog />
 <Dialog 
-    v-model:visible="showCloseModal" 
+    v-model:visible="arqueoState.isOpen" 
     modal 
     header="Finalizar Turno" 
     :style="{ width: '420px' }"
     class="arqueo-dialog"
-    :closable="!loadingCierre"
+    :closable="!arqueoState.loading"
 >
     <div class="arqueo-wrapper">
         <div class="arqueo-hero">
@@ -24,13 +24,13 @@
             <div class="display-input-group">
                 <span class="display-currency">S/</span>
                 <InputNumber 
-                    v-model="montoArqueo" 
+                    v-model="arqueoState.monto" 
                     mode="decimal" 
                     :minFractionDigits="2" 
                     placeholder="0.00" 
                     class="display-input-comp" 
                     inputClass="display-input-raw"
-                    :disabled="loadingCierre"
+                    :disabled="arqueoState.loading"
                     autofocus
                 />
             </div>
@@ -45,23 +45,23 @@
             <Button 
                 label="VOLVER" 
                 text
-                @click="showCloseModal = false" 
-                :disabled="loadingCierre"
+                @click="arqueoState.isOpen = false" 
+                :disabled="arqueoState.loading"
                 class="btn-back"
             />
             <Button 
                 label="CONFIRMAR Y CERRAR" 
                 icon="pi pi-lock" 
                 @click="confirmarCierre" 
-                :loading="loadingCierre"
-                :disabled="montoArqueo === null"
+                :loading="arqueoState.loading"
+                :disabled="arqueoState.monto === null"
                 class="btn-submit-arqueo" 
             />
         </div>
     </div>
 </Dialog>
     <Dialog 
-    v-model:visible="showExpenseModal" 
+    v-model:visible="expenseState.isOpen" 
     modal 
     header="Registro de Gasto Operativo" 
     :style="{ width: '380px' }"
@@ -76,7 +76,7 @@
         <div class="field-group">
             <label>Descripción del Gasto</label>
             <InputText 
-                v-model="expenseDesc" 
+                v-model="expenseState.description" 
                 placeholder="Ej. Pasajes, Almuerzo, Bolsas..." 
                 class="w-full p-inputtext-sm" 
             />
@@ -87,7 +87,7 @@
             <div class="price-input-wrapper expense-border">
                 <span class="currency">S/</span>
                 <InputNumber 
-                    v-model="expenseAmount" 
+                    v-model="expenseState.amount"
                     mode="decimal" 
                     :minFractionDigits="2" 
                     placeholder="0.00" 
@@ -103,8 +103,9 @@
                 label="REGISTRAR SALIDA" 
                 severity="danger" 
                 icon="pi pi-sign-out" 
-                @click="guardarGasto" 
-                :disabled="!expenseDesc || !expenseAmount"
+                @click="guardarGastoUI"
+                :loading="expenseState.loading"
+                :disabled="!expenseState.description || !expenseState.amount"
                 class="flex-1 btn-expense" 
             />
         </div>
@@ -173,7 +174,7 @@
     <div class="nav-group navigation">
       <Button label="Simular" icon="pi pi-bolt" @click="handleSimulacion" text class="nav-btn" />
       <Button label="Sede" icon="pi pi-sync" @click="cambiarSucursal" text class="nav-btn" />
-      <Button label="Gasto" icon="pi pi-minus-circle" @click="showExpenseModal = true" text class="nav-btn expense" />
+      <Button label="Gasto" icon="pi pi-minus-circle" @click="expenseState.isOpen = true" text class="nav-btn expense" />
     </div>
 
     <div class="nav-divider"></div>
@@ -234,29 +235,36 @@ const toast = useToast();
 const confirm = useConfirm();
 const posPanelRef = ref(null);
 
-// --- ESTADO PARA EL CIERRE ---
-const showCloseModal = ref(false);
-const montoArqueo = ref(null);
-const loadingCierre = ref(false);
-
-// Agrega esto junto a tus otros refs (const activeTab, etc.)
-const showExpenseModal = ref(false);
-const expenseDesc = ref('');
-const expenseAmount = ref(null);
-
 const { user } = useAuth();
-const { sucursalActual, nombreSucursalActual, limpiarSucursal } = useSucursal();
-const { verificarTurnoActivo, cerrarTurno, isShiftOpen, currentShift } = useShift();
+const {
+  sucursalActual,
+  nombreSucursalActual,
+  limpiarSucursal
+} = useSucursal();
+
+const {
+  verificarTurnoActivo,
+  cerrarTurno,
+  isShiftOpen,
+  currentShift,
+  arqueoState,
+  abrirArqueo
+} = useShift();
+
 const {
   escucharPendientes,
   yapesPendientes,
   detenerTodo
 } = useYape();
+
 const { 
   escucharMovimientos,
   movimientosTurno,
-  detenerEscuchaMovimientos
+  detenerEscuchaMovimientos,
+  expenseState,
+  registrarGasto
 } = useMovements();
+
 const { 
     matcherState, 
     vigilarYapesEntrantes, 
@@ -373,46 +381,42 @@ const guardarGasto = async () => {
  * TODO: Usar logica de cierre programado en useShift para cerrar correctamente con auditoría
  */
 const handleCierreClick = async () => {
-  montoArqueo.value = null; // Reiniciar valor
-  showCloseModal.value = true;
+  abrirArqueo();
 };
 
 // 2. Ejecuta el cierre (Conectado al botón del modal)
 const confirmarCierre = async () => {
-    if (montoArqueo.value === null) return;
+    if (arqueoState.monto === null) return;
 
-    // Opcional: Una última confirmación de seguridad si el monto es 0 o muy raro
-    // Si prefieres directo, borra este bloque confirm.require
-    if (montoArqueo.value === 0) {
-        confirm.require({
-            message: 'Estás declarando S/ 0.00 en caja. ¿Es correcto?',
-            header: 'Advertencia de Arqueo',
-            icon: 'pi pi-exclamation-triangle',
-            acceptClass: 'p-button-danger',
-            accept: () => ejecutarCierreReal()
-        });
+    if (arqueoState.monto === 0) {
+      confirm.require({
+        message: '¿Declarar S/ 0.00 en caja?',
+        header: 'Advertencia',
+        icon: 'pi pi-exclamation-triangle',
+        accept: () => ejecutarCierre()
+      });
     } else {
-        await ejecutarCierreReal();
+      await ejecutarCierre();
     }
 };
 
-// 3. La lógica dura (Tu llamada a la API)
-const ejecutarCierreReal = async () => {
-    loadingCierre.value = true;
-    try {
-        await cerrarTurno(Number(montoArqueo.value), nombreSucursalActual.value);
-        
-        // Éxito
-        showCloseModal.value = false;
-        detenerTodo(); // Detiene workers de Yape, etc.
-        toast.add({ severity: 'success', summary: 'Turno Cerrado', detail: 'El sistema ha registrado el arqueo.' });
-        
-        // Redirigir o limpiar estado si es necesario
-    } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error en Cierre', detail: e.message });
-    } finally {
-        loadingCierre.value = false;
-    }
+const ejecutarCierre = async () => {
+  try {
+    await cerrarTurno();
+    detenerTodo();
+    toast.add({ severity: 'success', summary: 'Turno Cerrado', detail: 'Arqueo registrado correctamente.' });
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: e.message });
+  }
+};
+
+const guardarGastoUI = async () => {
+  try {
+    await registrarGasto();
+    toast.add({ severity: 'warn', summary: 'Gasto Registrado', detail: 'Actualizado en caja.' });
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: e.message });
+  }
 };
 
 /**
