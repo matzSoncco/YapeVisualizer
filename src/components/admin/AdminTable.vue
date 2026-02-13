@@ -1,91 +1,85 @@
 <template>
-  <Card class="data-card">
+  <Card class="report-table-card">
     <template #content>
       <DataTable
         :value="data"
         :loading="loading"
-        stripedRows
         :paginator="data.length > 10"
         :rows="10"
         responsiveLayout="scroll"
+        class="admin-datatable"
       >
-        <Column field="fecha" header="Fecha" sortable>
-          <template #body="slotProps">
-            {{ formatearFecha(slotProps.data.fecha) }}
+        <Column field="fecha" header="Fecha" sortable class="col-date">
+          <template #body="{ data }">
+            <span class="date-cell">{{ formatearFecha(data.fecha) }}</span>
           </template>
         </Column>
 
         <Column field="sedeNombre" header="Sede" sortable>
-          <template #body="slotProps">
-            <strong>{{ slotProps.data.sedeNombre }}</strong>
+          <template #body="{ data }">
+            <span class="branch-cell">{{ data.sedeNombre }}</span>
           </template>
         </Column>
 
         <Column field="cajero" header="Cajero">
-          <template #body="slotProps">
-            <span class="capitalize">{{ slotProps.data.cajero || '---' }}</span>
+          <template #body="{ data }">
+            <span class="cashier-cell">{{ data.cajero || '---' }}</span>
           </template>
         </Column>
 
-        <Column field="totalIngresosDia" header="Ingreso Total">
-          <template #body="slotProps">
-            <span class="font-bold text-slate-700">
-              S/ {{ Number(slotProps.data.totalIngresosDia || 0).toFixed(2) }}
+        <Column field="totalIngresosDia" header="Ingreso Total" class="col-amount">
+          <template #body="{ data }">
+            <span class="total-amount">S/ {{ Number(data.totalIngresosDia || 0).toFixed(2) }}</span>
+          </template>
+        </Column>
+
+        <Column field="montoYape" header="Total Yape" class="col-amount">
+          <template #body="{ data }">
+            <span class="yape-amount">S/ {{ Number(data.montoYape || 0).toFixed(2) }}</span>
+          </template>
+        </Column>
+
+        <Column field="montoEfectivo" header="Efectivo" class="col-amount">
+          <template #body="{ data }">
+            <span class="cash-amount">S/ {{ Number(data.montoEfectivo || 0).toFixed(2) }}</span>
+          </template>
+        </Column>
+
+        <Column field="diferencia" header="Diferencia" class="col-amount">
+          <template #body="{ data }">
+            <span :class="['diff-badge', getDiffClass(data.diferencia)]">
+              {{ data.diferencia > 0 ? '+' : '' }}S/ {{ Number(data.diferencia || 0).toFixed(2) }}
             </span>
           </template>
         </Column>
 
-        <Column field="montoYape" header="Total Yape" class="text-right">
-          <template #body="slotProps">
-            <span class="text-purple-700 font-bold">
-              S/ {{ Number(slotProps.data.montoYape || 0).toFixed(2) }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="montoEfectivo" header="Efectivo Entregado">
-          <template #body="slotProps">
-            S/ {{ Number(slotProps.data.montoEfectivo || 0).toFixed(2) }}
-          </template>
-        </Column>
-
-        <Column field="diferencia" header="Diferencia">
-          <template #body="slotProps">
-            <span :class="
-              slotProps.data.diferencia < -0.5 ? 'text-red-500 font-bold' : 
-              (slotProps.data.diferencia > 0.5 ? 'text-blue-500 font-bold' : 'text-green-600 font-medium')
-            ">
-              S/ {{ Number(slotProps.data.diferencia || 0).toFixed(2) }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="estado" header="Estado">
-          <template #body="slotProps">
+        <Column field="estado" header="Auditoría" class="col-status">
+          <template #body="{ data }">
             <Tag 
-              :value="slotProps.data.estado"
-              :severity="slotProps.data.estado === 'Cuadrado' ? 'success' : 'danger'"
+              :value="data.estado"
+              :severity="data.estado === 'Cuadrado' ? 'success' : 'danger'"
+              rounded
+              class="status-tag"
             />
           </template>
         </Column>
 
-        <Column header="Detalle">
-          <template #body="slotProps">
+        <Column header="Acción" class="col-action">
+          <template #body="{ data }">
             <Button
-              icon="pi pi-eye"
+              icon="pi pi-search-plus"
               text
               rounded
-              severity="secondary"
-              v-tooltip.top="'Ver Auditoría Completa'"
-              @click="$emit('ver-detalle', slotProps.data)"
+              class="btn-detail"
+              @click="$emit('ver-detalle', data)"
             />
           </template>
         </Column>
 
         <template #empty>
-          <div class="flex flex-col items-center justify-center p-8 text-surface-500">
-            <i class="pi pi-inbox" style="font-size: 3rem; opacity: 0.5;"></i>
-            <p class="mt-2">No se encontraron reportes con los filtros seleccionados.</p>
+          <div class="empty-table-state">
+            <i class="pi pi-filter-slash"></i>
+            <p>No hay cierres registrados en este rango.</p>
           </div>
         </template>
       </DataTable>
@@ -122,4 +116,72 @@ defineProps({
  * TODO: Implementar la lógica para mostrar el detalle del cierre seleccionado en una vista o modal aparte
  */
 defineEmits(['ver-detalle']);
+
+const getDiffClass = (val) => {
+  if (val < -0.5) return 'diff-negative';
+  if (val > 0.5) return 'diff-positive';
+  return 'diff-neutral';
+};
 </script>
+
+<style scoped>
+/* TABLA DE REPORTES */
+.report-table-card {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  overflow: hidden;
+}
+
+:deep(.admin-datatable .p-datatable-thead > tr > th) {
+  background: #f8fafc !important;
+  color: #64748b !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  padding: 1rem !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+
+:deep(.admin-datatable .p-datatable-tbody > tr > td) {
+  padding: 1rem !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  font-size: 0.875rem !important;
+}
+
+/* CELDAS ESTILIZADAS */
+.date-cell { color: #64748b; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+.branch-cell { font-weight: 800; color: #0f172a; }
+.cashier-cell { text-transform: capitalize; color: #475569; }
+
+.total-amount { font-weight: 800; color: #0f172a; }
+.yape-amount { font-weight: 800; color: #7c3aed; }
+.cash-amount { font-weight: 600; color: #334155; }
+
+/* BADGES DE DIFERENCIA */
+.diff-badge {
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.diff-negative { background: #fef2f2; color: #ef4444; }
+.diff-positive { background: #eff6ff; color: #3b82f6; }
+.diff-neutral { background: #f0fdf4; color: #22c55e; }
+
+.status-tag { font-weight: 800 !important; font-size: 0.7rem !important; }
+
+.btn-detail { color: #64748b !important; }
+.btn-detail:hover { background: #f1f5f9 !important; color: #0f172a !important; }
+
+.empty-table-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4rem;
+  color: #94a3b8;
+}
+.empty-table-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+
+.col-amount { text-align: right; }
+</style>

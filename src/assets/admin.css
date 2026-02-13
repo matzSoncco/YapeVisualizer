@@ -1,129 +1,355 @@
-.admin-container {
-  min-height: 100vh;
-  background: #fafbfc;
+/* src/assets/admin.css */
+
+.admin-layout {
+  display: flex;
+  height: 100vh;
+  background-color: #f1f5f9; /* Slate 100 */
+  overflow: hidden;
+}
+
+/* SIDEBAR: Estilo futurista y delgado */
+.admin-sidebar {
+  width: 240px;
+  position: relative;
+  background: #0f172a;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
+  z-index: 50; /* Para que esté sobre el contenido principal */
+  /* NO PONGAS overflow: hidden AQUÍ GLOBALMENTE */
 }
 
-.admin-topbar {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 1.25rem 1.5rem;
+.sidebar-collapsed .admin-sidebar {
+  width: 80px; /* Ancho colapsado */
+}
+
+/* Oculta el texto de navegación si el sidebar está colapsado */
+.sidebar-collapsed .nav-item span {
+  display: none;
+}
+
+/* Centra los iconos cuando está colapsado */
+.sidebar-collapsed .nav-item {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Opcional: Centrar también el logo/marca cuando está cerrado */
+.sidebar-collapsed .sidebar-brand {
+  justify-content: center;
+  padding-left: 0;
+}
+
+/* BOTÓN DE FLECHA (TOGGLE) */
+.sidebar-toggle {
+  position: absolute;
+  right: -12px;
+  top: 35px;
+  width: 24px;
+  height: 24px;
+  background: var(--color-accent); /* Amarillo */
+  border: none;
+  border-radius: 50%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
+  justify-content: center;
+  cursor: pointer;
   z-index: 100;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: #0f172a;
 }
 
-.brand-section {
+/* BRANDING */
+.sidebar-brand {
+  height: 70px;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-}
-
-.titles h1 {
+  justify-content: center;
+  gap: 0.75rem;
   font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--chinese-black);
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  color: var(--color-accent);
+  overflow: hidden; /* Importante para cuando colapsa */
 }
 
-.greeting {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.filters-card {
-  margin: 1.5rem;
-  border: 1px solid #e5e7eb;
-}
-
-.filters-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.25rem;
-}
-
-.filter-item {
+.sidebar-nav {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  width: 100%;
+  padding: 1rem 0.75rem;
+  overflow-x: hidden;
 }
 
-.filter-item label {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--chinese-black);
-}
-
-.data-card {
-  flex: 1;
-  margin: 0 1.5rem 1.5rem 1.5rem;
-  border: 1px solid #e5e7eb;
+/* ITEMS DE NAVEGACIÓN */
+.nav-item {
+  background: transparent;
+  border: none;
+  color: #94a3b8; /* Slate 400 */
+  padding: 0.75rem;
+  border-radius: 12px;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.2s;
+  white-space: nowrap; /* Evita que el texto salte */
 }
 
-.data-card :deep(.p-card-body) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.data-card :deep(.p-card-content) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-}
-
-.data-card :deep(.p-datatable) {
-  flex: 1;
-}
-
-.empty-table {
+.nav-item i { 
+  font-size: 1.25rem; 
+  min-width: 24px; 
   text-align: center;
-  padding: 3rem;
-  color: #6b7280;
 }
 
-.empty-table p {
-  margin-top: 1rem;
-  font-size: 0.9375rem;
+.nav-item span { 
+  font-weight: 600; 
+  font-size: 0.9rem;
 }
 
-.text-success {
-  color: #059669;
-  font-weight: 600;
+.nav-item:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
 }
 
-.text-danger {
-  color: #dc2626;
-  font-weight: 600;
+.nav-item.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-@media (max-width: 768px) {
-  .admin-topbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
+/* FOOTER DEL SIDEBAR Y MENÚ */
+.sidebar-footer {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: center;
+  position: relative; /* CLAVE: Para que el menú se posicione respecto a esto */
+}
 
-  .brand-section {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
+.admin-avatar {
+  cursor: pointer;
+  transition: transform 0.2s;
+  border: 2px solid transparent;
+}
+.admin-avatar:hover {
+  border-color: var(--color-accent);
+}
 
-  .filters-grid {
-    grid-template-columns: 1fr;
-  }
+/* NUESTRO MENÚ DE USUARIO CUSTOM */
+.custom-user-menu {
+  position: absolute;
+  bottom: 70px;
+  left: 10px;
+  /* right: 10px;  <--- BORRA ESTA LÍNEA, es la culpable */
+  width: 220px;    /* <--- AGREGA ESTA LÍNEA: Ancho fijo siempre */
+  background: white;
+  border-radius: 12px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15); /* Sombra más fuerte para resaltar */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 1000;   /* <--- Asegura que flote sobre todo */
+  border: 1px solid #e2e8f0;
+}
+
+/* Flechita decorativa abajo del menú (Opcional, detalle pro) */
+.custom-user-menu::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+}
+
+.custom-user-menu button {
+  background: transparent;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #475569;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.custom-user-menu button:hover { background: #f1f5f9; color: #0f172a; }
+.custom-user-menu .logout-btn { color: #ef4444; }
+.custom-user-menu .logout-btn:hover { background: #fef2f2; color: #b91c1c; }
+
+.menu-sep { height: 1px; background: #e2e8f0; margin: 4px 0; }
+
+/* Animación del Menú */
+.menu-pop-enter-active, .menu-pop-leave-active { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.menu-pop-enter-from, .menu-pop-leave-to { opacity: 0; transform: translateY(10px) scale(0.95); }
+
+/* TOOLBAR Y CONTENIDO */
+.admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-toolbar {
+  height: 70px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 2rem;
+  flex-shrink: 0;
+}
+
+.admin-toolbar h1 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* CONTENEDOR TIPO "PÍLDORA" */
+.toolbar-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem; /* Espacio pequeñito entre elementos */
+  background: #f8fafc; /* Slate 50 */
+  border: 1px solid #cbd5e1; /* Borde sutil gris */
+  border-radius: 99px; /* Pill shape total */
+  padding: 3px 6px 3px 12px; /* Padding interno */
+  transition: all 0.2s;
+}
+
+.toolbar-filters:hover {
+  border-color: #94a3b8; /* Se oscurece un poco al pasar el mouse */
+  background: #fff;
+}
+
+/* SEPARADOR (-) */
+.sep {
+  color: #94a3b8;
+  font-weight: 700;
+  font-size: 0.8rem;
+  user-select: none;
+}
+
+/* DATEPICKER COMPACTO (El truco es hacer transparente el input) */
+.compact-date .p-inputtext {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #334155 !important;
+  font-size: 0.85rem !important;
+  font-weight: 600 !important;
+  padding: 0.5rem 0.25rem !important; /* Reducir padding */
+  width: 75px !important; /* Ancho fijo para que no baile */
+  text-align: center;
+}
+
+.compact-date .p-inputtext:focus {
+  color: var(--color-accent-dark) !important;
+}
+
+/* SELECT COMPACTO */
+.compact-select {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  align-items: center;
+}
+
+/* Línea divisoria visual antes del Select */
+.compact-select {
+  border-left: 1px solid #cbd5e1 !important;
+  border-radius: 0 !important;
+  margin-left: 0.5rem;
+  padding-left: 0.5rem;
+  height: 24px; /* Altura de la línea divisoria */
+  display: flex;
+  align-items: center;
+}
+
+.compact-select .p-select-label {
+  padding: 0 0.5rem !important;
+  font-size: 0.85rem !important;
+  font-weight: 700 !important;
+  color: #334155 !important;
+  white-space: nowrap;
+}
+
+.compact-select .p-select-dropdown {
+  width: 1rem !important;
+  color: #64748b !important;
+}
+
+/* BOTÓN DE REFRESCAR */
+.toolbar-filters .p-button.p-button-icon-only {
+  width: 32px !important;
+  height: 32px !important;
+  color: #64748b !important;
+}
+
+.toolbar-filters .p-button:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Estilos de inputs compactos */
+:deep(.compact-date .p-inputtext),
+:deep(.compact-select .p-select-label) {
+  border: none !important;
+  background: transparent !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+  padding: 6px 12px !important;
+  box-shadow: none !important;
+}
+.sep { color: #cbd5e1; font-weight: bold; }
+
+/* VIEWPORT */
+.admin-viewport {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.view-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Transición de Vistas */
+.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.3s ease; }
+.fade-slide-enter-from { opacity: 0; transform: translateX(10px); }
+.fade-slide-leave-to { opacity: 0; transform: translateX(-10px); }
+
+/* SECCIONES INTERNAS */
+.overview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.charts-preview-container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }

@@ -1,19 +1,29 @@
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+  <div class="charts-grid">
     
-    <Card class="col-span-1 lg:col-span-2 shadow-sm">
-      <template #title>Evolución de Ventas</template>
+    <Card class="chart-card evolution-chart">
+      <template #title>
+        <div class="chart-header">
+          <i class="pi pi-chart-line"></i>
+          <span>Evolución de Ventas</span>
+        </div>
+      </template>
       <template #content>
-        <div class="h-[300px] w-full relative">
+        <div class="chart-container">
           <Line :data="salesData" :options="lineOptions" />
         </div>
       </template>
     </Card>
 
-    <Card class="shadow-sm">
-      <template #title>Ventas por Sede</template>
+    <Card class="chart-card distribution-chart">
+      <template #title>
+        <div class="chart-header">
+          <i class="pi pi-map-marker"></i>
+          <span>Ventas por Sede</span>
+        </div>
+      </template>
       <template #content>
-        <div class="h-[300px] w-full relative flex items-center justify-center">
+        <div class="chart-container doughnut-wrapper">
           <Doughnut :data="branchData" :options="doughnutOptions" />
         </div>
       </template>
@@ -68,27 +78,23 @@ const lineOptions = {
   plugins: {
     legend: { display: false },
     tooltip: {
-      mode: 'index',
-      intersect: false,
-      callbacks: {
-        label: (context) => ` S/ ${context.raw.toFixed(2)}`
-      }
+      backgroundColor: '#0f172a', // Slate 900
+      titleFont: { size: 14, weight: 'bold' },
+      padding: 12,
+      cornerRadius: 10,
+      callbacks: { label: (context) => ` S/ ${context.raw.toFixed(2)}` }
     }
   },
   scales: {
     y: {
       beginAtZero: true,
-      grid: { color: '#f3f4f6' },
-      ticks: { callback: (value) => `S/ ${value}` }
+      grid: { color: '#f1f5f9', drawBorder: false },
+      ticks: { color: '#94a3b8', font: { weight: '600' }, callback: (value) => `S/ ${value}` }
     },
     x: {
-      grid: { display: false }
+      grid: { display: false },
+      ticks: { color: '#94a3b8', font: { weight: '600' } }
     }
-  },
-  interaction: {
-    mode: 'nearest',
-    axis: 'x',
-    intersect: false
   }
 };
 
@@ -97,7 +103,11 @@ const doughnutOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
-    legend: { position: 'bottom' }
-  }
+    legend: { 
+      position: 'bottom',
+      labels: { usePointStyle: true, padding: 20, font: { weight: '700', size: 11 } }
+    }
+  },
+  cutout: '70%' // Hace que la dona sea más elegante/delgada
 };
 </script>

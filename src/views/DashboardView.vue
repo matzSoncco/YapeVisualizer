@@ -2,7 +2,114 @@
   <div class="dashboard">
     <Toast />
     <ConfirmDialog />
+<Dialog 
+    v-model:visible="showCloseModal" 
+    modal 
+    header="Finalizar Turno" 
+    :style="{ width: '420px' }"
+    class="arqueo-dialog"
+    :closable="!loadingCierre"
+>
+    <div class="arqueo-wrapper">
+        <div class="arqueo-hero">
+            <div class="arqueo-badge">
+                <i class="pi pi-verified"></i>
+            </div>
+            <h3>Cierre de Auditoría</h3>
+            <p>Ingresa el efectivo total presente en caja para validar contra el sistema.</p>
+        </div>
 
+        <div class="arqueo-display">
+            <span class="display-label">EFECTIVO FÍSICO</span>
+            <div class="display-input-group">
+                <span class="display-currency">S/</span>
+                <InputNumber 
+                    v-model="montoArqueo" 
+                    mode="decimal" 
+                    :minFractionDigits="2" 
+                    placeholder="0.00" 
+                    class="display-input-comp" 
+                    inputClass="display-input-raw"
+                    :disabled="loadingCierre"
+                    autofocus
+                />
+            </div>
+        </div>
+
+        <div class="arqueo-footer-info">
+            <i class="pi pi-info-circle"></i>
+            <span>Este proceso es irreversible y cerrará tu sesión actual.</span>
+        </div>
+
+        <div class="arqueo-btns">
+            <Button 
+                label="VOLVER" 
+                text
+                @click="showCloseModal = false" 
+                :disabled="loadingCierre"
+                class="btn-back"
+            />
+            <Button 
+                label="CONFIRMAR Y CERRAR" 
+                icon="pi pi-lock" 
+                @click="confirmarCierre" 
+                :loading="loadingCierre"
+                :disabled="montoArqueo === null"
+                class="btn-submit-arqueo" 
+            />
+        </div>
+    </div>
+</Dialog>
+    <Dialog 
+    v-model:visible="showExpenseModal" 
+    modal 
+    header="Registro de Gasto Operativo" 
+    :style="{ width: '380px' }"
+    class="expense-dialog"
+>
+    <div class="expense-form">
+        <p class="expense-warning">
+            <i class="pi pi-exclamation-triangle"></i>
+            Este monto se restará del efectivo en caja.
+        </p>
+
+        <div class="field-group">
+            <label>Descripción del Gasto</label>
+            <InputText 
+                v-model="expenseDesc" 
+                placeholder="Ej. Pasajes, Almuerzo, Bolsas..." 
+                class="w-full p-inputtext-sm" 
+            />
+        </div>
+
+        <div class="field-group">
+            <label>Monto a Retirar</label>
+            <div class="price-input-wrapper expense-border">
+                <span class="currency">S/</span>
+                <InputNumber 
+                    v-model="expenseAmount" 
+                    mode="decimal" 
+                    :minFractionDigits="2" 
+                    placeholder="0.00" 
+                    class="w-full"
+                    inputClass="expense-input-inner"
+                />
+            </div>
+        </div>
+
+        <div class="expense-actions">
+            <Button label="Cancelar" severity="secondary" text @click="showExpenseModal = false" class="flex-1" />
+            <Button 
+                label="REGISTRAR SALIDA" 
+                severity="danger" 
+                icon="pi pi-sign-out" 
+                @click="guardarGasto" 
+                :disabled="!expenseDesc || !expenseAmount"
+                class="flex-1 btn-expense" 
+            />
+        </div>
+    </div>
+</Dialog>
     <Dialog 
         v-model:visible="matcherState.showModal" 
         modal 
@@ -45,20 +152,42 @@
 
       <div v-else class="pos-grid-container"> 
         <header class="pos-navbar">
-           <div class="brand-area">
-             <i class="pi pi-wallet"></i>
-             <span class="brand-text">Monitor</span>
-             <div class="divider"></div>
-             <span class="location-tag">{{ nombreSucursalActual }}</span>
-           </div>
-           
-           <div class="actions-area">
-             <Button label="Simular" icon="pi pi-bolt" @click="handleSimulacion" text size="small" class="btn-nav-ghost" />
-             <Button label="Sede" icon="pi pi-sync" @click="cambiarSucursal" text size="small" class="btn-nav-ghost" />
-             <div class="divider"></div>
-             <Button label="Cerrar Turno" icon="pi pi-power-off" @click="handleCierreClick" text severity="danger" size="small" class="btn-nav-danger" />
-           </div>
-        </header>
+  <div class="navbar-left">
+    <div class="brand-badge">
+      <i class="pi pi-wallet"></i>
+    </div>
+    <div class="brand-info">
+      <span class="brand-title">Monitor</span>
+      <div class="location-context">
+        <span class="location-name">{{ nombreSucursalActual }}</span>
+        <span class="context-divider">|</span>
+        <div class="cashier-tag">
+          <i class="pi pi-user"></i>
+          <span class="cashier-name">{{ nombreCajero }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="navbar-right">
+    <div class="nav-group navigation">
+      <Button label="Simular" icon="pi pi-bolt" @click="handleSimulacion" text class="nav-btn" />
+      <Button label="Sede" icon="pi pi-sync" @click="cambiarSucursal" text class="nav-btn" />
+      <Button label="Gasto" icon="pi pi-minus-circle" @click="showExpenseModal = true" text class="nav-btn expense" />
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-group sessions">
+      <Button 
+        label="Finalizar Turno" 
+        icon="pi pi-power-off" 
+        @click="handleCierreClick" 
+        class="btn-exit"
+      />
+    </div>
+  </div>
+</header>
 
         <section class="top-feed-bar">
            <YapeFeed :yapes="yapesPendientes" @pescar="handlePesca" />
@@ -78,7 +207,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
@@ -97,7 +226,6 @@ import { useYape } from '@/composables/useYape';
 import { simularDatos } from '@/utils/devSimulator';
 import { useMovements } from '@/composables/useMovements';
 import { useYapeMatcher } from '@/composables/useYapeMatcher';
-import { formatearHora } from '@/utils/dates';
 
 import '@/assets/dashboard.css';
 
@@ -105,6 +233,16 @@ const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
 const posPanelRef = ref(null);
+
+// --- ESTADO PARA EL CIERRE ---
+const showCloseModal = ref(false);
+const montoArqueo = ref(null);
+const loadingCierre = ref(false);
+
+// Agrega esto junto a tus otros refs (const activeTab, etc.)
+const showExpenseModal = ref(false);
+const expenseDesc = ref('');
+const expenseAmount = ref(null);
 
 const { user } = useAuth();
 const { sucursalActual, nombreSucursalActual, limpiarSucursal } = useSucursal();
@@ -131,6 +269,9 @@ vigilarYapesEntrantes(yapesPendientes);
 
 const globalLoading = ref(true);
 
+const nombreCajero = computed(() => {
+  return currentShift.value?.cajero || 'Cajero no asignado';
+});
 /**
  * Función principal para iniciar el dashboard
  * - Verifica el turno activo
@@ -195,28 +336,83 @@ const cambiarSucursal = () => {
     limpiarSucursal();
 };
 
+// Función para procesar el gasto
+const guardarGasto = async () => {
+    // 1. Validaciones básicas
+    if (!expenseDesc.value || !expenseAmount.value) {
+        toast.add({ severity: 'warn', summary: 'Faltan datos', detail: 'Ingresa descripción y monto', life: 3000 });
+        return;
+    }
+
+    try {
+        // AQUÍ VA TU LÓGICA DE BACKEND O STORE
+        // Por ejemplo: await transactionStore.addExpense({ desc: expenseDesc.value, amount: expenseAmount.value });
+        
+        // Simulación de éxito
+        console.log("Registrando gasto:", expenseDesc.value, expenseAmount.value);
+        
+        toast.add({ 
+            severity: 'error', // Rojo porque es salida de dinero
+            summary: 'Gasto Registrado', 
+            detail: `Se retiraron S/ ${expenseAmount.value} de caja`, 
+            life: 3000 
+        });
+
+        // 2. Limpiar y Cerrar
+        expenseDesc.value = '';
+        expenseAmount.value = null;
+        showExpenseModal.value = false;
+
+    } catch (error) {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo registrar el gasto' });
+    }
+};
+
 /**
  * Maneja el clic en "Cerrar Turno" para cerrar el turno actual
  * TODO: Usar logica de cierre programado en useShift para cerrar correctamente con auditoría
  */
 const handleCierreClick = async () => {
-    const montoDeclarado = prompt("Cierre de Caja: ¿Cuánto efectivo físico hay en caja?");
-    
-    if (montoDeclarado === null) return;
+  montoArqueo.value = null; // Reiniciar valor
+  showCloseModal.value = true;
+};
 
-    confirm.require({
-        message: `Estás declarando S/ ${montoDeclarado}. ¿Confirmas el cierre de turno?`,
-        header: 'Confirmar Arqueo',
-        accept: async () => {
-             try {
-                await cerrarTurno(Number(montoDeclarado), nombreSucursalActual.value);
-                detenerTodo();
-                toast.add({ severity: 'success', summary: 'Turno Cerrado Correctamente' });
-             } catch (e) {
-                toast.add({ severity: 'error', summary: 'Error', detail: e.message });
-             }
-        }
-    });
+// 2. Ejecuta el cierre (Conectado al botón del modal)
+const confirmarCierre = async () => {
+    if (montoArqueo.value === null) return;
+
+    // Opcional: Una última confirmación de seguridad si el monto es 0 o muy raro
+    // Si prefieres directo, borra este bloque confirm.require
+    if (montoArqueo.value === 0) {
+        confirm.require({
+            message: 'Estás declarando S/ 0.00 en caja. ¿Es correcto?',
+            header: 'Advertencia de Arqueo',
+            icon: 'pi pi-exclamation-triangle',
+            acceptClass: 'p-button-danger',
+            accept: () => ejecutarCierreReal()
+        });
+    } else {
+        await ejecutarCierreReal();
+    }
+};
+
+// 3. La lógica dura (Tu llamada a la API)
+const ejecutarCierreReal = async () => {
+    loadingCierre.value = true;
+    try {
+        await cerrarTurno(Number(montoArqueo.value), nombreSucursalActual.value);
+        
+        // Éxito
+        showCloseModal.value = false;
+        detenerTodo(); // Detiene workers de Yape, etc.
+        toast.add({ severity: 'success', summary: 'Turno Cerrado', detail: 'El sistema ha registrado el arqueo.' });
+        
+        // Redirigir o limpiar estado si es necesario
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Error en Cierre', detail: e.message });
+    } finally {
+        loadingCierre.value = false;
+    }
 };
 
 /**

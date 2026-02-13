@@ -1,123 +1,127 @@
 <template>
-  <div class="admin-container">
+  <div class="admin-layout" :class="{ 'sidebar-collapsed': !isSidebarExpanded }">
     
-    <header class="admin-topbar">
-      <div class="brand-section">
-        <div class="titles">
-          <h1>PANEL DE ADMINISTRADOR</h1>
-          <p class="greeting">👋 Hola, {{ userName }}</p>
-        </div>
-      </div>
+    <aside class="admin-sidebar">
+      <button class="sidebar-toggle" @click="toggleSidebar">
+        <i :class="isSidebarExpanded ? 'pi pi-chevron-left' : 'pi pi-chevron-right'"></i>
+      </button>
 
-      <div class="user-section">
-        <Avatar
-          :label="userInitial"
-          shape="circle"
-          size="large"
-          class="cursor-pointer bg-slate-800 text-white"
-          @click="toggleUserMenu"
+      <div class="sidebar-brand">
+        <i class="pi pi-shield"></i>
+        <span v-if="isSidebarExpanded">ADMIN</span>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button v-for="tab in tabs" :key="tab.id" 
+                :class="['nav-item', { active: activeTab === tab.id }]"
+                @click="activeTab = tab.id"
+                :title="!isSidebarExpanded ? tab.label : ''">
+          <i :class="tab.icon"></i>
+          <span v-if="isSidebarExpanded">{{ tab.label }}</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <Transition name="menu-pop">
+          <div v-if="isUserMenuOpen" class="custom-user-menu">
+            <button @click="router.push('/profile')">
+              <i class="pi pi-user"></i> <span>Perfil</span>
+            </button>
+            <button @click="router.push('/dashboard')">
+              <i class="pi pi-arrow-left"></i> <span>Monitor</span>
+            </button>
+            <div class="menu-sep"></div>
+            <button class="logout-btn" @click="handleLogout">
+              <i class="pi pi-sign-out"></i> <span>Salir</span>
+            </button>
+          </div>
+        </Transition>
+
+        <Avatar 
+          :label="userInitial" 
+          shape="circle" 
+          @click="toggleUserMenu" 
+          class="admin-avatar bg-slate-700 text-white" 
         />
-        <Menu ref="userMenu" :model="userMenuItems" popup />
       </div>
-    </header>
+    </aside>
 
-    <Card class="filters-card mb-4">
-      <template #content>
-        <div class="filters-grid flex gap-4 items-end flex-wrap">
-          <div class="filter-item flex flex-col gap-1">
-            <label class="font-bold text-sm">Desde:</label>
-            <DatePicker v-model="filters.startDate" dateFormat="dd/mm/yy" showIcon iconDisplay="input" />
-          </div>
-          <div class="filter-item flex flex-col gap-1">
-            <label class="font-bold text-sm">Hasta:</label>
-            <DatePicker v-model="filters.endDate" dateFormat="dd/mm/yy" showIcon iconDisplay="input" />
-          </div>
-          <div class="filter-item flex flex-col gap-1 min-w-[200px]">
-            <label class="font-bold text-sm">Sede:</label>
-            <Select
-              v-model="filters.branchId"
-              :options="sedeOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Todas las sedes"
-              showClear
-              class="w-full"
-            />
-          </div>
-          <div class="filter-item flex-grow">
-            <Button
-              label="Actualizar Datos"
-              icon="pi pi-refresh"
-              @click="handleSearch"
-              :loading="loadingReportes"
-              class="w-full md:w-auto"
-            />
+    <main class="admin-main">
+      
+      <header class="admin-toolbar">
+        <div class="toolbar-left">
+          <h1>{{ currentTabLabel }}</h1>
+        </div>
+        
+        <div class="toolbar-right">
+          <div class="toolbar-filters">
+            <DatePicker v-model="filters.startDate" dateFormat="dd/mm" placeholder="Ini" class="compact-date" />
+            <span class="sep">-</span>
+            <DatePicker v-model="filters.endDate" dateFormat="dd/mm" placeholder="Fin" class="compact-date" />
+            <Select v-model="filters.branchId" :options="sedeOptions" optionLabel="label" optionValue="value" placeholder="Sede" class="compact-select" />
+            <Button icon="pi pi-refresh" @click="handleSearch" :loading="loadingReportes" text rounded />
           </div>
         </div>
-      </template>
-    </Card>
+      </header>
 
-    <div class="admin-content">
-      <Tabs value="stats">
-        
-        <TabList>
-            <Tab value="stats">Resumen General</Tab>
-            <Tab value="charts">Análisis Gráfico</Tab>
-            <Tab value="table">Historial de Cierres</Tab>
-        </TabList>
-
-        <TabPanels>
+      <section class="admin-viewport custom-scrollbar">
+        <Transition name="fade-slide" mode="out-in">
+          <div :key="activeTab" class="view-wrapper">
             
-            <TabPanel value="stats">
-                <AdminStats :kpis="kpis" />
-                <div class="mt-4">
-                  <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
-                </div>
-            </TabPanel>
-
-            <TabPanel value="charts">
+            <div v-if="activeTab === 'overview'" class="overview-section">
+              <AdminStats :kpis="kpis" />
+              <div class="charts-preview-container">
                 <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
-            </TabPanel>
+              </div>
+            </div>
 
-            <TabPanel value="table">
-                <AdminTable 
-                    :data="reportes" 
-                    :loading="loadingReportes"
-                    @ver-detalle="verDetalle" 
-                />
-            </TabPanel>
+            <div v-else-if="activeTab === 'charts'">
+              <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
+            </div>
 
-        </TabPanels>
-      </Tabs>
-    </div>
+            <div v-else-if="activeTab === 'table'">
+              <AdminTable 
+                :data="reportes" 
+                :loading="loadingReportes" 
+                @ver-detalle="verDetalle" 
+              />
+            </div>
 
+          </div>
+        </Transition>
+      </section>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
 import { useAdmin } from '@/composables/useAdmin';
 import { useToast } from 'primevue/usetoast';
 
-import Card from 'primevue/card';
 import Button from 'primevue/button';
 import DatePicker from 'primevue/datepicker';
 import Select from 'primevue/select';
 import Avatar from 'primevue/avatar';
-import Menu from 'primevue/menu';
-import Tabs from 'primevue/tabs';
-import TabList from 'primevue/tablist';
-import Tab from 'primevue/tab';
-import TabPanels from 'primevue/tabpanels';
-import TabPanel from 'primevue/tabpanel';
 
 import AdminTable from '@/components/admin/AdminTable.vue';
 import AdminStats from '@/components/admin/AdminStats.vue';
 import AdminCharts from '@/components/admin/AdminCharts.vue';
+
 import '@/assets/admin.css';
+
+const activeTab = ref('overview');
+const isSidebarExpanded = ref(false);
+const isUserMenuOpen = ref(false);
+
+const tabs = [
+  { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
+  { id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' },
+  { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
+];
 
 const router = useRouter();
 const toast = useToast();
@@ -125,12 +129,15 @@ const { user, logOut } = useAuth();
 const { sucursales, limpiarSucursal } = useSucursal();
 const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } = useAdmin();
 
-const userMenu = ref();
 const filters = ref({
   startDate: new Date(),
   endDate: new Date(),
   branchId: ''
 });
+
+const currentTabLabel = computed(() => 
+  tabs.find(t => t.id === activeTab.value)?.label
+);
 
 const userName = computed(() => user.value?.displayName || 'Admin');
 const userInitial = computed(() => (userName.value || 'A').charAt(0).toUpperCase());
@@ -140,18 +147,13 @@ const sedeOptions = computed(() => [
   ...sucursales.value.map(s => ({ label: s.nombre, value: s.id }))
 ]);
 
-/**
- * Menú de usuario con opciones para perfil y cierre de sesión
- */
-const userMenuItems = computed(() => [
-  { label: 'Mi Perfil', icon: 'pi pi-user', command: () => router.push('/profile') },
-  { separator: true },
-  { label: 'Volver al Selector de Sede', icon: 'pi pi-arrow-left', command: () => router.push('/dashboard') },
-  { separator: true },
-  { label: 'Cerrar Sesión', icon: 'pi pi-sign-out', command: handleLogout }
-]);
+const toggleSidebar = () => {
+  isSidebarExpanded.value = !isSidebarExpanded.value;
+};
 
-const toggleUserMenu = (event) => userMenu.value.toggle(event);
+const toggleUserMenu = () => {
+  isUserMenuOpen.value = !isUserMenuOpen.value;
+};
 
 /**
  * Función para cerrar sesión, limpiar datos relacionados con la sucursal y redirigir al login
@@ -173,4 +175,9 @@ const handleSearch = () => {
 const verDetalle = () => {
   toast.add({ severity: 'info', summary: 'Detalle', detail: 'Próximamente' });
 };
+
+// Carga inicial
+onMounted(() => {
+  handleSearch();
+});
 </script>
