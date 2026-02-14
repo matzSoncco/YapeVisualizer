@@ -111,9 +111,9 @@
             <div class="security-content">
               <p class="text-sm text-gray-500 mb-3">Control de acceso administrativo</p>
               
-              <div v-if="isDefaultPin" class="mb-3 p-2 bg-orange-50 border-orange-200 border rounded text-xs text-orange-700">
-                <i class="pi pi-exclamation-triangle mr-1"></i>
-                Tu PIN es inseguro (Default).
+              <div v-if="isDefaultPin" class="pin-warning-box">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>Tu PIN es inseguro (Default).</span>
               </div>
 
               <Button 
@@ -211,41 +211,42 @@
       </template>
     </Dialog>
     <Dialog
-      v-model:visible="showChangePinModal"
-      modal
-      header="Actualizar PIN de Seguridad"
-      class="custom-pin-dialog"
-      :style="{ width: '380px' }"
-      :draggable="false"
-    >
-      <div class="pin-form-content">
-        <p class="text-sm text-gray-500 mb-4">Ingresa tu PIN actual y define uno nuevo de 4 dígitos.</p>
-        
-        <div class="field-group mb-4">
-          <label class="block text-sm font-bold mb-2 text-gray-700">PIN Actual</label>
-          <div class="flex justify-center">
-             <InputOtp v-model="pinForm.current" :length="4" mask />
-          </div>
-        </div>
-
-        <div class="field-group mb-4">
-          <label class="block text-sm font-bold mb-2 text-gray-700">Nuevo PIN</label>
-          <div class="flex justify-center">
-             <InputOtp v-model="pinForm.new" :length="4" mask />
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-2 mt-6">
-          <Button label="Cancelar" severity="secondary" text @click="showChangePinModal = false" />
-          <Button 
-            label="Guardar Nuevo PIN" 
-            @click="handlePinUpdate" 
-            :loading="loadingAuth" 
-            :disabled="pinForm.new.length < 4 || pinForm.current.length < 4"
-          />
-        </div>
+  v-model:visible="showChangePinModal"
+  modal
+  header="Actualizar PIN de Seguridad"
+  class="custom-pin-dialog"
+  :style="{ width: '380px' }"
+  :draggable="false"
+>
+  <div class="pin-form-content">
+    <p class="pin-description">Ingresa tu PIN actual y define uno nuevo de 4 dígitos.</p>
+    
+    <div class="pin-field-group">
+      <label>PIN Actual</label>
+      <div class="otp-container">
+         <InputOtp v-model="pinForm.current" :length="4" mask />
       </div>
-    </Dialog>
+    </div>
+
+    <div class="pin-field-group">
+      <label>Nuevo PIN</label>
+      <div class="otp-container">
+         <InputOtp v-model="pinForm.new" :length="4" mask />
+      </div>
+    </div>
+
+    <div class="pin-footer-actions">
+      <Button label="Cancelar" severity="secondary" text @click="showChangePinModal = false" />
+      <Button 
+        label="Guardar Nuevo PIN" 
+        @click="handlePinUpdate" 
+        :loading="loadingAuth" 
+        :disabled="pinForm.new.length < 4 || pinForm.current.length < 4"
+        class="btn-save-pin"
+      />
+    </div>
+  </div>
+</Dialog>
   </div>
 </template>
 
