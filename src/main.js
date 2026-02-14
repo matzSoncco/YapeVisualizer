@@ -10,6 +10,9 @@
  * @autor matzSoncco
  * @coautor pepo (hizo el apk movil y parte del backend xd)
  * @año 2026
+ * @mes febrero
+ * @hora 1:54 AM
+ * @version 1.0.0
  */
 
 import { createApp } from 'vue'
