@@ -315,17 +315,17 @@ const openPinChangeModal = () => {
 
 const handlePinUpdate = async () => {
     if (pinForm.current === pinForm.new) {
-      toast.add({ severity: 'warn', summary: 'Sin cambios', detail: 'El nuevo PIN es igual al actual.' });
+      toast.add({ severity: 'warn', summary: 'Sin cambios', detail: 'El nuevo PIN es igual al actual.', life: 3000});
       return;
     }
 
     try {
       await updateAdminPin(pinForm.current, pinForm.new);
       
-      toast.add({ severity: 'success', summary: 'Seguridad Actualizada', detail: 'Tu nuevo PIN ha sido guardado.' });
+      toast.add({ severity: 'success', summary: 'Seguridad Actualizada', detail: 'Tu nuevo PIN ha sido guardado.', life: 2000 });
       showChangePinModal.value = false;
     } catch (e) {
-      toast.add({ severity: 'error', summary: 'Error de Seguridad', detail: e.message });
+      toast.add({ severity: 'error', summary: 'Error de Seguridad', detail: e.message, life: 5000 });
     }
 };
 
@@ -364,7 +364,7 @@ const handleSaveBranch = async () => {
       severity: 'error',
       summary: 'Error',
       detail: 'El nombre es obligatorio',
-      life: 3000
+      life: 5000
     });
     return;
   }
@@ -397,7 +397,7 @@ const handleSaveBranch = async () => {
       severity: 'error',
       summary: 'Error',
       detail: e.message,
-      life: 3000
+      life: 5000
     });
   }
 };
@@ -423,7 +423,7 @@ const deleteSucursalModal = (id) => {
           severity: 'error',
           summary: 'Error',
           detail: e.message,
-          life: 3000
+          life: 5000
         });
       }
     }

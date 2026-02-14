@@ -351,7 +351,7 @@ const procesarPago = async (method, yapeConfirmado = null) => {
     toast.add({ severity: 'success', summary: 'Venta Registrada', life: 2000 });
     emit('transaction-completed');
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message });
+    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 });
   } finally {
     loading.value = false;
   }

@@ -174,7 +174,7 @@ const handleSearch = () => {
  * TODO: Implementar la vista de detalle con información completa del cierre seleccionado
  */
 const verDetalle = () => {
-  toast.add({ severity: 'info', summary: 'Detalle', detail: 'Próximamente' });
+  toast.add({ severity: 'info', summary: 'Detalle', detail: 'Próximamente', life: 3000});
 };
 
 // Carga inicial

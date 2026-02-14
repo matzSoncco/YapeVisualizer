@@ -322,7 +322,8 @@ const iniciarDashboard = async () => {
     toast.add({ 
       severity: 'error', 
       summary: 'Error de conexión', 
-      detail: 'No se pudo sincronizar el estado de la caja.' 
+      detail: 'No se pudo sincronizar el estado de la caja.',
+      life: 5000
     });
   } finally {
     globalLoading.value = false;
@@ -413,7 +414,7 @@ const ejecutarCierre = async () => {
     detenerTodo();
     toast.add({ severity: 'success', summary: 'Turno Cerrado', detail: 'Arqueo registrado correctamente.', life: 3000});
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message });
+    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000});
   }
 };
 
@@ -426,7 +427,7 @@ const guardarGastoUI = async () => {
     await registrarGasto();
     toast.add({ severity: 'warn', summary: 'Gasto Registrado', detail: 'Actualizado en caja.', life: 3000 });
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message });
+    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000});
   }
 };
 
