@@ -1,3 +1,17 @@
+/**
+ * YAPE VISUALIZER - MOTOR PRINCIPAL v1.0.0
+ * -------------------------------------------------------------------
+ * "Menos es más, pero que funcione xd"
+ * * Este sistema fue blindado con:
+ * - Arquitectura limpia
+ * - Validación de Guardia en cada paso del proceso
+ * - Sincronización Real-Time
+ * * Desarrollado con mucha fe, bastante lógica y cero miedo al éxito
+ * @autor matzSoncco
+ * @coautor pepo (hizo el apk movil y parte del backend xd)
+ * @año 2026
+ */
+
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
