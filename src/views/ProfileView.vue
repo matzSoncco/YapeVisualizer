@@ -101,7 +101,7 @@
           </template>
         </Card>
 
-        <Card class="profile-card security-card">
+        <Card class="profile-card security-card" :class="{ 'highlight-focus': isDefaultPin }" ref="securityCardRef">
           <template #header>
             <div class="card-header">
               <h3><i class="pi pi-shield"></i> Seguridad</h3>
@@ -112,7 +112,7 @@
               <p class="text-sm text-gray-500 mb-3">Control de acceso administrativo</p>
               
               <div v-if="isDefaultPin" class="pin-warning-box">
-              <i class="pi pi-exclamation-triangle"></i>
+                <i class="pi pi-exclamation-triangle"></i>
                 <span>Tu PIN es inseguro (Default).</span>
               </div>
 
@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { computed, ref, reactive } from 'vue';
+import { computed, ref, reactive, onMounted, nextTick } from 'vue';
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useRouter } from 'vue-router';
@@ -271,6 +271,7 @@ const { user, updateAdminPin, loading: loadingAuth } = useAuth();
 const { sucursales, addSucursal, deleteSucursal } = useSucursal();
 const { subscriptionStatus } = useSubscription();
 
+const securityCardRef = ref(null);
 const showModal = ref(false);
 const isEditing = ref(false); 
 const form = reactive({ id: null, nombre: '', icono: '' });
@@ -282,6 +283,21 @@ const isDefaultPin = computed(() => store.userProfile?.adminPin === '1234');
 
 const userName = computed(() => user.value?.displayName || 'Usuario');
 const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
+
+onMounted(async () => {
+  if (store.userProfile?.adminPin === '1234') {
+    await nextTick();
+    
+    const element = securityCardRef.value?.$el;
+    
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center'
+      });
+    }
+  }
+});
 
 const closeModal = () => {
   showModal.value = false;
