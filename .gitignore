@@ -37,5 +37,4 @@ __screenshots__/
 
 # entornos de desarrollo
 .env
-.env.local
 .env.development
