@@ -73,6 +73,19 @@ export function useSucursal() {
         }
         
     };
+    
+    /**
+     * Cálculo del nombre de la sucursal actual
+     * @return {string} Nombre de la sucursal o 'Administrador'
+     */
+    const nombreSucursalActual = computed(() => {
+        const actual = store.sucursalActual;
+        if (!actual) return '';
+        if (actual === 'ADMIN') return 'Administrador';
+        
+        const suc = sucursales.value.find(s => s.id === actual);
+        return suc ? suc.nombre : 'Cargando...';
+    });
 
     /**
      * Limpia la sucursal actual seleccionada
@@ -93,6 +106,7 @@ export function useSucursal() {
         sucursalActual: computed(() => store.sucursalActual),
         loading: computed(() => store.loading),
         esAdmin: computed(() => store.sucursalActual === 'ADMIN'),
+        nombreSucursalActual,
         
         addSucursal,
         deleteSucursal,

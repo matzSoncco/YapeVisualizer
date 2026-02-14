@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, db } from "../firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { setUserProfile } from '@/store';
+import { store, setUserProfile } from '@/store';
 
 const user = ref(null);
 
@@ -92,10 +92,47 @@ export function useAuth() {
         }
     }
 
+    /**
+     * Actualiza el PIN administrativo en Firestore y en el estado local
+     * Realiza validación de doble factor
+     */
+    const updateAdminPin = async (currentPin, newPin) => {
+        if (!user.value) throw new Error("Sesión no válida");
+        
+        const storedPin = store.userProfile?.adminPin;
+        
+        if (storedPin && storedPin !== currentPin) {
+            throw new Error("El PIN actual ingresado es incorrecto.");
+        }
+
+        if (!/^\d{4}$/.test(newPin)) {
+            throw new Error("El PIN debe contener exactamente 4 dígitos numéricos.");
+        }
+
+        if (newPin === '1234') {
+             throw new Error("No puedes usar el PIN por defecto. Elige uno seguro.");
+        }
+
+        loading.value = true;
+        try {
+            const userRef = doc(db, "users", user.value.uid);
+            await setDoc(userRef, { adminPin: newPin }, { merge: true });
+
+            setUserProfile({ ...store.userProfile, adminPin: newPin });
+
+        } catch (err) {
+            console.error("Error updating PIN:", err);
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
     return {
         user,
         logInWithGoogle,
         logOut,
+        updateAdminPin,
         error,
         loading
     }

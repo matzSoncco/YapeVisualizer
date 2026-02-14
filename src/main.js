@@ -1,3 +1,17 @@
+/**
+ * YAPE VISUALIZER - MOTOR PRINCIPAL v1.0.0
+ * -------------------------------------------------------------------
+ * "Menos es más, pero que funcione xd"
+ * * Este sistema fue blindado con:
+ * - Arquitectura limpia
+ * - Validación de Guardia en cada paso del proceso
+ * - Sincronización Real-Time
+ * * Desarrollado con mucha fe, bastante lógica y cero miedo al éxito
+ * @autor matzSoncco
+ * @coautor pepo (hizo el apk movil y parte del backend xd)
+ * @año 2026
+ */
+
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -23,6 +37,11 @@ import Menu from 'primevue/menu'
 import InputText from 'primevue/inputtext'
 import Dialog from 'primevue/dialog'
 import InputOtp from 'primevue/inputotp'
+import InputNumber from 'primevue/inputnumber'
+import Tab from 'primevue/tab'
+import AutoComplete from 'primevue/autocomplete'
+import Tooltip from 'primevue/tooltip'
+import ProgressSpinner from 'primevue/progressspinner'
 
 import 'primeicons/primeicons.css'
 
@@ -82,6 +101,7 @@ app.use(PrimeVue, {
 })
 app.use(ToastService)
 app.use(ConfirmationService)
+app.directive('tooltip', Tooltip);
 app.component('DataTable', DataTable);
 app.component('Column', Column);
 app.component('Badge', Badge);
@@ -97,5 +117,9 @@ app.component('Menu', Menu)
 app.component('InputText', InputText)
 app.component('Dialog', Dialog)
 app.component('InputOtp', InputOtp)
+app.component('InputNumber', InputNumber)
+app.component('Tab', Tab)
+app.component('AutoComplete', AutoComplete)
+app.component('ProgressSpinner', ProgressSpinner)
 
 app.mount('#app')

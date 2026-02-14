@@ -1,265 +1,195 @@
 <template>
-  <div class="admin-container">
-    <Toast />
+  <div class="admin-layout" :class="{ 'sidebar-collapsed': !isSidebarExpanded }">
     
-    <!-- Header -->
-    <header class="admin-topbar">
-      <div class="brand-section">
-        <Button 
-          label="Volver al Dashboard"
-          icon="pi pi-arrow-left"
-          @click="volverAlDashboard"
-          outlined
+    <aside class="admin-sidebar">
+      <button class="sidebar-toggle" @click="toggleSidebar">
+        <i :class="isSidebarExpanded ? 'pi pi-chevron-left' : 'pi pi-chevron-right'"></i>
+      </button>
+
+      <div class="sidebar-brand">
+        <i class="pi pi-shield"></i>
+        <span v-if="isSidebarExpanded">ADMIN</span>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <button v-for="tab in tabs" :key="tab.id" 
+                :class="['nav-item', { active: activeTab === tab.id }]"
+                @click="activeTab = tab.id"
+                :title="!isSidebarExpanded ? tab.label : ''">
+          <i :class="tab.icon"></i>
+          <span v-if="isSidebarExpanded">{{ tab.label }}</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <Transition name="menu-pop">
+          <div v-if="isUserMenuOpen" class="custom-user-menu">
+            <button @click="router.push('/profile')">
+              <i class="pi pi-user"></i> <span>Perfil</span>
+            </button>
+            <button @click="router.push('/dashboard')">
+              <i class="pi pi-arrow-left"></i> <span>Monitor</span>
+            </button>
+            <div class="menu-sep"></div>
+            <button class="logout-btn" @click="handleLogout">
+              <i class="pi pi-sign-out"></i> <span>Salir</span>
+            </button>
+          </div>
+        </Transition>
+
+        <Avatar 
+          :label="userInitial" 
+          shape="circle" 
+          @click="toggleUserMenu" 
+          class="admin-avatar bg-slate-700 text-white" 
         />
-        
-        <div class="titles">
-          <h1>PANEL DE ADMINISTRADOR</h1>
-          <p class="greeting">👋 Hola, {{ userName }}</p>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      
+      <header class="admin-toolbar">
+        <div class="toolbar-left">
+          <h1>{{ currentTabLabel }}</h1>
         </div>
-      </div>
-
-      <div class="user-section">
-        <Avatar
-          :label="userInitial"
-          shape="circle"
-          size="large"
-          style="background-color: var(--dark-jungle-green); color: white; cursor: pointer;"
-          @click="toggleUserMenu"
-        />
         
-        <Menu
-          ref="userMenu"
-          :model="userMenuItems"
-          popup
-        />
-      </div>
-    </header>
-
-    <!-- Filters -->
-    <Card class="filters-card">
-      <template #content>
-        <div class="filters-grid">
-          <div class="filter-item">
-            <label>Desde:</label>
-            <DatePicker
-              v-model="filters.startDate" 
-              dateFormat="dd/mm/yy"
-              showIcon
-              iconDisplay="input"
-            />
-          </div>
-
-          <div class="filter-item">
-            <label>Hasta:</label>
-            <DatePicker
-              v-model="filters.endDate" 
-              dateFormat="dd/mm/yy"
-              showIcon
-              iconDisplay="input"
-            />
-          </div>
-
-          <div class="filter-item">
-            <label>Sede:</label>
-            <Select
-              v-model="filters.branchId"
-              :options="sedeOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Todas las sedes"
-              showClear
-            />
-          </div>
-
-          <div class="filter-item" style="align-self: flex-end;">
-            <Button
-              label="Buscar Reportes"
-              icon="pi pi-search"
-              @click="buscarCuadres"
-              :loading="loadingReportes"
-              style="width: 100%;"
-            />
+        <div class="toolbar-right">
+          <div class="toolbar-filters">
+            <DatePicker v-model="filters.startDate" dateFormat="dd/mm" placeholder="Ini" class="compact-date" />
+            <span class="sep">-</span>
+            <DatePicker v-model="filters.endDate" dateFormat="dd/mm" placeholder="Fin" class="compact-date" />
+            <Select v-model="filters.branchId" :options="sedeOptions" optionLabel="label" optionValue="value" placeholder="Sede" class="compact-select" />
+            <Button icon="pi pi-refresh" @click="handleSearch" :loading="loadingReportes" text rounded />
           </div>
         </div>
-      </template>
-    </Card>
+      </header>
 
-    <!-- Data Table -->
-    <Card class="data-card">
-      <template #content>
-        <DataTable
-          :value="reportes"
-          :loading="loadingReportes"
-          stripedRows
-          :paginator="reportes.length > 10"
-          :rows="10"
-          responsiveLayout="scroll"
-        >
-          <Column field="fecha" header="Fecha">
-            <template #body="slotProps">
-              {{ formatearFecha(slotProps.data.fecha) }}
-            </template>
-          </Column>
-
-          <Column field="sedeNombre" header="Sede">
-            <template #body="slotProps">
-              <strong>{{ slotProps.data.sedeNombre }}</strong>
-            </template>
-          </Column>
-
-          <Column field="montoYape" header="Total Yape">
-            <template #body="slotProps">
-              <span class="text-success">
-                S/ {{ slotProps.data.montoYape }}
-              </span>
-            </template>
-          </Column>
-
-          <Column field="montoEfectivo" header="Total Efectivo">
-            <template #body="slotProps">
-              S/ {{ slotProps.data.montoEfectivo }}
-            </template>
-          </Column>
-
-          <Column field="diferencia" header="Diferencia">
-            <template #body="slotProps">
-              <span :class="slotProps.data.diferencia < 0 ? 'text-danger' : 'text-success'">
-                S/ {{ slotProps.data.diferencia }}
-              </span>
-            </template>
-          </Column>
-
-          <Column field="estado" header="Estado">
-            <template #body="slotProps">
-              <Tag 
-                :value="slotProps.data.estado"
-                :severity="slotProps.data.estado === 'Cuadrado' ? 'success' : 'warning'"
-              />
-            </template>
-          </Column>
-
-          <Column header="Acciones">
-            <template #body>
-              <Button
-                icon="pi pi-eye"
-                text
-                rounded
-                severity="secondary"
-                @click="verDetalle"
-              />
-            </template>
-          </Column>
-
-          <template #empty>
-            <div class="empty-table">
-              <i class="pi pi-inbox" style="font-size: 3rem; color: var(--jet); opacity: 0.3;"></i>
-              <p>No se encontraron reportes con los filtros seleccionados.</p>
+      <section class="admin-viewport custom-scrollbar">
+        <Transition name="fade-slide" mode="out-in">
+          <div :key="activeTab" class="view-wrapper">
+            
+            <div v-if="activeTab === 'overview'" class="overview-section">
+              <AdminStats :kpis="kpis" />
+              <div class="charts-preview-container">
+                <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
+              </div>
             </div>
-          </template>
-        </DataTable>
-      </template>
-    </Card>
+
+            <div v-else-if="activeTab === 'charts'">
+              <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
+            </div>
+
+            <div v-else-if="activeTab === 'table'">
+              <AdminTable 
+                :data="reportes" 
+                :loading="loadingReportes" 
+                @ver-detalle="verDetalle" 
+              />
+            </div>
+
+          </div>
+        </Transition>
+      </section>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
+import { useAdmin } from '@/composables/useAdmin';
 import { useToast } from 'primevue/usetoast';
-import { formatearFecha } from '@/utils/dates';
+import { store } from '@/store';
+
+import Button from 'primevue/button';
+import DatePicker from 'primevue/datepicker';
+import Select from 'primevue/select';
+import Avatar from 'primevue/avatar';
+
+import AdminTable from '@/components/admin/AdminTable.vue';
+import AdminStats from '@/components/admin/AdminStats.vue';
+import AdminCharts from '@/components/admin/AdminCharts.vue';
 
 import '@/assets/admin.css';
+
+const activeTab = ref('overview');
+const isSidebarExpanded = ref(false);
+const isUserMenuOpen = ref(false);
+
+const tabs = [
+  { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
+  { id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' },
+  { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
+];
 
 const router = useRouter();
 const toast = useToast();
 const { user, logOut } = useAuth();
 const { sucursales, limpiarSucursal } = useSucursal();
+const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } = useAdmin();
 
-const userMenu = ref();
-const reportes = ref([]);
 const filters = ref({
   startDate: new Date(),
   endDate: new Date(),
   branchId: ''
 });
 
-const loadingReportes = ref(false);
+const currentTabLabel = computed(() => 
+  tabs.find(t => t.id === activeTab.value)?.label
+);
 
 const userName = computed(() => user.value?.displayName || 'Admin');
 const userInitial = computed(() => (userName.value || 'A').charAt(0).toUpperCase());
 
-// Opciones para el Select de sedes
 const sedeOptions = computed(() => [
   { label: 'Todas las sedes', value: '' },
   ...sucursales.value.map(s => ({ label: s.nombre, value: s.id }))
 ]);
 
-// Menu items para el dropdown de usuario
-const userMenuItems = computed(() => [
-  {
-    label: 'Mi Perfil',
-    icon: 'pi pi-user',
-    command: () => router.push('/profile')
-  },
-  {
-    separator: true
-  },
-  {
-    label: 'Cerrar Sesión',
-    icon: 'pi pi-sign-out',
-    command: handleLogout
-  }
-]);
-
-const toggleUserMenu = (event) => {
-  userMenu.value.toggle(event);
+const toggleSidebar = () => {
+  isSidebarExpanded.value = !isSidebarExpanded.value;
 };
 
-const volverAlDashboard = () => {
-  limpiarSucursal();
-  router.push('/dashboard');
+const toggleUserMenu = () => {
+  isUserMenuOpen.value = !isUserMenuOpen.value;
 };
 
+/**
+ * Función para cerrar sesión, limpiar datos relacionados con la sucursal y redirigir al login
+ */
 const handleLogout = async () => {
   await logOut();
   limpiarSucursal();
   router.push('/');
 };
 
-const buscarCuadres = async () => {
-  loadingReportes.value = true;
-  console.log("Buscando con filtros:", filters.value);
-  
-  try {
-    // Simulación de carga
-    setTimeout(() => {
-      loadingReportes.value = false;
-      toast.add({ 
-        severity: 'info', 
-        summary: 'Búsqueda completa', 
-        detail: 'No se encontraron reportes', 
-        life: 3000 
-      });
-    }, 1000);
-  } catch (error) {
-    loadingReportes.value = false;
-    toast.add({ 
-      severity: 'error', 
-      summary: 'Error', 
-      detail: 'No se pudo buscar reportes', 
-      life: 3000 
-    });
-  }
+const handleSearch = () => {
+    buscarCuadres(filters.value);
 };
 
+/**
+ * Función para mostrar el detalle de cierre
+ * TODO: Implementar la vista de detalle con información completa del cierre seleccionado
+ */
 const verDetalle = () => {
-  toast.add({ 
-    severity: 'info', 
-    summary: 'Detalle', 
-    detail: 'Función en desarrollo', 
-    life: 3000 
-  });
+  toast.add({ severity: 'info', summary: 'Detalle', detail: 'Próximamente', life: 3000});
 };
+
+// Carga inicial
+onMounted(() => {
+  if (store.userProfile?.adminPin === '1234') {
+  toast.add({ 
+    severity: 'warn', 
+    summary: 'Acción Requerida', 
+    detail: 'Por seguridad, debes cambiar tu PIN antes de administrar.', 
+    life: 6000 
+  });
+  
+  router.push('/profile');
+  return;
+  }
+  handleSearch();
+});
 </script>

@@ -1,514 +1,491 @@
-/* ============================================
-   DASHBOARD - Tema claro con oscuros protagonistas
-   ============================================ */
-
-.dashboard {
-  min-height: 100vh;
-  background: #fafbfc;
+.loading-overlay-full {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-app);
+    z-index: 9999;
+    gap: 1.5rem;
 }
 
-.dashboard-layout {
+.loading-overlay-full p {
+    color: var(--color-text-muted);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.pos-layout-wrapper {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding-top: 0.5rem;
+}
+
+.expense-warning {
+    background: #fef2f2;
+    color: #b91c1c;
+    padding: 0.75rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.field-group label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+}
+
+.expense-border {
+    border: 2px solid #fee2e2 !important;
+    transition: border-color 0.2s;
+}
+
+.expense-border:focus-within {
+    border-color: #ef4444 !important;
+}
+
+.expense-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+/* 1. EL CONTENEDOR (La caja roja) */
+.price-input-wrapper.expense-border {
+    display: flex;
+    align-items: center;
+    border: 2px solid #fee2e2 !important; /* Rojo suave por defecto */
+    border-radius: 8px;
+    background: white;
+    padding: 0 1rem; /* Espacio a los lados */
+    height: 50px; /* Altura fija para que se vea robusto */
+    transition: all 0.2s ease;
+}
+
+/* Efecto al hacer click dentro */
+.price-input-wrapper.expense-border:focus-within {
+    border-color: #ef4444 !important; /* Rojo intenso al escribir */
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15); /* Sombra roja sutil */
+}
+
+/* 2. EL SÍMBOLO S/ */
+.price-input-wrapper.expense-border .currency {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ef4444; /* Que combine con el borde */
+    margin-right: 0.5rem;
+}
+
+/* 3. RESET TOTAL A PRIMEVUE (Esto arregla el choque visual) */
+/* Quitamos borde, fondo y sombra al componente InputNumber */
+.price-input-wrapper .p-inputnumber-input {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+/* 4. ESTILO DEL TEXTO (Sin :deep porque es css global) */
+.expense-input-inner {
+    font-weight: 900 !important;
+    font-size: 1.5rem !important; /* Número grande y legible */
+    color: #b91c1c !important;     /* Rojo oscuro texto */
+    text-align: right !important;  /* Alineado a la derecha */
+    height: 100% !important;
+}
+
+.btn-expense {
+    background: #dc2626 !important;
+    border: none !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+}
+
+.flex-1 { flex: 1; }
+
+/* =========================================
+   MODAL DE ARQUEO (CIERRE DE CAJA)
+   ========================================= */
+
+.arqueo-dialog .p-dialog-header {
+    display: none; /* Escondemos el header de PrimeVue para usar el nuestro personalizado */
+}
+
+.arqueo-wrapper {
+    padding: 1.5rem 0.5rem 0.5rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* HERO SECTION */
+.arqueo-hero {
+    text-align: center;
+}
+
+.arqueo-badge {
+    width: 50px;
+    height: 50px;
+    background: #facc15; /* Tu amarillo de acento */
+    color: #0f172a;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem auto;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 12px rgba(250, 204, 21, 0.3);
+}
+
+.arqueo-hero h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.arqueo-hero p {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 0.5rem;
+    line-height: 1.4;
+}
+
+/* EL DISPLAY (TIPO CALCULADORA PRO) */
+.arqueo-display {
+    background: #0f172a; /* Fondo muy oscuro */
+    border-radius: 20px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #1e293b;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+}
+
+.display-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.display-input-group {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+}
+
+.display-currency {
+    color: #facc15;
+    font-size: 1.75rem;
+    font-weight: 900;
+}
+
+/* Reset de PrimeVue para el display */
+.display-input-comp .p-inputnumber-input {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.display-input-raw {
+    font-family: 'JetBrains Mono', monospace; /* Tipografía técnica */
+    font-size: clamp(2rem, 8vw, 3.5rem) !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    text-align: left !important;
+    width: 100% !important;
+    min-width: 200px;
+}
+
+/* INFO FOOTER */
+.arqueo-footer-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: #f1f5f9;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    color: #475569;
+    font-weight: 600;
+}
+
+.arqueo-footer-info i {
+    color: #94a3b8;
+    font-size: 1rem;
+}
+
+/* BOTONES */
+.arqueo-btns {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-back {
+    flex: 1;
+    font-weight: 700 !important;
+    color: #64748b !important;
+}
+
+.btn-submit-arqueo {
+    flex: 2;
+    background: #0f172a !important;
+    border: none !important;
+    font-weight: 800 !important;
+    height: 48px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2) !important;
+}
+
+.pos-grid-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-app);
+    overflow: hidden;
+}
+
+/* NAVBAR SUPERIOR: ESTILO COMMAND CENTER */
+.pos-navbar {
+  height: 65px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.dashboard-header {
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
-.dashboard-header-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1.25rem 1.5rem;
+/* LADO IZQUIERDO: LOGO Y SEDE */
+.navbar-left {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-.dashboard-title-section h1 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--chinese-black);
-  margin-bottom: 0.25rem;
-  letter-spacing: -0.01em;
-}
-
-.dashboard-subtitle {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.dashboard-subtitle strong {
-  color: var(--dark-jungle-green);
-  font-weight: 600;
-}
-
-.dashboard-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.divider-vertical {
-  width: 1px;
-  height: 24px;
-  background: #e5e7eb;
-}
-
-.dashboard-content {
-  flex: 1;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-  padding: 2rem 1.5rem;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 2rem;
-}
-
-/* ============================================
-   SUCURSAL SELECTOR
-   ============================================ */
-
-.selector-container {
-  min-height: 100vh;
+.brand-badge {
+  width: 36px;
+  height: 36px;
+  background: #0f172a; /* Slate 900 */
+  color: #facc15; /* Tu amarillo */
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-  padding: 1.5rem;
+  font-size: 1.2rem;
 }
 
-.selector-card {
-  width: 100%;
-  max-width: 900px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 4px 24px rgba(12, 21, 25, 0.08);
-}
-
-.selector-header {
-  text-align: center;
-  margin-bottom: 2rem;
-}
-
-.selector-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 1rem;
-  background: var(--dark-jungle-green);
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-size: 1.75rem;
-  box-shadow: 0 8px 20px rgba(22, 33, 39, 0.25);
-}
-
-.selector-title {
-  font-size: 1.625rem;
-  font-weight: 700;
-  color: var(--chinese-black);
-  margin-bottom: 0.5rem;
-}
-
-.selector-subtitle {
-  font-size: 0.9375rem;
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.loading-state {
-  text-align: center;
-  padding: 3rem;
-  color: #6b7280;
-}
-
-.loading-state p {
-  margin-top: 1rem;
-  font-size: 0.9375rem;
-}
-
-.branches-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.branch-card {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  text-align: center;
-}
-
-.branch-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--dark-jungle-green);
-  box-shadow: 0 8px 20px rgba(22, 33, 39, 0.15);
-}
-
-.branch-admin {
-  border-color: var(--jet);
-  background: #f9fafb;
-}
-
-.branch-admin:hover {
-  border-color: var(--coffee);
-  box-shadow: 0 8px 20px rgba(114, 75, 57, 0.2);
-}
-
-.branch-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.branch-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--chinese-black);
-}
-
-.empty-message {
-  text-align: center;
-  margin-top: 2rem;
-  padding: 2rem;
-  color: #6b7280;
-  font-size: 0.9375rem;
-}
-
-/* ============================================
-   PENDING LIST - Columna izquierda fija
-   ============================================ */
-
-.grid-col-pending {
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
+.brand-info {
   display: flex;
   flex-direction: column;
-  height: fit-content;
-  max-height: calc(100vh - 180px);
 }
 
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  flex-shrink: 0;
+.brand-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.section-title h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--chinese-black);
-  margin: 0;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 3rem 1.5rem;
-  color: #6b7280;
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-}
-
-.empty-state i {
-  color: var(--jet);
-  opacity: 0.3;
-}
-
-.empty-state p {
-  margin-top: 1rem;
-  font-size: 0.9375rem;
-}
-
-.pending-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  overflow-y: auto;
-  padding-right: 0.5rem;
-  flex: 1;
-  min-height: 0;
-}
-
-.pending-grid::-webkit-scrollbar {
-  width: 6px;
-}
-
-.pending-grid::-webkit-scrollbar-track {
-  background: #f3f4f6;
-  border-radius: 3px;
-}
-
-.pending-grid::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 3px;
-}
-
-.pending-grid::-webkit-scrollbar-thumb:hover {
-  background: var(--jet);
-}
-
-.pending-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.pending-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--dark-jungle-green);
-  box-shadow: 0 4px 12px rgba(22, 33, 39, 0.12);
-}
-
-.pending-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.pending-time {
-  font-size: 0.8125rem;
-  color: #6b7280;
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-.pending-amount {
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: var(--dark-jungle-green);
-}
-
-.pending-sender {
-  font-size: 0.9375rem;
-  color: var(--chinese-black);
-  font-weight: 500;
+/* CONTEXTO DE UBICACIÓN Y CAJERO */
+.location-context {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 0;
-  border-top: 1px solid #f3f4f6;
+  margin-top: 2px;
 }
 
-/* ============================================
-   SALES HISTORY - Ocupa todo el espacio restante
-   ============================================ */
+.context-divider {
+  color: #cbd5e1; /* Slate 300 */
+  font-size: 0.75rem;
+  font-weight: 300;
+}
 
-.grid-col-history {
-  flex: 1;
-  min-width: 0;
+.cashier-tag {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f1f5f9; /* Slate 100 */
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
 }
 
-.grid-col-history.full-width {
-  flex: 1;
-  max-width: 100%;
+.cashier-tag i {
+  font-size: 0.65rem;
+  color: #64748b;
 }
 
-.total-badge {
-  background: var(--dark-jungle-green);
-  color: #ffffff;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(22, 33, 39, 0.2);
-}
-
-.total-badge strong {
+.cashier-name {
+  font-size: 0.7rem;
   font-weight: 700;
-  margin-left: 0.25rem;
+  color: #475569; /* Slate 600 */
+  text-transform: capitalize;
 }
 
-.history-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-}
-
-.history-card :deep(.p-card-body) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.history-card :deep(.p-card-content) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  padding: 0;
-}
-
-.history-card :deep(.p-datatable) {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.history-card :deep(.p-datatable-wrapper) {
-  flex: 1;
-  overflow: auto;
-}
-
-.client-name {
-  font-weight: 500;
-  color: var(--chinese-black);
-}
-
-.amount-cell {
+/* Ajuste al nombre de la sede para que resalte un poco más */
+.location-name {
+  font-size: 0.75rem;
+  color: #0f172a; /* Ahora un poco más oscuro */
   font-weight: 700;
-  color: var(--dark-jungle-green);
-  font-size: 1.0625rem;
 }
 
-/* ============================================
-   UTILITIES
-   ============================================ */
-
-.w-full {
-  width: 100%;
-}
-
-/* ============================================
-   PIN MODAL - Seguridad
-   ============================================ */
-
-.pin-modal-content {
-  padding: 1rem 0;
-}
-
-.pin-instructions {
-  text-align: center;
-  font-size: 0.9375rem;
-  color: #6b7280;
-  margin-bottom: 2rem;
-}
-
-.pin-input-wrapper {
+/* LADO DERECHO: ACCIONES */
+.navbar-right {
   display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
+  align-items: center;
+  gap: 1rem;
 }
 
-.pin-input-wrapper :deep(.p-inputotp) {
-  gap: 0.75rem;
-}
-
-.pin-input-wrapper :deep(.p-inputotp-input) {
-  width: 3rem;
-  height: 3rem;
-  font-size: 1.5rem;
-  text-align: center;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.pin-input-wrapper :deep(.p-inputotp-input:focus) {
-  border-color: var(--dark-jungle-green);
-  box-shadow: 0 0 0 3px rgba(22, 33, 39, 0.1);
-}
-
-.pin-input-wrapper :deep(.p-inputotp-input.p-filled) {
-  background: #f9fafb;
-  border-color: var(--dark-jungle-green);
-}
-
-.pin-actions {
+.nav-group {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
+/* BOTONES GHOST REFINADOS */
+.nav-btn {
+  color: #475569 !important; /* Slate 600 */
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 8px !important;
+  transition: all 0.2s !important;
+}
+
+.nav-btn:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* Botón de Gasto con toque de alerta */
+.nav-btn.expense:hover {
+  color: #ef4444 !important;
+  background: #fef2f2 !important;
+}
+
+/* DIVISOR VERTICAL */
+.nav-divider {
+  width: 1px;
+  height: 24px;
+  background: #e2e8f0;
+  margin: 0 0.25rem;
+}
+
+/* BOTÓN DE CIERRE (El protagonista) */
+.btn-exit {
+  background: #fee2e2 !important; /* Rojo muy suave */
+  border: 1px solid #fecaca !important;
+  color: #dc2626 !important; /* Rojo intenso */
+  font-weight: 800 !important;
+  font-size: 0.8rem !important;
+  padding: 0.5rem 1rem !important;
+  border-radius: 8px !important;
+  transition: all 0.2s !important;
+}
+
+.btn-exit:hover {
+  background: #dc2626 !important; /* Inversión de colores */
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+}
+
+/* LA CINTA DE NOTIFICACIONES (YAPE FEED) */
+.top-feed-bar {
+    height: 70px; 
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+    z-index: 15;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+/* EL ESCENARIO PRINCIPAL: INVERSIÓN DE PROPORCIONES */
+.pos-main-stage {
+    flex: 1;
+    display: flex; 
+    overflow: hidden;
+}
+
+/* POSPanel: Ahora es el panel que ocupa "lo necesario" */
+.stage-left {
+    width: 420px; /* Ancho suficiente para el formulario y botones sin verse apretado */
+    border-right: 1px solid var(--color-border);
+    overflow: hidden; 
+    background: var(--bg-app);
+    flex-shrink: 0; /* Evita que el historial lo aplaste */
+}
+
+/* SalesHistory: Ahora es el panel "maestro" que crece */
+.stage-right {
+    flex: 1; /* Ocupa todo el resto del ancho de la pantalla */
+    background: var(--bg-surface);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* REGLA DE ORO PARA EL CONTENIDO INTERNO */
+/* Esto asegura que los componentes que inyectas ocupen el 100% de alto de sus stages */
+.stage-left > *, .stage-right > * {
+    height: 100%;
+}
+
+/* Responsive: En tablets, el POS arriba y el Historial abajo */
 @media (max-width: 1024px) {
-  .dashboard-content {
-    flex-direction: column;
-  }
-
-  .pending-section {
-    flex: 0 0 auto;
-    max-height: 400px;
-    width: 100%;
-  }
-
-  .pending-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  }
-
-  .history-section {
-    min-height: 500px;
-  }
-}
-
-@media (max-width: 768px) {
-  .dashboard-header-content {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .dashboard-actions {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .divider-vertical {
-    display: none;
-  }
-
-  .dashboard-content {
-    padding: 1.5rem 1rem;
-  }
-
-  .branches-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pending-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .history-section {
-    min-height: 400px;
-  }
+    .pos-main-stage { 
+        flex-direction: column; 
+    }
+    .stage-left { 
+        width: 100%; 
+        height: auto; /* El POS se adapta a su contenido arriba */
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .stage-right { 
+        width: 100%; 
+        flex: 1; /* El historial toma el resto del alto */
+    }
 }

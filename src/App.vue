@@ -72,7 +72,8 @@ watch(user, (newUser) => {
       
       setUserProfile({
         role: data.role,
-        subscription: data.subscription || {}
+        subscription: data.subscription || {},
+        adminPin: data.adminPin
       });
     }
   }, (error) => {

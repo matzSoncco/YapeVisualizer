@@ -1,10 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { auth } from '../firebaseConfig'
+import { auth } from '@/firebaseConfig'
 import { onAuthStateChanged } from 'firebase/auth'
-import LoginView from '../views/LoginView.vue'
-import DashboardView from '../views/DashboardView.vue'
+import LoginView from '@/views/LoginView.vue'
+import DashboardView from '@/views/DashboardView.vue'
 import AdminView from '@/views/AdminView.vue'
 import UserProfileView from '@/views/ProfileView.vue'
+import { store, setAdminAuth } from '@/store'
 
 /**
  * Obtiene el usuario actual autenticado
@@ -37,13 +38,19 @@ const router = createRouter({
       path: '/admin', 
       name: 'admin', 
       component: AdminView,
-      meta: { requiresAuth: true } 
+      meta: {
+        requiresAuth: true,
+        requiresAdmin: true
+      } 
     },
     { 
       path: '/profile', 
       name: 'profile', 
       component: UserProfileView,
-      meta: { requiresAuth: true } 
+      meta: {
+        requiresAuth: true,
+        requiresAdmin: true
+      } 
     }
   ]
 })
@@ -54,12 +61,24 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const user = await getCurrentUser();
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const requiresAdmin = to.matched.some(record => record.meta.requiresAdmin);
 
   if (requiresAuth && !user) {
-    next('/');
-  } else if (to.name === 'login' && user) {
-    next('/dashboard');
-  } else {
+    return next('/');
+  }
+
+  if (requiresAdmin) {
+    if (store.isAdminAuthenticated) {
+      next();
+    } else {
+      next('/dashboard');
+    }
+  } 
+  else {
+    if (store.isAdminAuthenticated) {
+      setAdminAuth(false);
+      store.sucursalActual = null;
+    }
     next();
   }
 });

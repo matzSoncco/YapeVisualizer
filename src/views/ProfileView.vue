@@ -3,96 +3,137 @@
     <Toast />
     <ConfirmDialog />
 
-    <!-- Header -->
     <header class="profile-header">
-      <Button
-        label="Volver al Panel"
-        icon="pi pi-arrow-left"
-        @click="router.push('/admin')"
-        outlined
-      />
-      <h1>Mi Perfil y Configuración</h1>
+      <div class="header-left">
+        <Button
+          icon="pi pi-arrow-left"
+          @click="router.push('/admin')"
+          text
+          rounded
+          aria-label="Volver"
+          v-tooltip.bottom="'Volver al Admin'"
+        />
+        <h1>Mi Perfil y Configuración</h1>
+      </div>
     </header>
 
-    <div class="profile-grid">
+    <div class="profile-layout">
       
-      <!-- Sidebar -->
       <aside class="profile-sidebar">
         
-        <!-- User Card -->
-        <Card class="user-card">
+        <Card class="profile-card user-info-card">
           <template #content>
-            <Avatar
-              :label="userInitial"
-              size="xlarge"
-              shape="circle"
-              style="background-color: var(--dark-jungle-green); color: white; width: 60px; height: 60px; font-size: 2rem;"
-            />
-            <h2 class="user-name">{{ userName }}</h2>
-            <p class="user-email">{{ user?.email }}</p>
-            <Tag value="Dueño de Negocio" severity="secondary" />
+            <div class="user-avatar-wrapper">
+              <Avatar
+                :label="userInitial"
+                size="xlarge"
+                shape="circle"
+                class="user-avatar-lg"
+              />
+            </div>
+            <div class="user-details">
+              <h2 class="user-name">{{ userName }}</h2>
+              <p class="user-email">{{ user?.email }}</p>
+              <Tag value="Administrador" class="role-tag" rounded />
+            </div>
           </template>
         </Card>
 
-        <!-- Subscription Card -->
-        <Card class="subscription-card">
+        <Card class="profile-card subscription-card">
           <template #header>
-            <div class="subscription-header">
-              <h3>Estado de Suscripción</h3>
+            <div class="card-header">
+              <h3><i class="pi pi-sparkles"></i> Tu Plan</h3>
               <Tag 
-                :value="subscriptionStatus.isActive ? 'ACTIVO' : 'SUSPENDIDO'"
+                :value="subscriptionStatus.isActive ? 'ACTIVO' : 'INACTIVO'"
                 :severity="subscriptionStatus.isActive ? 'success' : 'danger'"
+                rounded
               />
             </div>
           </template>
 
           <template #content>
-            <div class="sub-details">
-              <div class="detail-row">
-                <span>Plan Actual:</span>
-                <strong>{{ subscriptionStatus.planName }}</strong>
+            <div class="plan-details">
+              <div class="plan-row">
+                <span class="lbl">Nivel Actual</span>
+                <span class="val highlight">{{ subscriptionStatus.planName }}</span>
               </div>
-              <div class="detail-row">
-                <span>{{ subscriptionStatus.labelFecha }}:</span>
-                <strong>{{ subscriptionStatus.fechaMostrar }}</strong>
+              <div class="plan-row">
+                <span class="lbl">{{ subscriptionStatus.labelFecha }}</span>
+                <span class="val">{{ subscriptionStatus.fechaMostrar }}</span>
               </div>
-              <div class="detail-row">
-                <span>Límite de Sucursales:</span>
-                <strong 
-                  :class="sucursales.length >= subscriptionStatus.limitSucursales ? 'text-danger' : 'text-success'"
-                >
-                  {{ sucursales.length }} / {{ subscriptionStatus.limitSucursales }}
-                </strong>
+              
+              <div class="usage-meter">
+                <div class="meter-labels">
+                  <span class="lbl">Sucursales</span>
+                  <span class="val" :class="{ 'limit-reached': sucursales.length >= subscriptionStatus.limitSucursales }">
+                    {{ sucursales.length }} / {{ subscriptionStatus.limitSucursales }}
+                  </span>
+                </div>
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill" 
+                    :style="{ width: `${(sucursales.length / subscriptionStatus.limitSucursales) * 100}%` }"
+                    :class="{ 'full': sucursales.length >= subscriptionStatus.limitSucursales }"
+                  ></div>
+                </div>
               </div>
             </div>
           </template>
 
           <template #footer>
-            <Button
-              v-if="!subscriptionStatus.isActive"
-              label="Reactivar Servicio"
-              icon="pi pi-bolt"
-              severity="warning"
-              class="w-full"
-            />
-            <Button
-              v-else
-              label="Cancelar Suscripción"
-              icon="pi pi-times"
-              severity="danger"
-              outlined
-              class="w-full"
-            />
+            <div class="plan-actions">
+                <Button
+                v-if="!subscriptionStatus.isActive"
+                label="Reactivar Servicio"
+                icon="pi pi-bolt"
+                severity="warning"
+                class="btn-full"
+                />
+                <Button
+                v-else
+                label="Gestionar Suscripción"
+                icon="pi pi-external-link"
+                severity="secondary"
+                outlined
+                class="btn-full"
+                />
+            </div>
+          </template>
+        </Card>
+
+        <Card class="profile-card security-card" :class="{ 'highlight-focus': isDefaultPin }" ref="securityCardRef">
+          <template #header>
+            <div class="card-header">
+              <h3><i class="pi pi-shield"></i> Seguridad</h3>
+            </div>
+          </template>
+          <template #content>
+            <div class="security-content">
+              <p class="text-sm text-gray-500 mb-3">Control de acceso administrativo</p>
+              
+              <div v-if="isDefaultPin" class="pin-warning-box">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>Tu PIN es inseguro (Default).</span>
+              </div>
+
+              <Button 
+                label="Cambiar PIN" 
+                icon="pi pi-key" 
+                severity="secondary" 
+                outlined 
+                class="w-full"
+                @click="openPinChangeModal"
+              />
+            </div>
           </template>
         </Card>
       </aside>
 
-      <!-- Branches Section -->
-      <main class="branches-section">
-        <Card>
+      <main class="profile-main">
+        <Card class="profile-card branches-card">
           <template #header>
-            <div class="branches-header">
-              <div class="branches-title">
+            <div class="card-header">
+              <div class="header-title">
                 <i class="pi pi-building"></i>
                 <h3>Mis Sucursales</h3>
               </div>
@@ -100,111 +141,117 @@
                 label="Nueva Sede"
                 icon="pi pi-plus"
                 @click="openModalCreation"
+                :disabled="sucursales.length >= subscriptionStatus.limitSucursales"
                 size="small"
               />
             </div>
           </template>
 
           <template #content>
-            <div v-if="sucursales.length === 0" class="empty-branches">
-              <i class="pi pi-inbox" style="font-size: 3rem; color: var(--jet); opacity: 0.3;"></i>
-              <p>No tienes sucursales registradas.</p>
-              <p class="subtext">Agrega tu primera tienda para comenzar a monitorear.</p>
+            <div v-if="sucursales.length === 0" class="empty-state-branches">
+              <div class="empty-icon">
+                <i class="pi pi-shop"></i>
+              </div>
+              <h4>No tienes sucursales aún</h4>
+              <p>Crea tu primera sede para empezar a vender.</p>
+              <Button label="Crear Sede" icon="pi pi-plus" text @click="openModalCreation" />
             </div>
 
-            <div v-else class="branches-list">
-              <Card 
+            <div v-else class="branches-grid">
+              <div 
                 v-for="sucursal in sucursales" 
                 :key="sucursal.id" 
-                class="branch-item"
+                class="branch-item-card"
               >
-                <template #content>
-                  <div class="branch-content">
-                    <div class="branch-info">
-                      <div class="branch-icon-wrapper">
-                        {{ sucursal.icono || '🏪' }}
-                      </div>
-                      <div>
-                        <h4 class="branch-title">{{ sucursal.nombre }}</h4>
-                        <p class="branch-id">ID: {{ sucursal.id }}</p>
-                      </div>
-                    </div>
-                    
-                    <div class="branch-actions">
-                      <Button
-                        icon="pi pi-pencil"
-                        @click="openModalEdit(sucursal)"
-                        text
-                        rounded
-                        severity="secondary"
-                      />
-                      <Button
-                        icon="pi pi-trash"
-                        @click="deleteSucursalModal(sucursal.id)"
-                        text
-                        rounded
-                        severity="danger"
-                      />
-                    </div>
-                  </div>
-                </template>
-              </Card>
+                <div class="branch-icon">
+                    <span>{{ sucursal.icono || '🏪' }}</span>
+                </div>
+                <div class="branch-info">
+                    <h4>{{ sucursal.nombre }}</h4>
+                </div>
+                <div class="branch-actions">
+                    <Button icon="pi pi-pencil" text rounded @click="openModalEdit(sucursal)" v-tooltip.top="'Editar'" />
+                    <Button icon="pi pi-trash" text rounded severity="danger" @click="deleteSucursalModal(sucursal.id)" v-tooltip.top="'Eliminar'" />
+                </div>
+              </div>
             </div>
           </template>
         </Card>
       </main>
     </div>
 
-    <!-- Modal -->
     <Dialog
       v-model:visible="showModal"
       :header="isEditing ? 'Editar Sucursal' : 'Nueva Sucursal'"
-      :modal="true"
-      :closable="true"
-      :style="{ width: '450px' }"
+      modal
+      class="custom-dialog"
+      :style="{ width: '400px' }"
+      :draggable="false"
     >
-      <div class="modal-form">
-        <div class="form-group">
+      <div class="form-grid">
+        <div class="form-field">
           <label for="nombre">Nombre de la Sede</label>
-          <InputText
-            id="nombre"
-            v-model="form.nombre"
-            placeholder="Ej. Tienda Centro"
-            class="w-full"
-          />
+          <InputText id="nombre" v-model="form.nombre" placeholder="Ej. Tienda Centro" class="input-full" autofocus />
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
           <label for="icono">Icono (Emoji)</label>
-          <InputText
-            id="icono"
-            v-model="form.icono"
-            placeholder="Ej. 🍕"
-            class="w-full"
-          />
+          <div class="emoji-input-wrapper">
+             <InputText id="icono" v-model="form.icono" placeholder="Ej. 🍕" class="input-emoji" />
+             <span class="helper-text">Usa una tecla (Windows + .) para abrir emojis</span>
+          </div>
         </div>
       </div>
 
       <template #footer>
-        <Button
-          label="Cancelar"
-          icon="pi pi-times"
-          @click="closeModal"
-          severity="secondary"
-          outlined
-        />
-        <Button
-          label="Guardar"
-          icon="pi pi-check"
-          @click="handleSaveBranch"
-        />
+        <div class="dialog-actions">
+            <Button label="Cancelar" icon="pi pi-times" text @click="closeModal" severity="secondary" />
+            <Button label="Guardar" icon="pi pi-check" @click="handleSaveBranch" :disabled="!form.nombre" />
+        </div>
       </template>
     </Dialog>
+    <Dialog
+  v-model:visible="showChangePinModal"
+  modal
+  header="Actualizar PIN de Seguridad"
+  class="custom-pin-dialog"
+  :style="{ width: '380px' }"
+  :draggable="false"
+>
+  <div class="pin-form-content">
+    <p class="pin-description">Ingresa tu PIN actual y define uno nuevo de 4 dígitos.</p>
+    
+    <div class="pin-field-group">
+      <label>PIN Actual</label>
+      <div class="otp-container">
+         <InputOtp v-model="pinForm.current" :length="4" mask />
+      </div>
+    </div>
+
+    <div class="pin-field-group">
+      <label>Nuevo PIN</label>
+      <div class="otp-container">
+         <InputOtp v-model="pinForm.new" :length="4" mask />
+      </div>
+    </div>
+
+    <div class="pin-footer-actions">
+      <Button label="Cancelar" severity="secondary" text @click="showChangePinModal = false" />
+      <Button 
+        label="Guardar Nuevo PIN" 
+        @click="handlePinUpdate" 
+        :loading="loadingAuth" 
+        :disabled="pinForm.new.length < 4 || pinForm.current.length < 4"
+        class="btn-save-pin"
+      />
+    </div>
+  </div>
+</Dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, reactive } from 'vue';
+import { computed, ref, reactive, onMounted, nextTick } from 'vue';
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { useRouter } from 'vue-router';
@@ -213,22 +260,44 @@ import { useSucursal } from '../composables/useSucursal';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useSubscription } from '@/composables/useSubscription';
+import { store } from '@/store';
 
 import '@/assets/profile.css';
 
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
-const { user } = useAuth();
+const { user, updateAdminPin, loading: loadingAuth } = useAuth();
 const { sucursales, addSucursal, deleteSucursal } = useSucursal();
 const { subscriptionStatus } = useSubscription();
 
+const securityCardRef = ref(null);
 const showModal = ref(false);
 const isEditing = ref(false); 
 const form = reactive({ id: null, nombre: '', icono: '' });
 
+// PIN
+const showChangePinModal = ref(false);
+const pinForm = reactive({ current: '', new: '' });
+const isDefaultPin = computed(() => store.userProfile?.adminPin === '1234');
+
 const userName = computed(() => user.value?.displayName || 'Usuario');
 const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
+
+onMounted(async () => {
+  if (store.userProfile?.adminPin === '1234') {
+    await nextTick();
+    
+    const element = securityCardRef.value?.$el;
+    
+    if (element) {
+      element.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center'
+      });
+    }
+  }
+});
 
 const closeModal = () => {
   showModal.value = false;
@@ -236,6 +305,28 @@ const closeModal = () => {
   form.nombre = '';
   form.icono = '';
   form.id = null;
+};
+
+const openPinChangeModal = () => {
+    pinForm.current = '';
+    pinForm.new = '';
+    showChangePinModal.value = true;
+};
+
+const handlePinUpdate = async () => {
+    if (pinForm.current === pinForm.new) {
+      toast.add({ severity: 'warn', summary: 'Sin cambios', detail: 'El nuevo PIN es igual al actual.', life: 3000});
+      return;
+    }
+
+    try {
+      await updateAdminPin(pinForm.current, pinForm.new);
+      
+      toast.add({ severity: 'success', summary: 'Seguridad Actualizada', detail: 'Tu nuevo PIN ha sido guardado.', life: 2000 });
+      showChangePinModal.value = false;
+    } catch (e) {
+      toast.add({ severity: 'error', summary: 'Error de Seguridad', detail: e.message, life: 5000 });
+    }
 };
 
 const openModalCreation = () => {
@@ -273,7 +364,7 @@ const handleSaveBranch = async () => {
       severity: 'error',
       summary: 'Error',
       detail: 'El nombre es obligatorio',
-      life: 3000
+      life: 5000
     });
     return;
   }
@@ -306,7 +397,7 @@ const handleSaveBranch = async () => {
       severity: 'error',
       summary: 'Error',
       detail: e.message,
-      life: 3000
+      life: 5000
     });
   }
 };
@@ -332,7 +423,7 @@ const deleteSucursalModal = (id) => {
           severity: 'error',
           summary: 'Error',
           detail: e.message,
-          life: 3000
+          life: 5000
         });
       }
     }
