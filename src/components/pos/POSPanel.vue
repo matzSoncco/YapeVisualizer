@@ -34,12 +34,12 @@
         <div class="detail-field price-group">
           <label>Precio Unitario</label>
           <div class="price-input-wrapper">
-            <span class="currency">S/</span>
             <InputNumber 
               v-model="prodPrice" 
-              mode="decimal" 
-              :minFractionDigits="2" 
-              placeholder="0.00" 
+              mode="currency"
+              currency="PEN"
+              locale="es-PE"
+              placeholder="Monto" 
               class="compact-price" 
               inputClass="price-field-inner"
               @keyup.enter="agregarAlCarrito" 
@@ -69,6 +69,7 @@
               v-model="quickAmount"
               mode="currency"
               currency="PEN"
+              locale="es-PE"
               placeholder="Monto"
               class="flex-1"
               :min-fraction-digits="2"
