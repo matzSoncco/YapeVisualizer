@@ -73,6 +73,7 @@
               placeholder="Monto"
               class="flex-1"
               :min-fraction-digits="2"
+              @input="(e) => quickAmount = e.value"
             />
             <Button
               v-if="quickAmount"
@@ -125,11 +126,19 @@
       </div>
 
       <div class="payment-grid">
-        <button class="pay-btn-custom cash-bg" @click="procesarPago('CASH', null)" :disabled="!puedeCobrar">
+        <button
+        class="pay-btn-custom cash-bg"
+        @click="procesarPago('CASH', null)"
+        :disabled="!puedeProcederAlPago || matcherState.isLocked"
+        >
           <i class="pi pi-money-bill"></i>
           <span>EFECTIVO</span>
         </button>
-        <button class="pay-btn-custom yape-bg" @click="iniciarFlujoYape" :disabled="!puedeCobrar">
+        <button
+        class="pay-btn-custom yape-bg"
+        @click="iniciarFlujoYape"
+        :disabled="!puedeProcederAlPago"
+        >
           <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
           <span>YAPE / PLIN</span>
           <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
@@ -214,6 +223,17 @@ const totalGeneral = computed(() => {
 const puedeAgregar = computed(() => {
   const val = typeof prodName.value === 'object' ? prodName.value.name : prodName.value;
   return val && val.length > 0 && prodPrice.value >= 0;
+});
+
+/**
+ * Lógica de validación de pago reactiva
+ * Se habilita si hay productos en el carrito O si hay un monto manual detectado
+ */
+const puedeProcederAlPago = computed(() => {
+  const tieneItems = cart.value.length > 0;
+  const tieneMontoManual = quickAmount.value !== null && quickAmount.value > 0;
+  
+  return tieneItems || tieneMontoManual;
 });
 
 const search = (e) => buscarProductos(e.query);

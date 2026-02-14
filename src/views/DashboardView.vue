@@ -22,14 +22,16 @@
             <div class="display-input-group">
                 <span class="display-currency">S/</span>
                 <InputNumber 
-                    v-model="arqueoState.monto" 
-                    mode="decimal" 
-                    :minFractionDigits="2" 
-                    placeholder="0.00" 
-                    class="display-input-comp" 
-                    inputClass="display-input-raw"
-                    :disabled="arqueoState.loading"
-                    autofocus
+                  v-model="arqueoState.monto" 
+                  mode="decimal" 
+                  :minFractionDigits="2" 
+                  placeholder="0.00" 
+                  class="display-input-comp" 
+                  inputClass="display-input-raw"
+                  :disabled="arqueoState.loading"
+                  autofocus
+                  @input="(e) => arqueoState.monto = e.value"
+                  @keyup.enter="confirmarCierre"
                 />
             </div>
         </div>
