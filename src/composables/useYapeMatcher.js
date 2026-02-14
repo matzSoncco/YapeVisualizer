@@ -90,13 +90,12 @@ export function useYapeMatcher() {
         const diferencia = Math.abs(Number(yape.amount) - Number(montoCarrito));
         
         if (diferencia > 0.1) {
-            toast.add({ 
-                severity: 'error', 
-                summary: 'Monto Incorrecto', 
-                detail: `El Yape es de S/ ${yape.amount} pero el carrito espera S/ ${montoCarrito.toFixed(2)}`,
-                life: 3000
-            });
-            return { valid: false };
+            return { 
+                valid: false, 
+                error: 'AMOUNT_MISMATCH', 
+                yapeAmount: yape.amount, 
+                expected: montoCarrito 
+            };
         }
 
         matcherState.candidateYape = yape;
