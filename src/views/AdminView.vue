@@ -101,6 +101,7 @@ import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
 import { useAdmin } from '@/composables/useAdmin';
 import { useToast } from 'primevue/usetoast';
+import { store } from '@/store';
 
 import Button from 'primevue/button';
 import DatePicker from 'primevue/datepicker';
@@ -178,6 +179,17 @@ const verDetalle = () => {
 
 // Carga inicial
 onMounted(() => {
+  if (store.userProfile?.adminPin === '1234') {
+  toast.add({ 
+    severity: 'warn', 
+    summary: 'Acción Requerida', 
+    detail: 'Por seguridad, debes cambiar tu PIN antes de administrar.', 
+    life: 6000 
+  });
+  
+  router.push('/profile');
+  return;
+  }
   handleSearch();
 });
 </script>

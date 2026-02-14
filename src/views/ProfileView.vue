@@ -100,6 +100,33 @@
             </div>
           </template>
         </Card>
+
+        <Card class="profile-card security-card">
+          <template #header>
+            <div class="card-header">
+              <h3><i class="pi pi-shield"></i> Seguridad</h3>
+            </div>
+          </template>
+          <template #content>
+            <div class="security-content">
+              <p class="text-sm text-gray-500 mb-3">Control de acceso administrativo</p>
+              
+              <div v-if="isDefaultPin" class="mb-3 p-2 bg-orange-50 border-orange-200 border rounded text-xs text-orange-700">
+                <i class="pi pi-exclamation-triangle mr-1"></i>
+                Tu PIN es inseguro (Default).
+              </div>
+
+              <Button 
+                label="Cambiar PIN" 
+                icon="pi pi-key" 
+                severity="secondary" 
+                outlined 
+                class="w-full"
+                @click="openPinChangeModal"
+              />
+            </div>
+          </template>
+        </Card>
       </aside>
 
       <main class="profile-main">
@@ -141,7 +168,6 @@
                 </div>
                 <div class="branch-info">
                     <h4>{{ sucursal.nombre }}</h4>
-                    <span class="branch-id">ID: {{ sucursal.id }}</span>
                 </div>
                 <div class="branch-actions">
                     <Button icon="pi pi-pencil" text rounded @click="openModalEdit(sucursal)" v-tooltip.top="'Editar'" />
@@ -184,6 +210,42 @@
         </div>
       </template>
     </Dialog>
+    <Dialog
+      v-model:visible="showChangePinModal"
+      modal
+      header="Actualizar PIN de Seguridad"
+      class="custom-pin-dialog"
+      :style="{ width: '380px' }"
+      :draggable="false"
+    >
+      <div class="pin-form-content">
+        <p class="text-sm text-gray-500 mb-4">Ingresa tu PIN actual y define uno nuevo de 4 dígitos.</p>
+        
+        <div class="field-group mb-4">
+          <label class="block text-sm font-bold mb-2 text-gray-700">PIN Actual</label>
+          <div class="flex justify-center">
+             <InputOtp v-model="pinForm.current" :length="4" mask />
+          </div>
+        </div>
+
+        <div class="field-group mb-4">
+          <label class="block text-sm font-bold mb-2 text-gray-700">Nuevo PIN</label>
+          <div class="flex justify-center">
+             <InputOtp v-model="pinForm.new" :length="4" mask />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6">
+          <Button label="Cancelar" severity="secondary" text @click="showChangePinModal = false" />
+          <Button 
+            label="Guardar Nuevo PIN" 
+            @click="handlePinUpdate" 
+            :loading="loadingAuth" 
+            :disabled="pinForm.new.length < 4 || pinForm.current.length < 4"
+          />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
@@ -197,19 +259,25 @@ import { useSucursal } from '../composables/useSucursal';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useSubscription } from '@/composables/useSubscription';
+import { store } from '@/store';
 
 import '@/assets/profile.css';
 
 const router = useRouter();
 const toast = useToast();
 const confirm = useConfirm();
-const { user } = useAuth();
+const { user, updateAdminPin, loading: loadingAuth } = useAuth();
 const { sucursales, addSucursal, deleteSucursal } = useSucursal();
 const { subscriptionStatus } = useSubscription();
 
 const showModal = ref(false);
 const isEditing = ref(false); 
 const form = reactive({ id: null, nombre: '', icono: '' });
+
+// PIN
+const showChangePinModal = ref(false);
+const pinForm = reactive({ current: '', new: '' });
+const isDefaultPin = computed(() => store.userProfile?.adminPin === '1234');
 
 const userName = computed(() => user.value?.displayName || 'Usuario');
 const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
@@ -220,6 +288,28 @@ const closeModal = () => {
   form.nombre = '';
   form.icono = '';
   form.id = null;
+};
+
+const openPinChangeModal = () => {
+    pinForm.current = '';
+    pinForm.new = '';
+    showChangePinModal.value = true;
+};
+
+const handlePinUpdate = async () => {
+    if (pinForm.current === pinForm.new) {
+      toast.add({ severity: 'warn', summary: 'Sin cambios', detail: 'El nuevo PIN es igual al actual.' });
+      return;
+    }
+
+    try {
+      await updateAdminPin(pinForm.current, pinForm.new);
+      
+      toast.add({ severity: 'success', summary: 'Seguridad Actualizada', detail: 'Tu nuevo PIN ha sido guardado.' });
+      showChangePinModal.value = false;
+    } catch (e) {
+      toast.add({ severity: 'error', summary: 'Error de Seguridad', detail: e.message });
+    }
 };
 
 const openModalCreation = () => {
