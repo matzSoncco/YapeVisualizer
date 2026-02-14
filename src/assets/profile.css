@@ -157,6 +157,145 @@
 
 .btn-full { width: 100%; }
 
+/* --- SECURITY CARD --- */
+.security-card {
+    border-top: 3px solid var(--color-primary); /* Refuerzo visual de seguridad */
+}
+
+.security-content p {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+}
+
+/* Caja de Alerta (PIN Default) */
+.pin-warning-box {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background-color: #fffbeb; /* Fondo ámbar muy suave */
+    border: 1px solid #fde68a; /* Borde ámbar */
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    color: #92400e; /* Texto marrón/ámbar oscuro */
+    font-size: 0.75rem;
+    font-weight: 700;
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+.pin-warning-box i {
+    font-size: 1rem;
+    color: #d97706;
+}
+
+/* Botón de cambio de PIN en la card */
+.security-card .p-button-outlined {
+    border: 2px solid var(--color-border) !important;
+    color: var(--color-primary) !important;
+    font-weight: 800 !important;
+    font-size: 0.85rem !important;
+    transition: all 0.2s ease;
+}
+
+.security-card .p-button-outlined:hover {
+    background: var(--bg-surface) !important;
+    border-color: var(--color-primary) !important;
+    transform: translateY(-1px);
+}
+
+/* Animación de sismo suave para llamar la atención sobre el PIN inseguro */
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* --- PIN MODAL --- */
+.custom-pin-dialog .p-dialog-header {
+    padding: 1.5rem 1.5rem 0.5rem;
+}
+
+.custom-pin-dialog .p-dialog-title {
+    font-weight: 800;
+    color: var(--color-primary);
+}
+
+.pin-form-content {
+    padding-top: 0.5rem;
+}
+
+.pin-description {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+}
+
+.pin-field-group {
+    margin-bottom: 1.25rem;
+}
+
+.pin-field-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.025em;
+}
+
+/* Contenedor del InputOtp */
+.otp-container {
+    display: flex;
+    justify-content: center;
+}
+
+/* Personalización profunda del InputOtp de PrimeVue */
+.custom-pin-dialog .p-inputotp-input {
+    width: 3.5rem !important;
+    height: 3.5rem !important;
+    font-size: 1.5rem !important;
+    font-weight: 800 !important;
+    border: 2px solid var(--color-border) !important;
+    border-radius: var(--radius-lg) !important;
+    background: var(--bg-surface) !important;
+    transition: all 0.2s ease !important;
+    margin: 0 0.25rem !important;
+}
+
+.custom-pin-dialog .p-inputotp-input:focus {
+    border-color: var(--color-accent) !important;
+    background: var(--color-accent-soft) !important;
+    box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.1) !important;
+    outline: none !important;
+}
+
+/* Acciones del Footer */
+.pin-footer-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+}
+
+.btn-save-pin {
+    background: var(--color-primary) !important;
+    border-color: var(--color-primary) !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+}
+
+.btn-save-pin:disabled {
+    opacity: 0.5 !important;
+    background: var(--color-text-muted) !important;
+    border-color: var(--color-text-muted) !important;
+}
+
 /* MAIN: BRANCHES */
 .header-title {
   display: flex;

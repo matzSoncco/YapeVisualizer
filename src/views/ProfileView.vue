@@ -112,7 +112,7 @@
               <p class="text-sm text-gray-500 mb-3">Control de acceso administrativo</p>
               
               <div v-if="isDefaultPin" class="pin-warning-box">
-                <i class="pi pi-exclamation-triangle"></i>
+              <i class="pi pi-exclamation-triangle"></i>
                 <span>Tu PIN es inseguro (Default).</span>
               </div>
 
