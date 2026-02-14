@@ -13,6 +13,11 @@
           class="full-width-search" 
           ref="mainInput" 
         />
+        <Button 
+          icon="pi pi-times"
+          severity="secondary"
+          @click="prodName = ''"
+        />
       </div>
 
       <div class="input-level details-row">
