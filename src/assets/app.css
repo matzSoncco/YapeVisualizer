@@ -34,3 +34,56 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
+
+/* --- CLEAN TOAST OVERRIDE --- */
+
+/* Ajustamos el ancho y la sombra para que no se vea plano */
+.p-toast {
+    width: 320px !important;
+}
+
+.p-toast-message {
+    border-radius: 12px !important; /* Bordes redondeados pero no circulares */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important; /* Sombra suave */
+    border: 1px solid var(--color-border) !important;
+    background: #ffffff !important;
+    margin-bottom: 0.75rem;
+}
+
+/* Ajustamos el contenido para que respire */
+.p-toast-message-content {
+    padding: 1rem !important;
+    align-items: center !important;
+}
+
+.p-toast-message-icon {
+    font-size: 1.2rem !important;
+    margin-right: 0.75rem;
+}
+
+/* Tipografía pesada para el resumen (estilo gosu ligero) */
+.p-toast-summary {
+    font-weight: 800 !important;
+    font-size: 0.85rem !important;
+    color: var(--color-text-main) !important;
+    display: block;
+}
+
+.p-toast-detail {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: var(--color-text-muted) !important;
+    margin-top: 2px;
+}
+
+/* Colores de borde lateral sutiles (sin pseudo-elementos raros) */
+.p-toast-message-success { border-left: 5px solid var(--color-success) !important; }
+.p-toast-message-error { border-left: 5px solid var(--color-error) !important; }
+.p-toast-message-warn { border-left: 5px solid var(--color-accent) !important; }
+.p-toast-message-info { border-left: 5px solid var(--color-primary) !important; }
+
+/* Botón de cerrar pequeño */
+.p-toast-icon-close {
+    width: 20px !important;
+    height: 20px !important;
+}
