@@ -81,7 +81,7 @@ export const setUserProfile = (data) => {
     }
     Object.assign(store.userProfile, {
         ...data,
-        adminPin: data.adminPin 
+        adminPin: data.adminPin || '1234'
     });
 };
 
