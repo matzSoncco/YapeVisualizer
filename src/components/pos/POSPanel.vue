@@ -360,6 +360,7 @@ const procesarPago = async (method, yapeConfirmado = null) => {
 defineExpose({ 
   finalizarVentaYapeConfirmada,
   prellenarCarrito,
+  cart,
   totalGeneral
 });
 </script>
