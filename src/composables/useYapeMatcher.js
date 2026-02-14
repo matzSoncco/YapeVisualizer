@@ -74,10 +74,17 @@ export function useYapeMatcher() {
      * @param {int} montoCarrito - El monto actual del carrito para validar contra el Yape
      */
     const validarSeleccionManual = (yape, montoCarrito) => {
+
         if (montoCarrito <= 0) {
-            matcherState.isLocked = true;
             matcherState.candidateYape = yape;
-            return { valid: true, action: 'PRELLENAR' };
+            matcherState.expectedAmount = Number(yape.amount);
+            matcherState.matchType = 'DIRECT';
+
+            matcherState.showModal = true;
+            matcherState.isListening = false;
+            matcherState.isLocked = true;
+
+            return { valid: true, action: 'CONFIRM_DIRECT' };
         }
 
         const diferencia = Math.abs(Number(yape.amount) - Number(montoCarrito));
