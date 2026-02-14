@@ -443,7 +443,15 @@ const handlePesca = (yape) => {
   const resultado = validarSeleccionManual(yape, totalCarrito);
 
   if (!resultado.valid) {
-    console.warn("Selección inválida");
+    if (resultado.error === 'AMOUNT_MISMATCH') {
+      toast.add({ 
+        severity: 'error', 
+        summary: 'Monto Incorrecto', 
+        detail: `El Yape es de S/ ${resultado.yapeAmount} pero el carrito espera S/ ${resultado.expected.toFixed(2)}`,
+        life: 3000
+      });
+    }
+    return;
   }
 };
 
