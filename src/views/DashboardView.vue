@@ -314,7 +314,11 @@ const iniciarDashboard = async () => {
     }
 };
 
-const handleTransaccionCompletada = () => { console.log("Transacción OK"); };
+const handleTransaccionCompletada = () => {
+  resetMatcher();
+
+  //TODO: Crear un método para poner el foco del cursor en el input de productos
+}
 
 /**
  * Iniciar el dashboard al montar el componente

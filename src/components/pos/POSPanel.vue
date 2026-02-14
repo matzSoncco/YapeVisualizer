@@ -155,6 +155,7 @@ const loading = ref(false);
 const prodName = ref('');
 const prodQty = ref(1);
 const prodPrice = ref(null);
+const emit = defineEmits(['transaction-completed']);
 
 /**
  * 
@@ -322,6 +323,7 @@ const procesarPago = async (method, yapeConfirmado = null) => {
     quickAmount.value = null;
     
     toast.add({ severity: 'success', summary: 'Venta Registrada', life: 2000 });
+    emit('transaction-completed');
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: e.message });
   } finally {
