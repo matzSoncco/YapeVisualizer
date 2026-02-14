@@ -27,6 +27,7 @@ import InputNumber from 'primevue/inputnumber'
 import Tab from 'primevue/tab'
 import AutoComplete from 'primevue/autocomplete'
 import Tooltip from 'primevue/tooltip'
+import ProgressSpinner from 'primevue/progressspinner'
 
 import 'primeicons/primeicons.css'
 
@@ -105,5 +106,6 @@ app.component('InputOtp', InputOtp)
 app.component('InputNumber', InputNumber)
 app.component('Tab', Tab)
 app.component('AutoComplete', AutoComplete)
+app.component('ProgressSpinner', ProgressSpinner)
 
 app.mount('#app')

@@ -1,6 +1,11 @@
 <template>
   <div class="dashboard">
-<Dialog 
+    <div v-if="globalLoading" class="loading-overlay-full">
+        <ProgressSpinner strokeWidth="4" />
+        <p>Sincronizando caja...</p>
+    </div>
+    <template v-else>
+      <Dialog 
     v-model:visible="arqueoState.isOpen" 
     modal 
     header="Finalizar Turno" 
@@ -206,6 +211,7 @@
         </main>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
@@ -282,6 +288,7 @@ const globalLoading = ref(true);
 const nombreCajero = computed(() => {
   return currentShift.value?.cajero || 'Cajero no asignado';
 });
+
 /**
  * Función principal para iniciar el dashboard
  * - Verifica el turno activo
@@ -291,29 +298,35 @@ const nombreCajero = computed(() => {
 const iniciarDashboard = async () => {
     if (!user.value) return;
     
-    if (sucursalActual.value === 'ADMIN') {
-        router.push('/admin');
-        return;
-    }
-
-    if (!sucursalActual.value) {
-        globalLoading.value = false;
-        return;
-    }
-
     globalLoading.value = true;
     try {
-        await verificarTurnoActivo();
-        
-        if (isShiftOpen.value) {
-            escucharPendientes(user.value.email);
-            escucharMovimientos();
-        }
-    } catch (error) {
-      console.error("Error dashboard:", error);
-    } finally {
-      globalLoading.value = false;
-    }
+      if (sucursalActual.value === 'ADMIN') {
+        router.push('/admin');
+        return;
+      }
+
+      if (!sucursalActual.value) {
+        globalLoading.value = false;
+        return;
+      }
+
+      await verificarTurnoActivo();
+      
+      if (isShiftOpen.value) {
+        escucharPendientes(user.value.email);
+        escucharMovimientos();
+      }
+
+  } catch (error) {
+    console.error("Error crítico en Dashboard:", error);
+    toast.add({ 
+      severity: 'error', 
+      summary: 'Error de conexión', 
+      detail: 'No se pudo sincronizar el estado de la caja.' 
+    });
+  } finally {
+    globalLoading.value = false;
+  }
 };
 
 const handleTransaccionCompletada = () => {
