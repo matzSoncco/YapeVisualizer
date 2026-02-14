@@ -358,6 +358,18 @@ const cambiarSucursal = () => {
  * TODO: Usar logica de cierre programado en useShift para cerrar correctamente con auditoría
  */
 const handleCierreClick = async () => {
+  const tieneProductos = posPanelRef.value?.cart?.length > 0;
+  if (tieneProductos) {
+    toast.add({ 
+      severity: 'error', 
+      summary: 'Acción bloqueada', 
+      detail: 'No puedes cerrar turno con productos en el carrito. Finaliza la venta o limpia el carrito.', 
+      life: 5000 
+    });
+    
+    posPanelRef.value?.$el.scrollIntoView({ behavior: 'smooth' });
+    return;
+  }
   abrirArqueo();
 };
 
