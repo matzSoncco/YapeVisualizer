@@ -204,6 +204,17 @@
     transform: translateY(-1px);
 }
 
+/* Una animación de borde que brilla solo al entrar */
+.security-card.highlight-focus {
+    animation: border-glow 2s ease-out;
+}
+
+@keyframes border-glow {
+    0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); border-color: var(--color-border); }
+    30% { box-shadow: 0 0 20px 5px rgba(250, 204, 21, 0.4); border-color: var(--color-accent); }
+    100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); border-color: var(--color-primary); }
+}
+
 /* Animación de sismo suave para llamar la atención sobre el PIN inseguro */
 @keyframes shake {
   10%, 90% { transform: translate3d(-1px, 0, 0); }
