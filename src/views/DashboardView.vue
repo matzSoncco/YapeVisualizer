@@ -174,7 +174,7 @@
   
   <div class="navbar-right">
     <div class="nav-group navigation">
-      <Button label="Simular" icon="pi pi-bolt" @click="handleSimulacion" text class="nav-btn" />
+      <Button v-if="showSimulator" label="Simular" icon="pi pi-bolt" @click="handleSimulacion" text class="nav-btn" />
       <Button label="Sede" icon="pi pi-sync" @click="cambiarSucursal" text class="nav-btn" />
       <Button label="Gasto" icon="pi pi-minus-circle" @click="expenseState.isOpen = true" text class="nav-btn expense" />
     </div>
@@ -322,6 +322,9 @@ const handleTransaccionCompletada = () => {
   //TODO: Crear un método para poner el foco del cursor en el input de productos
 }
 
+const showSimulator = computed(() => {
+  return import.meta.env.DEV && import.meta.env.VITE_ENABLE_SIMULATOR === 'true';
+})
 /**
  * Iniciar el dashboard al montar el componente
  * Diferentes watchers para reiniciar el dashboard según cambios
@@ -440,8 +443,11 @@ const cancelarVinculo = () => {
 /**
  * Utilitario para simular datos de transacciones
  */
-const handleSimulacion = () => {
-    if (user.value?.email) simularDatos(user.value.email);
+const handleSimulacion = async () => {
+  if (showSimulator.value && user.value?.email) {
+    const { simularDatos } = await import('@/utils/devSimulator');
+    simularDatos(user.value.email);
+  }
 };
 </script>
 
