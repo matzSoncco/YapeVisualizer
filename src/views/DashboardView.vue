@@ -1,7 +1,5 @@
 <template>
   <div class="dashboard">
-    <Toast />
-    <ConfirmDialog />
 <Dialog 
     v-model:visible="arqueoState.isOpen" 
     modal 
@@ -123,7 +121,9 @@
             <header class="confirm-status">
                 <i class="pi pi-check-circle pulse-green"></i>
                 <h3>¡Pago Detectado!</h3>
-                <span class="match-tag">{{ matcherState.matchType === 'AUTO' ? 'Automático' : 'Manual' }}</span>
+                <span class="match-tag">
+                  {{ matcherState.matchType === 'AUTO' ? 'Automático' :
+                    matcherState.matchType === 'DIRECT' ? 'Venta Rápida' : 'Manual'}}</span> 
             </header>
 
             <div class="confirm-data-card">
@@ -344,38 +344,6 @@ const cambiarSucursal = () => {
     limpiarSucursal();
 };
 
-// Función para procesar el gasto
-const guardarGasto = async () => {
-    // 1. Validaciones básicas
-    if (!expenseDesc.value || !expenseAmount.value) {
-        toast.add({ severity: 'warn', summary: 'Faltan datos', detail: 'Ingresa descripción y monto', life: 3000 });
-        return;
-    }
-
-    try {
-        // AQUÍ VA TU LÓGICA DE BACKEND O STORE
-        // Por ejemplo: await transactionStore.addExpense({ desc: expenseDesc.value, amount: expenseAmount.value });
-        
-        // Simulación de éxito
-        console.log("Registrando gasto:", expenseDesc.value, expenseAmount.value);
-        
-        toast.add({ 
-            severity: 'error', // Rojo porque es salida de dinero
-            summary: 'Gasto Registrado', 
-            detail: `Se retiraron S/ ${expenseAmount.value} de caja`, 
-            life: 3000 
-        });
-
-        // 2. Limpiar y Cerrar
-        expenseDesc.value = '';
-        expenseAmount.value = null;
-        showExpenseModal.value = false;
-
-    } catch (error) {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo registrar el gasto' });
-    }
-};
-
 /**
  * Maneja el clic en "Cerrar Turno" para cerrar el turno actual
  * TODO: Usar logica de cierre programado en useShift para cerrar correctamente con auditoría
@@ -384,7 +352,9 @@ const handleCierreClick = async () => {
   abrirArqueo();
 };
 
-// 2. Ejecuta el cierre (Conectado al botón del modal)
+/**
+ * Confirma el cierre del turno con el monto declarado en caja
+ */
 const confirmarCierre = async () => {
     if (arqueoState.monto === null) return;
 
@@ -400,20 +370,27 @@ const confirmarCierre = async () => {
     }
 };
 
+/**
+ * Método para registrar el cierre, arqueo y finalización del turno
+ */
 const ejecutarCierre = async () => {
   try {
     await cerrarTurno();
     detenerTodo();
-    toast.add({ severity: 'success', summary: 'Turno Cerrado', detail: 'Arqueo registrado correctamente.' });
+    toast.add({ severity: 'success', summary: 'Turno Cerrado', detail: 'Arqueo registrado correctamente.', life: 3000});
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: e.message });
   }
 };
 
+/**
+ * Método que maneja el registro de un gasto operativo desde la UI
+ * Muestra notificaciones según el resultado del registro del gasto
+ */
 const guardarGastoUI = async () => {
   try {
     await registrarGasto();
-    toast.add({ severity: 'warn', summary: 'Gasto Registrado', detail: 'Actualizado en caja.' });
+    toast.add({ severity: 'warn', summary: 'Gasto Registrado', detail: 'Actualizado en caja.', life: 3000 });
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: e.message });
   }
@@ -430,8 +407,8 @@ const handlePesca = (yape) => {
 
   const resultado = validarSeleccionManual(yape, totalCarrito);
 
-  if (resultado.valid && resultado.action === 'PRELLENAR') {
-    posPanelRef.value.prellenarCarrito(yape.amount);
+  if (!resultado.valid) {
+    console.warn("Selección inválida");
   }
 };
 
@@ -451,7 +428,7 @@ const confirmarVinculo = async () => {
  */
 const cancelarVinculo = () => {
     cancelarEspera();
-    toast.add({ severity: 'info', summary: 'Vínculo cancelado', detail: 'Botones de pago liberados.' });
+    toast.add({ severity: 'info', summary: 'Vínculo cancelado', detail: 'Botones de pago liberados.', life: 3000});
 };
 
 /**
@@ -463,7 +440,7 @@ const handleSimulacion = () => {
 </script>
 
 <style scoped>
-/* Estilos específicos del Modal de Confirmación para que no rompa el ADN */
+/* Estilos específicos del Modal de Confirmación */
 .confirm-body {
   padding: 1rem 0;
   display: flex;
