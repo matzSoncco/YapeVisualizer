@@ -69,7 +69,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useSucursal } from '../../composables/useSucursal';
 import { useToast } from 'primevue/usetoast';
-import { setAdminAuth } from '@/store';
+import { setAdminAuth, store } from '@/store';
 
 const router = useRouter();
 const toast = useToast();
@@ -98,15 +98,14 @@ const handleSelect = (valorSeleccionado) => {
 
 const verificarPin = async () => {
   if (pin.value.length < 4) return;
-
   loadingPin.value = true;
-
   await new Promise(r => setTimeout(r, 600));
 
-  const exito = seleccionar('ADMIN', pin.value);
+  const pinCorrecto = store.userProfile.adminPin;
 
-  if (exito) {
-    setAdminAuth (true);
+  if (pin.value === String(pinCorrecto)) {
+    setAdminAuth(true); 
+    seleccionar('ADMIN'); 
     showPinModal.value = false;
     toast.add({ severity: 'success', summary: 'Acceso Concedido', life: 2000 });
     router.push({ name: 'admin' });
@@ -114,7 +113,6 @@ const verificarPin = async () => {
     toast.add({ severity: 'error', summary: 'Acceso Denegado', detail: 'PIN Incorrecto', life: 3000 });
     pin.value = '';
   }
-
   loadingPin.value = false;
 }
 </script>

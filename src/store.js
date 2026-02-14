@@ -69,7 +69,7 @@ export const setUserProfile = (data) => {
     if (!data || Object.keys(data).length === 0) {
         store.userProfile = {
             role: 'user',
-            adminPin: '0000',
+            adminPin: null,
             subscription: {
                 isActive: false,
                 planName: '',
@@ -81,7 +81,7 @@ export const setUserProfile = (data) => {
     }
     Object.assign(store.userProfile, {
         ...data,
-        adminPin: data.adminPin || '1234' 
+        adminPin: data.adminPin || '1234'
     });
 };
 

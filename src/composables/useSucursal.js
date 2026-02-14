@@ -57,21 +57,15 @@ export function useSucursal() {
             return true;    
         }
 
-        if (!pinIngresado) {
-            console.error("Se requiere PIN para acceso ADMIN");
-            return false;
-        }
-
         const pinReal = String(store.userProfile.adminPin || '1234');
-        const pinUsuario = String(pinIngresado).trim();
-
-        if (pinUsuario === pinReal) {
+        
+        if (!pinIngresado || String(pinIngresado).trim() === pinReal) {
             setSucursalActual('ADMIN');
             return true;
-        } else {
-            return false;
         }
-        
+
+        console.error("PIN incorrecto o no proporcionado");
+        return false;
     };
     
     /**
