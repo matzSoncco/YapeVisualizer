@@ -132,6 +132,7 @@ export function useShift() {
 
             const cierreData = {
                 status: 'CLOSED',
+                userId: user.value.uid,
                 fechaCierre: new Date().toISOString(),
                 timestampCierre: serverTimestamp(),
                 sucursalId: currentSucursalId,
