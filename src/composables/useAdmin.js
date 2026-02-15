@@ -8,17 +8,25 @@ import {
     orderBy, 
     Timestamp 
 } from "firebase/firestore";
+import { useAuth } from '@/composables/useAuth';
 
 export function useAdmin() {
     const reportes = ref([]);
     const loadingReportes = ref(false);
     const error = ref(null);
+    const { user } = useAuth();
 
     /**
      * Busca los cuadres cerrados en el rango de fechas y sucursal
      * @param {Object} filters - Filtros de búsqueda
      */
     const buscarCuadres = async (filters) => {
+        if (!user.value?.uid) {
+            console.error("No hay usuario autenticado para buscar cuadres");
+            error.value = "Sesión expirada o no válida";
+            return;
+        }
+
         loadingReportes.value = true;
         reportes.value = [];
         error.value = null;
@@ -33,6 +41,7 @@ export function useAdmin() {
             const cuadresRef = collectionGroup(db, 'shifts');
             
             const constraints = [
+                where('userId', '==', user.value.uid),
                 where('status', '==', 'CLOSED'),
                 where('timestampCierre', '>=', Timestamp.fromDate(start)),
                 where('timestampCierre', '<=', Timestamp.fromDate(end)),

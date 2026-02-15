@@ -57,7 +57,7 @@ export function useYapeMatcher() {
         watch(yapesPendientesRef, (nuevosYapes) => {
             if (!matcherState.isListening || matcherState.showModal) return;
 
-            const match = nuevosYapes.find(y => Math.abs(Number(y.amount) - matcherState.expectedAmount) < 0.1);
+            const match = nuevosYapes.find(y => Number(y.amount) === matcherState.expectedAmount);
 
             if (match) {
                 matcherState.candidateYape = match;
@@ -87,9 +87,9 @@ export function useYapeMatcher() {
             return { valid: true, action: 'CONFIRM_DIRECT' };
         }
 
-        const diferencia = Math.abs(Number(yape.amount) - Number(montoCarrito));
+        const areEqual = Math.round(Number(yape.amount) * 100) === Math.round(Number(montoCarrito) * 100);
         
-        if (diferencia > 0.1) {
+        if (!areEqual) {
             return { 
                 valid: false, 
                 error: 'AMOUNT_MISMATCH', 

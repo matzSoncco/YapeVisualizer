@@ -132,6 +132,7 @@ export function useShift() {
 
             const cierreData = {
                 status: 'CLOSED',
+                userId: user.value.uid,
                 fechaCierre: new Date().toISOString(),
                 timestampCierre: serverTimestamp(),
                 sucursalId: currentSucursalId,
@@ -142,7 +143,7 @@ export function useShift() {
                     totalSystemCash: efectivoTeorico,
                     declaredCash: Number(arqueoState.monto),
                     difference: diferencia,
-                    isBalanced: Math.abs(diferencia) < 0.5
+                    isBalanced: Math.round(diferencia * 100) === 0
                 },
 
                 totalIngresosDia: cash + yape,

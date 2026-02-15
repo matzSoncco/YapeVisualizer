@@ -10,7 +10,7 @@ import {
     orderBy
 } from "firebase/firestore";
 import { useAuth } from './useAuth';
-import { isShiftOpen, store } from '../store';
+import { store } from '../store';
 import { useProducts } from "./useProducts";
 import { ref, reactive } from 'vue';
 
