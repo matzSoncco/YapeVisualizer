@@ -7,6 +7,7 @@ import {
     orderBy,
     onSnapshot,
     doc,
+    getDoc,
     updateDoc,
     serverTimestamp 
 } from "firebase/firestore";
@@ -47,6 +48,10 @@ export function useDigitalPayments() {
 
         try {
             const digitalRef = doc(db, "users", user.value.uid, "yape_notifications", yapeId);
+            const docSnap = await getDoc(digitalRef);
+            if (docSnap.exists() && docSnap.data().status === 'PROCESSED') {
+                throw new Error("Este pago ya fue reclamado previamente.");
+            }
             await updateDoc(digitalRef, {
                 status: "PROCESSED",
                 claimedAt: serverTimestamp(),

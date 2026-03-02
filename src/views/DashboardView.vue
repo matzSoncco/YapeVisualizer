@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <div v-if="globalLoading" class="loading-overlay-full">
+    <div v-if="globalLoading || store.loading" class="loading-overlay-full">
         <ProgressSpinner strokeWidth="4" />
         <p>Sincronizando caja...</p>
     </div>
@@ -145,8 +145,20 @@
             </div>
 
             <div class="confirm-btns">
-                <Button label="DESCARTAR" severity="secondary" text @click="cancelarVinculo" class="flex-1" />
-                <Button label="CONFIRMAR VENTA" @click="confirmarVinculo" icon="pi pi-bolt" class="flex-1 btn-confirm-digital-payment" />
+                <Button
+                  label="DESCARTAR"
+                  severity="secondary"
+                  text
+                  @click="cancelarVinculo"
+                  class="flex-1"
+                />
+                <Button
+                label="CONFIRMAR VENTA"
+                @click="confirmarVinculo"
+                icon="pi pi-bolt"
+                :loading="matcherState.loading" 
+                :disabled="matcherState.loading"
+                class="flex-1 btn-confirm-digital-payment" />
             </div>
         </div>
     </Dialog>
@@ -237,6 +249,7 @@ import { useMovements } from '@/composables/useMovements';
 import { useMatcher } from '@/composables/useMatcher';
 
 import '@/assets/dashboard.css';
+import { store } from '@/store';
 
 const router = useRouter();
 const toast = useToast();
@@ -462,11 +475,22 @@ const handlePesca = (pagoDigital) => {
  * Método para confirmar el match entre una transacción pendiente y una venta en POS
  */
 const confirmarVinculo = async () => {
-    if (!posPanelRef.value || !matcherState.candidate) return;
-    
+  if (matcherState.loading) return;
+
+  if (!posPanelRef.value || !matcherState.candidate) return;
+
+  matcherState.loading = true;
+  try {
     await posPanelRef.value.finalizarVentaDigitalConfirmada(matcherState.candidate);
     
     resetMatcher();
+    toast.add({ severity: 'success', summary: 'Venta Procesada', life: 2000 });
+  } catch (error) {
+    console.error("Error al confirmar vínculo:", error);
+    toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 5000 });
+  } finally {
+    matcherState.loading = false;
+  }
 };
 
 /**

@@ -254,23 +254,39 @@ const agregarAlCarrito = () => {
 const removerItem = (idx) => cart.value.splice(idx, 1);
 
 /**
- * Iniciar el flujo de venta con Yape
- * El matcher evita que se inicie un nuevo proceso
+ * Iniciar el flujo de venta con espera de pago digital. Si ya se está esperando, cancela la espera actual.
  */
 const iniciarFlujo = () => {
   if (matcherState.isListening) {
     cancelarEspera();
+    toast.add({ severity: 'info', summary: 'Escucha cancelada' });
   } else {
-    iniciarEspera(totalGeneral.value);
+    const exito = iniciarEspera(totalGeneral.value);
+
+    if (exito) {
+      toast.add({ 
+        severity: 'info', 
+        summary: 'Esperando Pago Digital...', 
+        detail: `Monitoreando ingresos por S/ ${totalGeneral.value.toFixed(2)}`,
+        life: 3000 
+      });
+    } else {
+      toast.add({ 
+        severity: 'warn', 
+        summary: 'Carrito vacío', 
+        detail: 'Agrega productos antes de esperar un pago.',
+        life: 3000 
+      });
+    }
   }
 };
 
 /**
  * Método para finalizar la venta una vez que el matcher confirma el pago digital
- * @param pagoDigital - Objeto de la transacción confirmada por el matcher
+ * @param candidato - Objeto de la transacción confirmada por el matcher
  */
-const finalizarVentaDigitalConfirmada = async (pagoDigital) => {
-  await procesarPago('DIGITAL', pagoDigital);
+const finalizarVentaDigitalConfirmada = async (candidato) => {
+  await procesarPago('DIGITAL', candidato);
 };
 
 /**
@@ -350,10 +366,9 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
     cart.value = [];
     quickAmount.value = null;
     
-    toast.add({ severity: 'success', summary: 'Venta Registrada', life: 2000 });
     emit('transaction-completed');
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 });
+    throw e;
   } finally {
     loading.value = false;
   }

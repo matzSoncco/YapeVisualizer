@@ -7,7 +7,8 @@ const matcherState = reactive({
     candidate: null,
     showModal: false,
     matchType: null,
-    isLocked: false
+    isLocked: false,
+    loading: false
 });
 
 export function useMatcher() {
@@ -19,22 +20,19 @@ export function useMatcher() {
      * @param {int} montoTotal - Monto esperado para la transacción actual
      */
     const iniciarEspera = (montoTotal) => {
-        if (montoTotal <= 0) {
-            toast.add({ severity: 'warn', summary: 'Carrito vacío', life: 3000 });
-            return;
+        const monto = Number(montoTotal);
+
+        if (monto <= 0) {
+            return false;
         }
 
-        matcherState.expectedAmount = Number(montoTotal);
+        matcherState.expectedAmount = monto;
         matcherState.isListening = true;
         matcherState.candidate = null;
         matcherState.isLocked = true;
+        matcherState.loading = false;
         
-        toast.add({ 
-            severity: 'info', 
-            summary: 'Esperando Pago Digital...', 
-            detail: `Monitoreando ingresos por S/ ${montoTotal.toFixed(2)}`,
-            life: 3000 
-        });
+        return true;
     };
 
     /**
@@ -117,6 +115,7 @@ export function useMatcher() {
         matcherState.candidate = null;
         matcherState.showModal = false;
         matcherState.isLocked = false;
+        matcherState.loading = false;
     };
 
     return {

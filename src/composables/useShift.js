@@ -1,19 +1,19 @@
 import { computed, reactive } from 'vue';
 import { db } from "../firebaseConfig";
 import {
+    onSnapshot,
     collection,
     addDoc,
     doc,
     updateDoc,
     query,
     where,
-    getDocs,
     getDoc,
     limit,
     serverTimestamp,
 } from "firebase/firestore";
 import { useAuth } from './useAuth';
-import { store, setCurrentShift } from '@/store';
+import { store, setCurrentShift, setLoading } from '@/store';
 
 export function useShift() {
     const { user } = useAuth();
@@ -29,21 +29,27 @@ export function useShift() {
     const verificarTurnoActivo = async () => {
         setCurrentShift(null);
         if (!user.value?.uid || !sucursalId.value || sucursalId.value === 'ADMIN') return;
+        setLoading(true);
 
         try {
             const shiftsRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts');
             const q = query(shiftsRef, where('status', '==', 'OPEN'), limit(1));
             
-            const snapshot = await getDocs(q);
-            
-            if (!snapshot.empty) {
-                const docData = snapshot.docs[0];
-                setCurrentShift({ id: docData.id, ...docData.data() });
-            } else {
-                setCurrentShift(null);
-            }
+            return onSnapshot(q, (snapshot) => {
+                if (!snapshot.empty) {
+                    const docData = snapshot.docs[0];
+                    setCurrentShift({ id: docData.id, ...docData.data() });
+                } else {
+                    setCurrentShift(null);
+                }
+                setLoading(false);
+            }, (error) => {
+                console.error("Error en el stream del turno:", error);
+                setLoading(false);
+            });
         } catch (error) {
             console.error("Error verificando turno activo:", error);
+            setLoading(false);
         }
     };
 
