@@ -78,12 +78,15 @@ export function useMovements() {
                 type: 'SALE',
                 timestamp: serverTimestamp(),
                 items: items || [],
-                payments: payments.map(p => ({
-                    method: p.method,
-                    amount: Number(p.amount),
-                    refId: p.refId || null
-                })),
-                totalAmount: Number(total),
+                payments: payments.map(p => {
+                    const safeAmount = Math.round((Number(p.amount) || 0) * 100) / 100;
+                    return {
+                        method: p.method,
+                        amount: safeAmount,
+                        refId: p.refId || null
+                    };
+                }),
+                totalAmount: Math.round((Number(total) || 0) * 100) / 100,
                 clientName: clientName || 'Cliente Eventual',
                 totalItems: items ? items.reduce((acc, i) => acc + i.qty, 0) : 0,
                 metadata: {
@@ -98,7 +101,8 @@ export function useMovements() {
             
             payments.forEach(p => {
                 const field = p.method === 'CASH' ? 'stats.totalCashSales' : 'stats.totalYapeSales';
-                statsUpdate[field] = increment(p.amount);
+                const safeAmount = Math.round((Number(p.amount) || 0) * 100) / 100;
+                statsUpdate[field] = increment(safeAmount);
             });
 
             batch.update(shiftRef, statsUpdate);
