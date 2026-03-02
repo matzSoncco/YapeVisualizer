@@ -104,7 +104,10 @@ export function useShift() {
         const localShift = store.currentShift;
         const currentSucursalId = store.sucursalActual;
 
-        if (!localShift?.id || !currentSucursalId) throw new Error("Contexto inválido para cierre");
+        if (!localShift?.id || !currentSucursalId) {
+            arqueoState.loading = false;
+            throw new Error("Contexto inválido para cierre");
+        }
 
         arqueoState.loading = true;
 
@@ -125,8 +128,8 @@ export function useShift() {
             const exp = Number(stats.totalExpenses || 0);
 
             const declarado = Number(arqueoState.monto) || 0;
-            const efectivoTeorico = fnd + cash - exp;
-            const diferencia = declarado - efectivoTeorico;
+            const efectivoTeorico = Math.round((fnd + cash - exp) * 100) / 100;
+            const diferencia = Math.round((declarado - efectivoTeorico) * 100) / 100;
             
             const nombreSede = store.sucursales.find(s => s.id === currentSucursalId)?.nombre || 'Sucursal';
 
@@ -146,7 +149,7 @@ export function useShift() {
                     isBalanced: Math.round(diferencia * 100) === 0
                 },
 
-                totalIngresosDia: cash + digital,
+                totalIngresosDia: Math.round((cash + digital) * 100) / 100,
                 totalDigital: digital,
                 totalEfectivoFinal: cash
             };
@@ -154,7 +157,10 @@ export function useShift() {
             await updateDoc(shiftRef, cierreData);
 
             setCurrentShift(null);
-            arqueoState.isOpen = false;
+            setTimeout(() => {
+                arqueoState.isOpen = false;
+                arqueoState.monto = null;
+            }, 100);
 
             return cierreData;
         } catch (error) {

@@ -59,7 +59,7 @@
                 icon="pi pi-lock" 
                 @click="confirmarCierre" 
                 :loading="arqueoState.loading"
-                :disabled="arqueoState.monto === null"
+                :disabled="arqueoState.monto === null || arqueoState.monto === undefined"
                 class="btn-submit-arqueo" 
             />
         </div>
@@ -391,18 +391,21 @@ const handleCierreClick = async () => {
  * Confirma el cierre del turno con el monto declarado en caja
  */
 const confirmarCierre = async () => {
-    if (arqueoState.monto === null) return;
+  if (arqueoState.monto === null || arqueoState.monto === undefined) {
+    toast.add({ severity: 'warn', summary: 'Atención', detail: 'Debes ingresar un monto.' });
+    return;
+  }
 
-    if (arqueoState.monto === 0) {
-      confirm.require({
-        message: '¿Declarar S/ 0.00 en caja?',
-        header: 'Advertencia',
-        icon: 'pi pi-exclamation-triangle',
-        accept: () => ejecutarCierre()
-      });
-    } else {
-      await ejecutarCierre();
-    }
+  if (Number(arqueoState.monto) === 0) {
+    confirm.require({
+      message: 'Ingresaste 0.00 en efectivo hoy. ¿Deseas declararlo y cerrar caja?',
+      header: 'Advertencia',
+      icon: 'pi pi-exclamation-triangle',
+      accept: async () => ejecutarCierre()
+    });
+  } else {
+    await ejecutarCierre();
+  }
 };
 
 /**
