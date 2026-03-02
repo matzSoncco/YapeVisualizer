@@ -11,6 +11,7 @@ import {
     serverTimestamp 
 } from "firebase/firestore";
 import { store } from '../store';
+import { useAuth } from './useAuth';
 
 /**
  * Composable para manejar las transacciones de Yape
@@ -18,6 +19,7 @@ import { store } from '../store';
  * @returns {Object} Propiedades y métodos del composable
  */
 export function useYape() {
+    const { user } = useAuth();
     const yapesPendientes = ref([]);
     const loading = ref(false);
     const error = ref(null);
@@ -42,7 +44,7 @@ export function useYape() {
         const nombreSucursal = sucursalObj ? sucursalObj.nombre : 'Sucursal Desconocida';
 
         try {
-            const yapeRef = doc(db, "yape_notifications", yapeId);
+            const yapeRef = doc(db, "users", user.value.uid, "yape_notifications", yapeId);
             await updateDoc(yapeRef, {
                 status: "PROCESSED",
                 claimedAt: serverTimestamp(),
@@ -64,12 +66,12 @@ export function useYape() {
      * @param {string} emailAdmin
      */
     const escucharPendientes = (emailAdmin) => {
-        if (!emailAdmin) return;
+        if (!emailAdmin || !user.value?.uid) return;
 
         loading.value = true;
+        const notificationsRef = collection(db, "users", user.value.uid, "yape_notifications");
         const q = query(
-            collection(db, "yape_notifications"),
-            where("userEmail", "==", emailAdmin),
+            notificationsRef,
             where("status", "==", "pending"),
             orderBy("timestamp", "desc")
         );
@@ -77,10 +79,14 @@ export function useYape() {
         if (unsubPendientes) unsubPendientes();
 
         unsubPendientes = onSnapshot(q, (snapshot) => {
-            yapesPendientes.value = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            yapesPendientes.value = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    monto: Number(data.amount) || 0
+                };
+            });
             loading.value = false;
         }, (err) => {
             console.error("Error feed Yape:", err);
