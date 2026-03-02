@@ -32,7 +32,7 @@ export function useDigitalPayments() {
      * @param {string} nombreSucursal - Nombre de la sede destino
      * @returns {Promise<boolean>}
      */
-    const reclamarDigital = async (yapeId, movementId) => {
+    const reclamarPagoDigital = async (yapeId, movementId) => {
         const currentShift = store.currentShift;
         const sucursalId = store.sucursalActual;
 
@@ -112,7 +112,7 @@ export function useDigitalPayments() {
         loading,
         error,
         escucharPendientes,
-        reclamarDigital,
+        reclamarPagoDigital,
         detenerTodo
     };
 }

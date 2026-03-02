@@ -4,18 +4,18 @@ import { useToast } from 'primevue/usetoast';
 const matcherState = reactive({
     isListening: false,
     expectedAmount: 0,
-    candidateYape: null,
+    candidate: null,
     showModal: false,
     matchType: null,
     isLocked: false
 });
 
-export function useYapeMatcher() {
+export function useMatcher() {
     const toast = useToast();
 
     /**
-     * Inicia espera de un Yape con un monto específico
-     * El cajero ha llenado el carrito y hace click en "Esperar Yape"
+     * Inicia espera de un pago digital con un monto específico
+     * El cajero ha llenado el carrito y hace click en "Esperar pago digital"
      * @param {int} montoTotal - Monto esperado para la transacción actual
      */
     const iniciarEspera = (montoTotal) => {
@@ -26,41 +26,41 @@ export function useYapeMatcher() {
 
         matcherState.expectedAmount = Number(montoTotal);
         matcherState.isListening = true;
-        matcherState.candidateYape = null;
+        matcherState.candidate = null;
         matcherState.isLocked = true;
         
         toast.add({ 
             severity: 'info', 
-            summary: 'Esperando Yape...', 
+            summary: 'Esperando Pago Digital...', 
             detail: `Monitoreando ingresos por S/ ${montoTotal.toFixed(2)}`,
             life: 3000 
         });
     };
 
     /**
-     * Método para cancelar la espera de un Yape
+     * Método para cancelar la espera de un pago digital
      * Posibles errores en el proceso o decisión humana
      */
     const cancelarEspera = () => {
         matcherState.isListening = false;
         matcherState.expectedAmount = 0;
-        matcherState.candidateYape = null;
+        matcherState.candidate = null;
         matcherState.showModal = false;
         matcherState.isLocked = false;
     };
 
     /**
-     * Watcher para detectar nuevos Yapes entrantes y validar el monto esperado
-     * @param {Ref} yapesPendientesRef - La referencia reactiva de useYape
+     * Watcher para detectar nuevos pagos digitales entrantes y validar el monto esperado
+     * @param {Ref} pendientesRef - La referencia reactiva de useDigitalPayments
      */
-    const vigilarYapesEntrantes = (yapesPendientesRef) => {
-        watch(yapesPendientesRef, (nuevosYapes) => {
+    const vigilarEntrantes = (pendientesRef) => {
+        watch(pendientesRef, (nuevosPagos) => {
             if (!matcherState.isListening || matcherState.showModal) return;
 
-            const match = nuevosYapes.find(y => Number(y.amount) === matcherState.expectedAmount);
+            const match = nuevosPagos.find(y => Number(y.amount) === matcherState.expectedAmount);
 
             if (match) {
-                matcherState.candidateYape = match;
+                matcherState.candidate = match;
                 matcherState.matchType = 'AUTO';
                 matcherState.showModal = true;
                 matcherState.isListening = false;
@@ -69,15 +69,15 @@ export function useYapeMatcher() {
     };
 
     /**
-     * El cajero selecciona manualmente un Yape de la lista
-     * @param {Object} yape - El Yape seleccionado manualmente
-     * @param {int} montoCarrito - El monto actual del carrito para validar contra el Yape
+     * El cajero selecciona manualmente un pago de la lista
+     * @param {Object} pagoDigital - El pago digital seleccionado manualmente
+     * @param {int} montoCarrito - El monto actual del carrito para validar contra el pago digital
      */
-    const validarSeleccionManual = (yape, montoCarrito) => {
+    const validarSeleccionManual = (pagoDigital, montoCarrito) => {
 
         if (montoCarrito <= 0) {
-            matcherState.candidateYape = yape;
-            matcherState.expectedAmount = Number(yape.amount);
+            matcherState.candidate = pagoDigital;
+            matcherState.expectedAmount = Number(pagoDigital.amount);
             matcherState.matchType = 'DIRECT';
 
             matcherState.showModal = true;
@@ -87,18 +87,18 @@ export function useYapeMatcher() {
             return { valid: true, action: 'CONFIRM_DIRECT' };
         }
 
-        const areEqual = Math.round(Number(yape.amount) * 100) === Math.round(Number(montoCarrito) * 100);
+        const areEqual = Math.round(Number(pagoDigital.amount) * 100) === Math.round(Number(montoCarrito) * 100);
         
         if (!areEqual) {
             return { 
                 valid: false, 
                 error: 'AMOUNT_MISMATCH', 
-                yapeAmount: yape.amount, 
+                pagoDigitalAmount: pagoDigital.amount, 
                 expected: montoCarrito 
             };
         }
 
-        matcherState.candidateYape = yape;
+        matcherState.candidate = pagoDigital;
         matcherState.expectedAmount = montoCarrito;
         matcherState.matchType = 'MANUAL';
         matcherState.showModal = true;
@@ -114,7 +114,7 @@ export function useYapeMatcher() {
     const resetMatcher = () => {
         matcherState.isListening = false;
         matcherState.expectedAmount = 0;
-        matcherState.candidateYape = null;
+        matcherState.candidate = null;
         matcherState.showModal = false;
         matcherState.isLocked = false;
     };
@@ -123,7 +123,7 @@ export function useYapeMatcher() {
         matcherState,
         iniciarEspera,
         cancelarEspera,
-        vigilarYapesEntrantes,
+        vigilarEntrantes,
         validarSeleccionManual,
         resetMatcher
     };

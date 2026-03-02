@@ -64,7 +64,7 @@ export function useShift() {
             stats: {
                 fund: Number(montoInicial),
                 totalCashSales: 0,
-                totalYapeSales: 0,
+                totalDigitalSales: 0,
                 totalExpenses: 0,
                 totalTransactions: 0
             },
@@ -121,7 +121,7 @@ export function useShift() {
 
             const fnd = Number(stats.fund || 0);
             const cash = Number(stats.totalCashSales || 0);
-            const yape = Number(stats.totalYapeSales || 0);
+            const digital = Number(stats.totalDigitalSales || 0);
             const exp = Number(stats.totalExpenses || 0);
 
             const declarado = Number(arqueoState.monto) || 0;
@@ -146,8 +146,8 @@ export function useShift() {
                     isBalanced: Math.round(diferencia * 100) === 0
                 },
 
-                totalIngresosDia: cash + yape,
-                totalYape: yape,
+                totalIngresosDia: cash + digital,
+                totalDigital: digital,
                 totalEfectivoFinal: cash
             };
 
