@@ -136,17 +136,17 @@
             <div class="confirm-data-card">
                 <div class="data-row">
                   <span class="lbl">Cliente:</span>
-                  <span class="val">{{ matcherState.candidateYape?.senderName }}</span>
+                  <span class="val">{{ matcherState.candidate?.senderName }}</span>
                 </div>
                 <div class="data-row total-row">
                   <span class="lbl">Monto:</span>
-                  <span class="val-amount">S/ {{ Number(matcherState.candidateYape?.amount).toFixed(2) }}</span>
+                  <span class="val-amount">S/ {{ Number(matcherState.candidate?.amount).toFixed(2) }}</span>
                 </div>
             </div>
 
             <div class="confirm-btns">
                 <Button label="DESCARTAR" severity="secondary" text @click="cancelarVinculo" class="flex-1" />
-                <Button label="CONFIRMAR VENTA" @click="confirmarVinculo" icon="pi pi-bolt" class="flex-1 btn-confirm-yape" />
+                <Button label="CONFIRMAR VENTA" @click="confirmarVinculo" icon="pi pi-bolt" class="flex-1 btn-confirm-digital-payment" />
             </div>
         </div>
     </Dialog>
@@ -198,7 +198,7 @@
 </header>
 
         <section class="top-feed-bar">
-           <YapeFeed :yapes="yapesPendientes" @pescar="handlePesca" />
+           <DigitalFeed :pagos-digitales="pendientes" @pescar="handlePesca" />
         </section>
 
         <main class="pos-main-stage">
@@ -222,7 +222,7 @@ import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 
 import ShiftOpen from '@/components/pos/ShiftOpen.vue';
-import YapeFeed from '@/components/pos/YapeFeed.vue'; 
+import DigitalFeed from '@/components/pos/DigitalFeed.vue'; 
 import SalesHistory from '@/components/pos/SalesHistory.vue'; 
 import SucursalSelector from '@/components/shared/SucursalSelector.vue';
 import POSPanel from '@/components/pos/POSPanel.vue';
@@ -231,10 +231,10 @@ import Button from 'primevue/button';
 import { useAuth } from '@/composables/useAuth';
 import { useSucursal } from '@/composables/useSucursal';
 import { useShift } from '@/composables/useShift'; 
-import { useYape } from '@/composables/useYape';
+import { useDigitalPayments } from '@/composables/useDigitalPayments';
 import { simularDatos } from '@/utils/devSimulator';
 import { useMovements } from '@/composables/useMovements';
-import { useYapeMatcher } from '@/composables/useYapeMatcher';
+import { useMatcher } from '@/composables/useMatcher';
 
 import '@/assets/dashboard.css';
 
@@ -261,9 +261,9 @@ const {
 
 const {
   escucharPendientes,
-  yapesPendientes,
+  pendientes,
   detenerTodo
-} = useYape();
+} = useDigitalPayments();
 
 const { 
   escucharMovimientos,
@@ -275,13 +275,13 @@ const {
 
 const { 
     matcherState, 
-    vigilarYapesEntrantes, 
+    vigilarEntrantes, 
     validarSeleccionManual, 
     resetMatcher, 
     cancelarEspera 
-} = useYapeMatcher();
+} = useMatcher();
 
-vigilarYapesEntrantes(yapesPendientes);
+vigilarEntrantes(pendientes);
 
 const globalLoading = ref(true);
 
@@ -433,21 +433,21 @@ const guardarGastoUI = async () => {
 
 /**
  * Utilitario de manejo de pesca de una transacción pendiente
- * @param {Object} yape - Objeto de transacción pendiente
+ * @param {Object} pagoDigital - Objeto de transacción pendiente
  */
-const handlePesca = (yape) => {
+const handlePesca = (pagoDigital) => {
   if (!posPanelRef.value) return;
 
   const totalCarrito = posPanelRef.value.totalGeneral || 0;
 
-  const resultado = validarSeleccionManual(yape, totalCarrito);
+  const resultado = validarSeleccionManual(pagoDigital, totalCarrito);
 
   if (!resultado.valid) {
     if (resultado.error === 'AMOUNT_MISMATCH') {
       toast.add({ 
         severity: 'error', 
         summary: 'Monto Incorrecto', 
-        detail: `El Yape es de S/ ${resultado.yapeAmount} pero el carrito espera S/ ${resultado.expected.toFixed(2)}`,
+        detail: `El Pago Digital es de S/ ${resultado.pagoDigitalAmount} pero el carrito espera S/ ${resultado.expected.toFixed(2)}`,
         life: 3000
       });
     }
@@ -459,9 +459,9 @@ const handlePesca = (yape) => {
  * Método para confirmar el match entre una transacción pendiente y una venta en POS
  */
 const confirmarVinculo = async () => {
-    if (!posPanelRef.value || !matcherState.candidateYape) return;
+    if (!posPanelRef.value || !matcherState.candidate) return;
     
-    await posPanelRef.value.finalizarVentaYapeConfirmada(matcherState.candidateYape);
+    await posPanelRef.value.finalizarVentaDigitalConfirmada(matcherState.candidate);
     
     resetMatcher();
 };
@@ -548,7 +548,7 @@ const handleSimulacion = async () => {
   gap: 1rem;
 }
 
-.btn-confirm-yape {
+.btn-confirm-digital-payment {
   background: var(--color-primary) !important;
   color: var(--color-accent) !important;
   border: none !important;
