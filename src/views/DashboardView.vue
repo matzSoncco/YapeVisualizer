@@ -478,9 +478,8 @@ const cancelarVinculo = () => {
  * Utilitario para simular datos de transacciones
  */
 const handleSimulacion = async () => {
-  if (showSimulator.value && user.value?.email) {
-    const { simularDatos } = await import('@/utils/devSimulator');
-    simularDatos(user.value.email);
+  if (showSimulator.value && user.value?.uid) {
+    simularDatos(user.value.uid);
   }
 };
 </script>
