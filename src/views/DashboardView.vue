@@ -254,8 +254,6 @@ const cancelarVinculo = () => {
  * Utilitario para simular datos de transacciones
  */
 const handleSimulacion = async () => {
-  if (showSimulator.value && user.value?.uid) {
-    simularDatos(user.value.uid)
-  }
+  if (user.value?.uid) simularDatos(user.value.uid);
 }
 </script>
