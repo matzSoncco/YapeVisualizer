@@ -4,8 +4,10 @@
     <template v-else>
       <ArqueoModal />
       <ExpenseModal />
-      <PaymentMatchModal @confirmar="confirmarVinculo" @cancelar="cancelarVinculo" />
-
+      <PaymentMatchModal
+        @confirmar-vinculo="confirmarVinculo"
+        @descartar-pago="cancelarVinculo"
+      />
       <div v-if="!sucursalActual">
         <SucursalSelector />
       </div>

@@ -59,15 +59,15 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { useMatcher } from '@/composables/useMatcher'
 
-// El estado del matcher es global, así que lo importamos directo
 const { matcherState } = useMatcher()
 
-// Emitimos eventos al Dashboard porque el Dashboard es quien tiene la referencia (ref) del POSPanel
-defineEmits(['confirmar', 'cancelar'])
+/**
+ * Emits para confirmar o cancelar el proceso de vinculación manual
+ */
+defineEmits(['confirmar-vinculo', 'descartar-pago'])
 </script>
 
 <style scoped>
-/* Estilos específicos del Modal de Confirmación */
 .confirm-body {
   padding: 1rem 0;
   display: flex;
