@@ -12,7 +12,7 @@ export const simularDatos = async (userId) => {
     }
 
     const randomMonto = [10, 20, 50, 100][Math.floor(Math.random() * 4)];
-    const randomName = ['Max', 'Peposinho', 'Juerges'][Math.floor(Math.random() * 3)];
+    const randomName = ['Max', 'Jose', 'Alejandro'][Math.floor(Math.random() * 3)];
     const wallets = ['YAPE', 'PLIN'];
     const randomWallet = wallets[Math.floor(Math.random() * wallets.length)];
 
@@ -22,7 +22,7 @@ export const simularDatos = async (userId) => {
         await setDoc(userRef, { lastActivity: serverTimestamp() }, { merge: true });
 
         const userNotificationsRef = collection(db, "users", userId, "yape_notifications");
-        const docRef = await addDoc(userNotificationsRef, {
+        await addDoc(userNotificationsRef, {
             senderName: randomName,
             amount: Number(randomMonto),
             wallet: randomWallet,
