@@ -32,7 +32,7 @@ export const formatearFecha = (fechaInput) => {
 
 export const formatearHora = (timestampRecibido) => {
   if (!timestampRecibido) return '--:--';
-  const horaFormateada = timestampRecibido.toDate ? timestampRecibido.toDate() : new DAte(timestampRecibido);
+  const horaFormateada = timestampRecibido.toDate ? timestampRecibido.toDate() : new Date(timestampRecibido);
   return horaFormateada.toLocaleTimeString('es-PE', {
     hour: '2-digit',
     minute: '2-digit',
