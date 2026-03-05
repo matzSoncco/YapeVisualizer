@@ -83,7 +83,6 @@ const {
   movimientosTurno,
   detenerEscuchaMovimientos,
   expenseState,
-  registrarGasto,
 } = useMovements()
 
 const { matcherState, vigilarEntrantes, validarSeleccionManual, resetMatcher, cancelarEspera } =
@@ -190,24 +189,6 @@ const handleCierreClick = async () => {
     return
   }
   abrirArqueo()
-}
-
-/**
- * Método que maneja el registro de un gasto operativo desde la UI
- * Muestra notificaciones según el resultado del registro del gasto
- */
-const guardarGastoUI = async () => {
-  try {
-    await registrarGasto()
-    toast.add({
-      severity: 'warn',
-      summary: 'Gasto Registrado',
-      detail: 'Actualizado en caja.',
-      life: 3000,
-    })
-  } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 })
-  }
 }
 
 /**
