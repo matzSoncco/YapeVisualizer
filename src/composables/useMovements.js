@@ -14,6 +14,16 @@ import { store } from '../store';
 import { useProducts } from "./useProducts";
 import { ref, reactive } from 'vue';
 
+/**
+ * Estado para el proceso de registro de gastos dentro del turno activo
+ */
+const expenseState = reactive({
+    isOpen: false,
+    description: '',
+    amount: null,
+    loading: false
+})
+
 export function useMovements() {
     const { actualizarCatalogo } = useProducts();
     const { user } = useAuth();
@@ -121,13 +131,6 @@ export function useMovements() {
             throw error;
         }
     };
-
-    const expenseState = reactive({
-        isOpen: false,
-        description: '',
-        amount: null,
-        loading: false
-    })
 
     /**
      * Registra un gasto como un nuevo movimiento en el turno activo

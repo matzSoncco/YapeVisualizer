@@ -15,6 +15,15 @@ import {
 import { useAuth } from './useAuth';
 import { store, setCurrentShift, setLoading } from '@/store';
 
+/**
+ * Estado para el proceso de arqueo al cerrar turno
+ */
+const arqueoState = reactive({
+    isOpen: false,
+    monto: null,
+    loading: false
+})
+
 export function useShift() {
     const { user } = useAuth();
 
@@ -91,12 +100,6 @@ export function useShift() {
             throw error;
         }
     };
-
-    const arqueoState = reactive({
-        isOpen: false,
-        monto: null,
-        loading: false
-    })
 
     const abrirArqueo = () => {
         arqueoState.monto = null;

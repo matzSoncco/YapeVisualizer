@@ -17,8 +17,8 @@
 
         <div v-else class="pos-grid-container">
           <POSNavbar
-            :nombreSucursal="nombreSucursalActual"
-            :nombreCajero="nombreCajero"
+            :nombre-sucursal="nombreSucursalActual"
+            :nombre-cajero="nombreCajero"
             @cambiar-sucursal="cambiarSucursal"
             @finalizar-turno="handleCierreClick"
             @abrir-gasto="expenseState.isOpen = true"

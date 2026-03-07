@@ -19,8 +19,8 @@
     </div>
 
     <div v-else class="table-wrapper">
-      <DataTable 
-        :value="ventas" 
+      <DataTable
+        :value="ventas"
         :paginator="ventas.length > 12"
         :rows="12"
         responsiveLayout="scroll"
@@ -31,11 +31,9 @@
             <code class="time-text">{{ formatearHora(slotProps.data.timestamp) }}</code>
           </template>
         </Column>
-        
         <Column header="Concepto / Cliente" class="col-client">
           <template #body="slotProps">
             <div v-if="slotProps.data.type === 'EXPENSE'" class="expense-label">
-              <i class="pi pi-arrow-down-right"></i>
               <span>GASTO OPERATIVO</span>
             </div>
             <div v-else class="client-info">
@@ -43,84 +41,134 @@
             </div>
           </template>
         </Column>
-        
         <Column header="Método" class="col-method">
           <template #body="slotProps">
             <div class="method-badges">
-               <Tag v-if="slotProps.data.type === 'EXPENSE'" value="Egreso" severity="danger" rounded />
-               <template v-else-if="obtenerBilletera(slotProps.data)">
-                <Tag 
-                  :value="obtenerBilletera(slotProps.data).label" 
-                  :class="obtenerBilletera(slotProps.data).class" 
-                  rounded 
+              <Tag
+                v-if="slotProps.data.type === 'EXPENSE'"
+                value="Egreso"
+                severity="danger"
+                rounded
+              />
+              <template v-else-if="obtenerBilletera(slotProps.data)">
+                <Tag
+                  :value="obtenerBilletera(slotProps.data).label"
+                  :class="obtenerBilletera(slotProps.data).class"
+                  rounded
                 />
               </template>
-               <Tag v-else value="Efectivo" class="tag-cash" rounded />
+              <Tag v-else value="Efectivo" class="tag-cash" rounded />
             </div>
           </template>
         </Column>
 
         <Column field="totalAmount" header="Monto" class="col-amount">
           <template #body="slotProps">
-            <span class="amount-text" :class="{'is-expense': slotProps.data.type === 'EXPENSE'}">
-              {{ slotProps.data.type === 'EXPENSE' ? '-' : '' }} S/ {{ Number(slotProps.data.totalAmount || slotProps.data.amount).toFixed(2) }}
+            <span class="amount-text" :class="{ 'is-expense': slotProps.data.type === 'EXPENSE' }">
+              {{ slotProps.data.type === 'EXPENSE' ? '-' : '' }} S/
+              {{ Number(slotProps.data.totalAmount || slotProps.data.amount).toFixed(2) }}
             </span>
+          </template>
+        </Column>
+        <Column header="Acciones" class="col-actions" :style="{ width: '100px' }">
+          <template #body="slotProps">
+            <div class="actions-group">
+              <Button
+                icon="pi pi-info-circle"
+                text
+                rounded
+                @click="detalleRef?.open(slotProps.data)"
+                v-tooltip.top="'Ver Detalle'"
+                class="btn-action-info"
+              />
+              <Button
+                v-if="slotProps.data.type !== 'EXPENSE'"
+                icon="pi pi-print"
+                text
+                rounded
+                severity="success"
+                @click="imprimirTicket(slotProps.data)"
+                v-tooltip.top="'Imprimir Ticket'"
+                class="btn-action-print"
+              />
+            </div>
           </template>
         </Column>
       </DataTable>
     </div>
+    <SaleDetailModal ref="detalleRef" />
   </div>
 </template>
 
 <script setup>
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Tag from 'primevue/tag';
-import { computed } from 'vue';
-import { formatearHora } from '@/utils/dates';
-import { store } from '@/store';
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import Tag from 'primevue/tag'
+import { ref, computed } from 'vue'
+import { formatearHora } from '@/utils/dates'
+import { store } from '@/store'
+import { useToast } from 'primevue'
+
+import SaleDetailModal from './SaleDetailModal.vue'
 
 const props = defineProps({
-  ventas: { type: Array, required: true }
-});
+  ventas: { type: Array, required: true },
+})
+
+const detalleRef = ref(null)
+const toast = useToast()
 
 /**
  * Cálculo del Total
  * TODO: Mover a un composable o utilitario si fuera necesario
  */
 const total = computed(() => {
-  const stats = store.currentShift?.stats;
+  const stats = store.currentShift?.stats
 
-  if (!stats) return 0;
-  
-  const cash = Number(stats.totalCashSales || 0);
-  const digital = Number(stats.totalDigitalSales || 0);
-  const expenses = Number(stats.totalExpenses || 0);
+  if (!stats) return 0
 
-  return (cash + digital) - expenses;
-});
+  const cash = Number(stats.totalCashSales || 0)
+  const digital = Number(stats.totalDigitalSales || 0)
+  const expenses = Number(stats.totalExpenses || 0)
+
+  return cash + digital - expenses
+})
 
 /**
  * Extrae la metadata de la billetera del objeto de venta
  * @param {Object} data - Documento de la venta
  */
 const obtenerBilletera = (data) => {
-  if (!data.payments || data.payments.length === 0) return null;
-  
-  const pagoDigital = data.payments.find(p => p.method !== 'CASH');
-  
-  if (pagoDigital) {
-      const walletRaw = pagoDigital.wallet || data.wallet || pagoDigital.method;
-      const walletName = walletRaw.toUpperCase();
+  if (!data.payments || data.payments.length === 0) return null
 
-      return {
-        label: walletName.charAt(0) + walletName.slice(1).toLowerCase(),
-        class: walletName === 'PLIN' ? 'tag-plin' : 'tag-yape'
-      };
+  const pagoDigital = data.payments.find((p) => p.method !== 'CASH')
+
+  if (pagoDigital) {
+    const walletRaw = pagoDigital.wallet || data.wallet || pagoDigital.method
+    const walletName = walletRaw.toUpperCase()
+
+    return {
+      label: walletName.charAt(0) + walletName.slice(1).toLowerCase(),
+      class: walletName === 'PLIN' ? 'tag-plin' : 'tag-yape',
+    }
   }
-  
-  return null;
-};
+
+  return null
+}
+
+/**
+ * Funcion temporal, pensada para impresion de tickets en general
+ * Imprime nota de venta sin valor real, solo para mostrar la funcionalidad
+ * @param data - Documento de venta para extraer información relevante para la impresión
+ */
+const imprimirTicket = (data) => {
+  toast.add({
+    severity: 'info',
+    summary: 'Función en Desarrollo',
+    detail: 'La impresión de notas está en desarrollo.',
+    life: 3000,
+  })
+}
 </script>
 
 <style scoped>
@@ -131,7 +179,6 @@ const obtenerBilletera = (data) => {
   background-color: white;
 }
 
-/* HEADER: Estilo minimalista */
 .history-header {
   padding: 1.25rem 1.5rem;
   display: flex;
@@ -147,7 +194,10 @@ const obtenerBilletera = (data) => {
   color: var(--color-primary);
 }
 
-.header-info i { font-size: 1.2rem; }
+.header-info i {
+  font-size: 1.2rem;
+}
+
 .header-info h3 {
   font-size: 1rem;
   font-weight: 800;
@@ -236,6 +286,27 @@ const obtenerBilletera = (data) => {
   color: #ef4444;
 }
 
+.actions-group {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.btn-action-info {
+  color: #64748b !important;
+}
+
+.btn-action-print {
+  color: #22c55e !important;
+}
+
+.btn-action-info:hover {
+  background: #f1f5f9 !important;
+}
+.btn-action-print:hover {
+  background: #f0fdf4 !important;
+}
+
 /* BADGES PERSONALIZADOS */
 :deep(.p-tag) {
   font-size: 0.65rem !important;
@@ -243,18 +314,18 @@ const obtenerBilletera = (data) => {
   padding: 0.2rem 0.6rem !important;
 }
 
-.tag-yape { 
-  background: #f5f3ff !important; 
-  color: #7c3aed !important; 
-  border: 1px solid #ddd6fe !important; 
+.tag-yape {
+  background: #f5f3ff !important;
+  color: #7c3aed !important;
+  border: 1px solid #ddd6fe !important;
 }
 
-/* Color Cyan para Plin */
-.tag-plin { 
-  background: #ecfeff !important; 
-  color: #0891b2 !important; 
-  border: 1px solid #cffafe !important; 
+.tag-plin {
+  background: #ecfeff !important;
+  color: #0891b2 !important;
+  border: 1px solid #cffafe !important;
 }
+
 .tag-cash {
   background: #f0fdf4 !important;
   color: #15803d !important;
@@ -275,8 +346,17 @@ const obtenerBilletera = (data) => {
   color: var(--color-text-muted);
 }
 
-.empty-visual i { font-size: 3.5rem; margin-bottom: 1rem; }
-.empty-visual p { font-weight: 700; font-size: 0.9rem; }
+.empty-visual i {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+}
 
-.col-amount { text-align: right; }
+.empty-visual p {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.col-amount {
+  text-align: right;
+}
 </style>

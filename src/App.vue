@@ -102,7 +102,14 @@ watch(user, (newUser) => {
 </script>
 
 <template>
-  <ConfirmDialog />
+  <ConfirmDialog class="custom-confirm">
+    <template #message="slotProps">
+      <div class="confirm-content">
+        <i :class="slotProps.message.icon" class="confirm-icon"></i>
+        <span class="confirm-text">{{ slotProps.message.message }}</span>
+      </div>
+    </template>
+  </ConfirmDialog>
   <SubscriptionBanner />
   <Toast />
   <RouterView :key="route.fullPath" />
