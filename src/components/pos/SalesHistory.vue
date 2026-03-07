@@ -48,7 +48,13 @@
           <template #body="slotProps">
             <div class="method-badges">
                <Tag v-if="slotProps.data.type === 'EXPENSE'" value="Egreso" severity="danger" rounded />
-               <Tag v-else-if="esPagoYape(slotProps.data)" value="Yape" class="tag-yape" rounded />
+               <template v-else-if="obtenerBilletera(slotProps.data)">
+                <Tag 
+                  :value="obtenerBilletera(slotProps.data).label" 
+                  :class="obtenerBilletera(slotProps.data).class" 
+                  rounded 
+                />
+              </template>
                <Tag v-else value="Efectivo" class="tag-cash" rounded />
             </div>
           </template>
@@ -72,6 +78,7 @@ import Column from 'primevue/column';
 import Tag from 'primevue/tag';
 import { computed } from 'vue';
 import { formatearHora } from '@/utils/dates';
+import { store } from '@/store';
 
 const props = defineProps({
   ventas: { type: Array, required: true }
@@ -82,22 +89,37 @@ const props = defineProps({
  * TODO: Mover a un composable o utilitario si fuera necesario
  */
 const total = computed(() => {
-  return props.ventas.reduce((sum, item) => {
-      const monto = Number(item.totalAmount || item.amount || 0);
-      if (item.type === 'EXPENSE') {
-          return sum - monto;
-      }
-      return sum + monto;
-  }, 0);
+  const stats = store.currentShift?.stats;
+
+  if (!stats) return 0;
+  
+  const cash = Number(stats.totalCashSales || 0);
+  const digital = Number(stats.totalDigitalSales || 0);
+  const expenses = Number(stats.totalExpenses || 0);
+
+  return (cash + digital) - expenses;
 });
 
 /**
- * Identifica si es una venta por Yape o gasto operativo para estilos
- * @param data - Objeto de venta o gasto operativo
+ * Extrae la metadata de la billetera del objeto de venta
+ * @param {Object} data - Documento de la venta
  */
-const esPagoYape = (data) => {
-    if (!data.payments) return false;
-    return data.payments.some(p => p.method === 'YAPE');
+const obtenerBilletera = (data) => {
+  if (!data.payments || data.payments.length === 0) return null;
+  
+  const pagoDigital = data.payments.find(p => p.method !== 'CASH');
+  
+  if (pagoDigital) {
+      const walletRaw = pagoDigital.wallet || data.wallet || pagoDigital.method;
+      const walletName = walletRaw.toUpperCase();
+
+      return {
+        label: walletName.charAt(0) + walletName.slice(1).toLowerCase(),
+        class: walletName === 'PLIN' ? 'tag-plin' : 'tag-yape'
+      };
+  }
+  
+  return null;
 };
 </script>
 
@@ -221,8 +243,23 @@ const esPagoYape = (data) => {
   padding: 0.2rem 0.6rem !important;
 }
 
-.tag-yape { background: #f5f3ff !important; color: #7c3aed !important; border: 1px solid #ddd6fe !important; }
-.tag-cash { background: #f0fdf4 !important; color: #15803d !important; border: 1px solid #bbf7d0 !important; }
+.tag-yape { 
+  background: #f5f3ff !important; 
+  color: #7c3aed !important; 
+  border: 1px solid #ddd6fe !important; 
+}
+
+/* Color Cyan para Plin */
+.tag-plin { 
+  background: #ecfeff !important; 
+  color: #0891b2 !important; 
+  border: 1px solid #cffafe !important; 
+}
+.tag-cash {
+  background: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1px solid #bbf7d0 !important;
+}
 
 /* ESTADO VACÍO */
 .empty-history {

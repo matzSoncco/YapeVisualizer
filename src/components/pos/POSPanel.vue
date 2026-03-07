@@ -136,7 +136,7 @@
         </button>
         <button
         class="pay-btn-custom yape-bg"
-        @click="iniciarFlujoYape"
+        @click="iniciarFlujo"
         :disabled="!puedeProcederAlPago"
         >
           <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
@@ -153,15 +153,15 @@ import { ref, computed, watch } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { useProducts } from '@/composables/useProducts';
 import { useMovements } from '@/composables/useMovements';
-import { useYape } from '@/composables/useYape';
-import { useYapeMatcher } from '@/composables/useYapeMatcher';
+import { useDigitalPayments } from '@/composables/useDigitalPayments';
+import { useMatcher } from '@/composables/useMatcher';
 import { cartStorageKey } from '@/store'
 import "@/assets/pospanel.css";
 
 const { suggestions, buscarProductos } = useProducts();
 const { registrarVenta } = useMovements();
-const { reclamarYape } = useYape();
-const { iniciarEspera, cancelarEspera, matcherState } = useYapeMatcher();
+const { reclamarPagoDigital } = useDigitalPayments();
+const { iniciarEspera, cancelarEspera, matcherState } = useMatcher();
 const toast = useToast();
 
 const cart = ref([]);
@@ -204,10 +204,6 @@ watch(cart, (newVal) => {
     }
   }
 }, { deep: true });
-
-const puedeCobrar = computed(() => {
-  return cart.value.length > 0 || (quickAmount.value && quickAmount.value > 0);
-})
 
 /**
  * Valores calculados para la UI
@@ -258,23 +254,39 @@ const agregarAlCarrito = () => {
 const removerItem = (idx) => cart.value.splice(idx, 1);
 
 /**
- * Iniciar el flujo de venta con Yape
- * El matcher evita que se inicie un nuevo proceso
+ * Iniciar el flujo de venta con espera de pago digital. Si ya se está esperando, cancela la espera actual.
  */
-const iniciarFlujoYape = () => {
+const iniciarFlujo = () => {
   if (matcherState.isListening) {
     cancelarEspera();
+    toast.add({ severity: 'info', summary: 'Escucha cancelada' });
   } else {
-    iniciarEspera(totalGeneral.value);
+    const exito = iniciarEspera(totalGeneral.value);
+
+    if (exito) {
+      toast.add({ 
+        severity: 'info', 
+        summary: 'Esperando Pago Digital...', 
+        detail: `Monitoreando ingresos por S/ ${totalGeneral.value.toFixed(2)}`,
+        life: 3000 
+      });
+    } else {
+      toast.add({ 
+        severity: 'warn', 
+        summary: 'Carrito vacío', 
+        detail: 'Agrega productos antes de esperar un pago.',
+        life: 3000 
+      });
+    }
   }
 };
 
 /**
- * Método para finalizar la venta una vez que el matcher confirma el Yape
- * @param yape - Objeto de la transacción Yape confirmada por el matcher
+ * Método para finalizar la venta una vez que el matcher confirma el pago digital
+ * @param candidato - Objeto de la transacción confirmada por el matcher
  */
-const finalizarVentaYapeConfirmada = async (yape) => {
-  await procesarPago('YAPE', yape);
+const finalizarVentaDigitalConfirmada = async (candidato) => {
+  await procesarPago('DIGITAL', candidato);
 };
 
 /**
@@ -290,32 +302,34 @@ const prellenarCarrito = (monto) => {
 /**
  * Método para determinar si un movimiento es un pago con Yape basado en su metadata
  * @param method - Método de pago del movimiento
- * @param yapeConfirmado - Objeto de la transacción Yape confirmada
+ * @param pagoDigitalConfirmado - Objeto de la transacción Yape confirmada
  */
-const procesarPago = async (method, yapeConfirmado = null) => {
+const procesarPago = async (method, pagoDigitalConfirmado = null) => {
   loading.value = true;
   try {
     let itemsFinales = [];
     let esVentaRapida = false;
 
-    if (cart.value.length > 0) {
-        itemsFinales = cart.value;
-    } else if (quickAmount.value > 0) {
-        itemsFinales = [{
-          name: "VENTA GENERAL",
-          qty: 1,
-          price: quickAmount.value,
-          subtotal: quickAmount.value
-        }];
-        esVentaRapida = true;
-    } else if (method === 'YAPE' && yapeConfirmado) {
-      const montoYape = Number(yapeConfirmado.amount);
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+      const montoValidado = Number(pagoDigitalConfirmado.amount) || 0;
       itemsFinales = [{
-        name: "VENTA YAPE DIRECTA",
+        name: "VENTA DIGITAL DIRECTA",
         qty: 1,
-        price: montoYape,
-        subtotal: montoYape
-      }]
+        price: montoValidado,
+        subtotal: montoValidado
+      }];
+    } 
+    else if (cart.value.length > 0) {
+      itemsFinales = cart.value;
+    } 
+    else if (quickAmount.value > 0) {
+      itemsFinales = [{
+        name: "VENTA GENERAL",
+        qty: 1,
+        price: Number(quickAmount.value),
+        subtotal: Number(quickAmount.value)
+      }];
+      esVentaRapida = true;
     } else {
       return;
     }
@@ -325,40 +339,43 @@ const procesarPago = async (method, yapeConfirmado = null) => {
     const payments = [{ 
       method, 
       amount: totalReal, 
-      refId: method === 'YAPE' && yapeConfirmado ? yapeConfirmado.id : null 
+      refId: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.id : null,
+      wallet: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.wallet : (method === 'DIGITAL' ? 'YAPE' : null)
     }];
 
     let nombreCliente = 'Cliente Eventual';
-    if (method === 'YAPE' && yapeConfirmado) {
-      nombreCliente = yapeConfirmado.senderName;
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+      nombreCliente = pagoDigitalConfirmado.senderName;
     }
 
     const movId = await registrarVenta({
       items: itemsFinales,
       payments,
       total: totalReal,
-      clientName: method === 'YAPE' && yapeConfirmado ? yapeConfirmado.senderName : 'Cliente Eventual',
-      metadata: { isQuickSale: esVentaRapida }
+      clientName: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.senderName : 'Cliente Eventual',
+      metadata: { 
+        isQuickSale: esVentaRapida,
+        walletUsed: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.wallet : null 
+      }
     });
 
-    if (method === 'YAPE' && yapeConfirmado) {
-      await reclamarYape(yapeConfirmado.id, movId);
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+      await reclamarPagoDigital(pagoDigitalConfirmado.id, movId);
     }
 
     cart.value = [];
     quickAmount.value = null;
     
-    toast.add({ severity: 'success', summary: 'Venta Registrada', life: 2000 });
     emit('transaction-completed');
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 });
+    throw e;
   } finally {
     loading.value = false;
   }
 };
 
 defineExpose({ 
-  finalizarVentaYapeConfirmada,
+  finalizarVentaDigitalConfirmada,
   prellenarCarrito,
   cart,
   totalGeneral

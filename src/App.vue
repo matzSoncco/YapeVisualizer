@@ -2,9 +2,10 @@
 import { RouterView, useRoute } from 'vue-router'
 import { watch } from 'vue'
 import { db } from './firebaseConfig'
-import { collection, query, onSnapshot, doc } from 'firebase/firestore'
+import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import { useAuth } from '@/composables/useAuth'
 import { setSucursales, setLoading, setUserProfile } from '@/store'
+import SubscriptionBanner from './components/shared/SubscriptionBanner.vue'
 
 /**
  * Escucha en tiempo real los cambios en las sucursales del usuario autenticado
@@ -66,13 +67,31 @@ watch(user, (newUser) => {
   /**
    * Escucha cambios en el perfil del usuario
    */
-  unsubPerfil = onSnapshot(userDocRef, (docSnap) => {
+  unsubPerfil = onSnapshot(userDocRef, async (docSnap) => {
     if (docSnap.exists()) {
       const data = docSnap.data();
+      const subData = data.subscription || {};
+
+      const now = new Date();
+      const trialEnd = subData.trialEndDate ? new Date(subData.trialEndDate) : null;
+      const isTrialExpired = subData.status === 'trial' && trialEnd && now > trialEnd;
+
+      if (isTrialExpired && subData.isActive) {
+        try {
+          console.log("Detectado trial vencido. Apagando acceso en Firestore para bloquear APK...");
+          await updateDoc(userDocRef, {
+            'subscription.isActive': false,
+            'subscription.status': 'expired'
+          });
+          return; 
+        } catch (e) {
+          console.error("Error apagando la suscripción:", e);
+        }
+      }
       
       setUserProfile({
         role: data.role,
-        subscription: data.subscription || {},
+        subscription: subData,
         adminPin: data.adminPin
       });
     }
@@ -83,6 +102,8 @@ watch(user, (newUser) => {
 </script>
 
 <template>
+  <ConfirmDialog />
+  <SubscriptionBanner />
   <Toast />
   <RouterView :key="route.fullPath" />
 </template>

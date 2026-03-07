@@ -1,19 +1,19 @@
 import { computed, reactive } from 'vue';
 import { db } from "../firebaseConfig";
 import {
+    onSnapshot,
     collection,
     addDoc,
     doc,
     updateDoc,
     query,
     where,
-    getDocs,
     getDoc,
     limit,
     serverTimestamp,
 } from "firebase/firestore";
 import { useAuth } from './useAuth';
-import { store, setCurrentShift } from '@/store';
+import { store, setCurrentShift, setLoading } from '@/store';
 
 export function useShift() {
     const { user } = useAuth();
@@ -29,21 +29,27 @@ export function useShift() {
     const verificarTurnoActivo = async () => {
         setCurrentShift(null);
         if (!user.value?.uid || !sucursalId.value || sucursalId.value === 'ADMIN') return;
+        setLoading(true);
 
         try {
             const shiftsRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts');
             const q = query(shiftsRef, where('status', '==', 'OPEN'), limit(1));
             
-            const snapshot = await getDocs(q);
-            
-            if (!snapshot.empty) {
-                const docData = snapshot.docs[0];
-                setCurrentShift({ id: docData.id, ...docData.data() });
-            } else {
-                setCurrentShift(null);
-            }
+            return onSnapshot(q, (snapshot) => {
+                if (!snapshot.empty) {
+                    const docData = snapshot.docs[0];
+                    setCurrentShift({ id: docData.id, ...docData.data() });
+                } else {
+                    setCurrentShift(null);
+                }
+                setLoading(false);
+            }, (error) => {
+                console.error("Error en el stream del turno:", error);
+                setLoading(false);
+            });
         } catch (error) {
             console.error("Error verificando turno activo:", error);
+            setLoading(false);
         }
     };
 
@@ -64,7 +70,7 @@ export function useShift() {
             stats: {
                 fund: Number(montoInicial),
                 totalCashSales: 0,
-                totalYapeSales: 0,
+                totalDigitalSales: 0,
                 totalExpenses: 0,
                 totalTransactions: 0
             },
@@ -104,7 +110,10 @@ export function useShift() {
         const localShift = store.currentShift;
         const currentSucursalId = store.sucursalActual;
 
-        if (!localShift?.id || !currentSucursalId) throw new Error("Contexto inválido para cierre");
+        if (!localShift?.id || !currentSucursalId) {
+            arqueoState.loading = false;
+            throw new Error("Contexto inválido para cierre");
+        }
 
         arqueoState.loading = true;
 
@@ -121,12 +130,12 @@ export function useShift() {
 
             const fnd = Number(stats.fund || 0);
             const cash = Number(stats.totalCashSales || 0);
-            const yape = Number(stats.totalYapeSales || 0);
+            const digital = Number(stats.totalDigitalSales || 0);
             const exp = Number(stats.totalExpenses || 0);
 
             const declarado = Number(arqueoState.monto) || 0;
-            const efectivoTeorico = fnd + cash - exp;
-            const diferencia = declarado - efectivoTeorico;
+            const efectivoTeorico = Math.round((fnd + cash - exp) * 100) / 100;
+            const diferencia = Math.round((declarado - efectivoTeorico) * 100) / 100;
             
             const nombreSede = store.sucursales.find(s => s.id === currentSucursalId)?.nombre || 'Sucursal';
 
@@ -146,15 +155,18 @@ export function useShift() {
                     isBalanced: Math.round(diferencia * 100) === 0
                 },
 
-                totalIngresosDia: cash + yape,
-                totalYape: yape,
+                totalIngresosDia: Math.round((cash + digital) * 100) / 100,
+                totalDigital: digital,
                 totalEfectivoFinal: cash
             };
 
             await updateDoc(shiftRef, cierreData);
 
             setCurrentShift(null);
-            arqueoState.isOpen = false;
+            setTimeout(() => {
+                arqueoState.isOpen = false;
+                arqueoState.monto = null;
+            }, 100);
 
             return cierreData;
         } catch (error) {

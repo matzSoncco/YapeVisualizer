@@ -6,27 +6,27 @@
       <span>EN VIVO</span>
     </div>
 
-    <div v-if="yapes.length === 0" class="feed-empty">
+    <div v-if="pagosDigitales.length === 0" class="feed-empty">
       <i class="pi pi-check-circle"></i>
       <span>Todo al día. Esperando pagos...</span>
     </div>
 
     <div v-else class="feed-items-wrapper">
       <div 
-        v-for="yape in yapes" 
-        :key="yape.id" 
+        v-for="pagoDigital in pagosDigitales" 
+        :key="pagoDigital.id" 
         class="feed-chip"
-        @click="$emit('pescar', yape)"
+        @click="$emit('pescar', pagoDigital)"
       >
         <div class="chip-icon">
           <i class="pi pi-qrcode"></i>
         </div>
         <div class="chip-info">
-          <span class="chip-sender">{{ yape.senderName }}</span>
-          <span class="chip-time">{{ formatTime(yape.timestamp) }}</span>
+          <span class="chip-sender">{{ pagoDigital.senderName }}</span>
+          <span class="chip-time">{{ formatearHora(pagoDigital.timestamp) }}</span>
         </div>
         <div class="chip-amount">
-          S/ {{ Number(yape.amount).toFixed(2) }}
+          S/ {{ Number(pagoDigital.amount).toFixed(2) }}
         </div>
         <div class="chip-action">
            <i class="pi pi-plus"></i>
@@ -38,31 +38,21 @@
 </template>
 
 <script setup>
+import { formatearHora } from '@/utils/dates';
 /**
  * Propiedades recibidas por el componente
- * @prop {Array} yapes - Lista de yapes pendientes de validar (pendientes)
+ * @prop {Array} pagosDigitales - Lista de pagos digitales pendientes de validar (pendientes)
  */
 defineProps({
-  yapes: { type: Array, required: true }
+  pagosDigitales: { type: Array, required: true }
 });
 
 /**
  * Eventos personalizados emitidos por el componente
  * @event pescar - Evento emitido al reclamar una transaccion
- * @property {Object} yape - Objeto de la transacción reclamada
+ * @property {Object} pagoDigital - Objeto de la transacción digital reclamada
  */
 defineEmits(['pescar']);
-
-/**
- * Convierte un formato de fecha/timestamp a una hora local de 24 horas
- * @param {Object|Date|string} ts - Marca de tiempo (Firestore Timestamp, Date o ISO String)
- * @returns {string} Hora formateada en español
- */
-const formatTime = (ts) => {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
-};
 </script>
 
 <style scoped>

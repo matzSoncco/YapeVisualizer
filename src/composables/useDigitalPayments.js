@@ -7,18 +7,21 @@ import {
     orderBy,
     onSnapshot,
     doc,
+    getDoc,
     updateDoc,
     serverTimestamp 
 } from "firebase/firestore";
 import { store } from '../store';
+import { useAuth } from './useAuth';
 
 /**
  * Composable para manejar las transacciones de Yape
  * Logica de autoasignacion cuando el numero de sucursales es 1
  * @returns {Object} Propiedades y métodos del composable
  */
-export function useYape() {
-    const yapesPendientes = ref([]);
+export function useDigitalPayments() {
+    const { user } = useAuth();
+    const pendientes = ref([]);
     const loading = ref(false);
     const error = ref(null);
 
@@ -30,20 +33,26 @@ export function useYape() {
      * @param {string} nombreSucursal - Nombre de la sede destino
      * @returns {Promise<boolean>}
      */
-    const reclamarYape = async (yapeId, movementId) => {
+    const reclamarPagoDigital = async (yapeId, movementId) => {
         const currentShift = store.currentShift;
         const sucursalId = store.sucursalActual;
 
         if (!currentShift?.id) {
             console.warn("Advertencia: Se está registrando una venta sin sesión de caja activa.");
         }
+
+        if (!user.value?.uid) throw new Error("Usuario no autenticado");
         
         const sucursalObj = store.sucursales.find(s => s.id === sucursalId);
         const nombreSucursal = sucursalObj ? sucursalObj.nombre : 'Sucursal Desconocida';
 
         try {
-            const yapeRef = doc(db, "yape_notifications", yapeId);
-            await updateDoc(yapeRef, {
+            const digitalRef = doc(db, "users", user.value.uid, "yape_notifications", yapeId);
+            const docSnap = await getDoc(digitalRef);
+            if (docSnap.exists() && docSnap.data().status === 'PROCESSED') {
+                throw new Error("Este pago ya fue reclamado previamente.");
+            }
+            await updateDoc(digitalRef, {
                 status: "PROCESSED",
                 claimedAt: serverTimestamp(),
                 branchId: sucursalId,
@@ -54,7 +63,7 @@ export function useYape() {
             });
             return true;
         } catch (e) {
-            console.error("Error reclamando Yape:", e);
+            console.error("Error procesando pago digital:", e);
             throw e;
         }
     };
@@ -64,12 +73,12 @@ export function useYape() {
      * @param {string} emailAdmin
      */
     const escucharPendientes = (emailAdmin) => {
-        if (!emailAdmin) return;
+        if (!emailAdmin || !user.value?.uid) return;
 
         loading.value = true;
+        const notificationsRef = collection(db, "users", user.value.uid, "yape_notifications");
         const q = query(
-            collection(db, "yape_notifications"),
-            where("userEmail", "==", emailAdmin),
+            notificationsRef,
             where("status", "==", "pending"),
             orderBy("timestamp", "desc")
         );
@@ -77,10 +86,14 @@ export function useYape() {
         if (unsubPendientes) unsubPendientes();
 
         unsubPendientes = onSnapshot(q, (snapshot) => {
-            yapesPendientes.value = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            pendientes.value = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    monto: Number(data.amount) || 0
+                };
+            });
             loading.value = false;
         }, (err) => {
             console.error("Error feed Yape:", err);
@@ -93,18 +106,18 @@ export function useYape() {
      */
     const detenerTodo = () => {
         if (unsubPendientes) unsubPendientes();
-        yapesPendientes.value = [];
+        pendientes.value = [];
     };
 
     /**
      * Retorna las propiedades y métodos del composable
      */
     return {
-        yapesPendientes,
+        pendientes,
         loading,
         error,
         escucharPendientes,
-        reclamarYape,
+        reclamarPagoDigital,
         detenerTodo
     };
 }

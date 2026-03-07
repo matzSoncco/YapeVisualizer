@@ -69,17 +69,17 @@ router.beforeEach(async (to, from, next) => {
 
   if (requiresAdmin) {
     if (store.isAdminAuthenticated) {
-      next();
+      return next();
     } else {
-      next('/dashboard');
+      return next('/dashboard');
     }
   } 
   else {
-    if (store.isAdminAuthenticated) {
+    if (store.isAdminAuthenticated && to.name !== 'profile' && to.name !== 'admin') {
       setAdminAuth(false);
       store.sucursalActual = null;
     }
-    next();
+    return next();
   }
 });
 

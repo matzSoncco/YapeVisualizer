@@ -34,7 +34,6 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { useAuth } from "@/composables/useAuth";
-import Card from 'primevue/card';
 import Button from 'primevue/button';
 
 const router = useRouter();

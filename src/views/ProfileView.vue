@@ -83,19 +83,19 @@
           <template #footer>
             <div class="plan-actions">
                 <Button
-                v-if="!subscriptionStatus.isActive"
-                label="Reactivar Servicio"
-                icon="pi pi-bolt"
-                severity="warning"
-                class="btn-full"
+                  v-if="subscriptionStatus.isHardBlocked"
+                  label="Reactivar Servicio"
+                  icon="pi pi-whatsapp"
+                  severity="succes"
+                  class="btn-full"
                 />
                 <Button
-                v-else
-                label="Gestionar Suscripción"
-                icon="pi pi-external-link"
-                severity="secondary"
-                outlined
-                class="btn-full"
+                  v-else
+                  label="Gestionar Suscripción"
+                  icon="pi pi-cog"
+                  severity="secondary"
+                  outlined
+                  class="btn-full"
                 />
             </div>
           </template>
@@ -141,8 +141,9 @@
                 label="Nueva Sede"
                 icon="pi pi-plus"
                 @click="openModalCreation"
-                :disabled="sucursales.length >= subscriptionStatus.limitSucursales"
+                :disabled="subscriptionStatus.isHardBlocked || sucursales.length >= subscriptionStatus.limitSucursales"
                 size="small"
+                v-tooltip="subscriptionStatus.isHardBlocked ? 'Servicio suspendido' : ''"
               />
             </div>
           </template>
@@ -170,8 +171,20 @@
                     <h4>{{ sucursal.nombre }}</h4>
                 </div>
                 <div class="branch-actions">
-                    <Button icon="pi pi-pencil" text rounded @click="openModalEdit(sucursal)" v-tooltip.top="'Editar'" />
-                    <Button icon="pi pi-trash" text rounded severity="danger" @click="deleteSucursalModal(sucursal.id)" v-tooltip.top="'Eliminar'" />
+                    <Button
+                      v-if="!subscriptionStatus.isHardBlocked"
+                      icon="pi pi-pencil"
+                      text rounded
+                      @click="openModalEdit(sucursal)"
+                      v-tooltip.top="'Editar'"
+                    />
+                    <Button
+                      v-if="!subscriptionStatus.isHardBlocked"
+                      icon="pi pi-trash"
+                      text rounded severity="danger"
+                      @click="deleteSucursalModal(sucursal.id)"
+                      v-tooltip.top="'Eliminar'"
+                    />
                 </div>
               </div>
             </div>

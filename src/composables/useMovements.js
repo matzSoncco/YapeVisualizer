@@ -56,7 +56,7 @@ export function useMovements() {
      * Registra una venta omo un nuevo movimiento en el turno activo
      * params: { items, payments, total, clientName, metadata }
       * - items: [{ name, price, qty }]
-      * - payments: [{ method: 'CASH'|'YAPE', amount, refId? }]
+      * - payments: [{ method: 'CASH'|'DIGITAL', amount, refId? }]
      */
     const registrarVenta = async ({ items, payments, total, clientName, metadata = {} }) => {
         if (!store.currentShift?.id) throw new Error("Turno cerrado. Abra caja primero.");
@@ -78,12 +78,16 @@ export function useMovements() {
                 type: 'SALE',
                 timestamp: serverTimestamp(),
                 items: items || [],
-                payments: payments.map(p => ({
-                    method: p.method,
-                    amount: Number(p.amount),
-                    refId: p.refId || null
-                })),
-                totalAmount: Number(total),
+                payments: payments.map(p => {
+                    const safeAmount = Math.round((Number(p.amount) || 0) * 100) / 100;
+                    return {
+                        method: p.method,
+                        amount: safeAmount,
+                        refId: p.refId || null,
+                        wallet: p.wallet || (p.method === 'YAPE' ? 'YAPE' : null)
+                    };
+                }),
+                totalAmount: Math.round((Number(total) || 0) * 100) / 100,
                 clientName: clientName || 'Cliente Eventual',
                 totalItems: items ? items.reduce((acc, i) => acc + i.qty, 0) : 0,
                 metadata: {
@@ -97,8 +101,9 @@ export function useMovements() {
             const statsUpdate = { 'stats.totalTransactions': increment(1) };
             
             payments.forEach(p => {
-                const field = p.method === 'CASH' ? 'stats.totalCashSales' : 'stats.totalYapeSales';
-                statsUpdate[field] = increment(p.amount);
+                const field = p.method === 'CASH' ? 'stats.totalCashSales' : 'stats.totalDigitalSales';
+                const safeAmount = Math.round((Number(p.amount) || 0) * 100) / 100;
+                statsUpdate[field] = increment(safeAmount);
             });
 
             batch.update(shiftRef, statsUpdate);
