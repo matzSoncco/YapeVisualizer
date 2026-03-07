@@ -8,11 +8,20 @@ export const formatearFecha = (fechaInput) => {
 
   let fecha;
 
-  if (fechaInput instanceof Date) {
+  if (fechaInput && typeof fechaInput.toDate === 'function') {
+    fecha = fechaInput.toDate();
+  }
+  else if (fechaInput instanceof Date) {
     fecha = fechaInput;
   } 
   else if (typeof fechaInput === 'string') {
     fecha = new Date(fechaInput.includes('T') ? fechaInput : `${fechaInput}T12:00:00`);
+  }
+  else if (typeof fechaInput === 'number') {
+    fecha = new Date(fechaInput);
+  }
+  else if (fechaInput.seconds) {
+    fecha = new Date(fechaInput.seconds * 1000);
   }
   else {
     fecha = new Date(fechaInput);
