@@ -11,8 +11,16 @@ export function useSubscription() {
      * @returns {Object} Información detallada sobre el estado de la suscripción
      */
     const subscriptionStatus = computed(() => {
-        const userProfile = store.userProfile || {};
-        const subData = userProfile.subscription || {};
+        const subData = store.userProfile?.subscription || {};
+        const now = new Date();
+        const trialEnd = subData.trialEndDate ? new Date(subData.trialEndDate) : null;
+        const daysLeft = trialEnd ? Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24)) : 0;
+        const isTrialExpired = subData.status === 'trial' && daysLeft <= 0;
+        const isPastDue = subData.status === 'overdue'
+        const isCanceled = subData.status === 'canceled'
+        const isExpired = subData.status === 'expired'
+
+        const isHardBlocked = isTrialExpired || isPastDue || isCanceled || isExpired || subData.isActive === false
 
         if (subData.status === 'loading') {
             return {
@@ -25,18 +33,7 @@ export function useSubscription() {
             };
         }
 
-        const now = new Date();
-        const trialEnd = subData.trialEndDate ? new Date(subData.trialEndDate) : null;
         const nextBillingDate = subData.nextBillingDate ? new Date(subData.nextBillingDate) : null;
-
-        let daysLeft = 0;
-        if (subData.status === 'trial' && trialEnd) {
-            const diffTime = trialEnd.getTime() - now.getTime();
-            daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        }
-
-        const isTrialExpired = subData.status === 'trial' && daysLeft <= 0;
-        const isHardExpired = ['overdue', 'canceled', 'expired'].includes(subData.status);
 
         let etiqueta = 'Próximo cobro';
         let fechaMostrar = 'N/A';
@@ -49,13 +46,11 @@ export function useSubscription() {
         }
 
         return {
-            planName: subData.planName || 'Gratuito',
-            status: subData.status || 'trial',
-            limitSucursales: subData.limitSucursales || 1,
-            isActive: subData.isActive || false,
+            ...subData,
             
-            daysLeft: daysLeft,
-            isExpired: isTrialExpired || isHardExpired,
+            daysLeft,
+            isHardBlocked: isHardBlocked,
+            isNearExpiring: daysLeft > 0 && daysLeft <= 3,
             labelFecha: etiqueta,
             fechaMostrar: fechaMostrar
         };
