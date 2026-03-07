@@ -2,6 +2,7 @@
   <Dialog
     v-model:visible="arqueoState.isOpen"
     modal
+    append-to="body"
     header="Finalizar Turno"
     :style="{ width: '420px' }"
     class="arqueo-dialog"
@@ -87,7 +88,7 @@ const ejecutarCierre = async () => {
       severity: 'success',
       summary: 'Turno Cerrado',
       detail: 'Arqueo registrado correctamente.',
-      life: 300,
+      life: 3000,
     })
   } catch (e) {
     toast.add({
@@ -251,13 +252,5 @@ const confirmarCierreUI = async () => {
   height: 48px !important;
   border-radius: 12px !important;
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.2) !important;
-}
-
-.pos-grid-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-app);
-  overflow: hidden;
 }
 </style>

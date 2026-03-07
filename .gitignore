@@ -38,3 +38,6 @@ __screenshots__/
 # entornos de desarrollo
 .env
 .env.development
+
+limpiar.cjs
+service-account.json
