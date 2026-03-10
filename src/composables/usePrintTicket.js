@@ -63,6 +63,7 @@ function montoEnLetras(monto) {
 function obtenerMetodoPago(sale) {
     if (!sale.payments || sale.payments.length === 0) return 'EFECTIVO'
     const pay = sale.payments[0]
+    if (pay.method === 'CASH') return 'EFECTIVO'
     return (pay.wallet || pay.method || 'EFECTIVO').toUpperCase()
 }
 
@@ -108,12 +109,10 @@ export function usePrintTicket() {
             ruc = '',
             direccion = '',
             telefono = '',
+            logoUrl = '',
             cajero = '',
             anchoMm = 80
         } = options
-
-        // conversión pixel a tamanio hojas: ~4px por mm (96dpi / 25.4mm)
-        const anchoPx = Math.round(anchoMm * 4)
 
         const total = Number(sale.totalAmount || sale.amount || 0)
         const metodoPago = obtenerMetodoPago(sale)
@@ -122,13 +121,12 @@ export function usePrintTicket() {
 
         // Construir filas de productos
         const itemsHTML = items.map(item => {
-            const subtotal = (item.price * item.qty).toFixed(2)
             return `
         <tr>
-          <td style="text-align:center">${item.qty}</td>
-          <td>${(item.name || '').toUpperCase()}</td>
-          <td style="text-align:right">${Number(item.price).toFixed(2)}</td>
-          <td style="text-align:right">${subtotal}</td>
+          <td class="qty">${item.qty}</td>
+          <td class="desc">${(item.name || '').toUpperCase()}</td>
+          <td class="price">${Number(item.price).toFixed(2)}</td>
+          <td class="total">${(item.price * item.qty).toFixed(2)}</td>
         </tr>`
         }).join('')
 
@@ -137,203 +135,104 @@ export function usePrintTicket() {
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Nota de Venta ${sale.ticketNumber || ''}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     @page {
       size: ${anchoMm}mm auto;
-      margin: 2mm;
+      margin: 0;
     }
 
     body {
       font-family: 'Courier New', Courier, monospace;
-      font-size: ${anchoMm <= 58 ? '9px' : '11px'};
+      width: ${anchoMm}mm;
+      padding: 4mm;
+      background-color: #fff;
       color: #000;
-      width: ${anchoPx}px;
-      margin: 0 auto;
-      padding: ${anchoMm <= 58 ? '4px' : '8px'};
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
+      line-height: 1.2;
     }
 
-    .ticket { width: 100%; }
+    .ticket-wrapper { width: 100%; }
 
-    .center { text-align: center; }
-    .right { text-align: right; }
-    .bold { font-weight: bold; }
+    .logo-container { text-align: center; margin-bottom: 5px; }
+    .logo { max-width: 40mm; max-height: 20mm; filter: grayscale(1); }
+
+    .header { text-align: center; margin-bottom: 10px; }
+    .business-name { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+    .business-info { font-size: 9px; }
+
+    .separator { border-top: 1px dashed #000; margin: 5px 0; }
+    .separator-bold { border-top: 2px solid #000; margin: 5px 0; }
+
+    .doc-info { text-align: center; margin: 8px 0; }
+    .doc-title { font-size: 13px; font-weight: bold; }
+    .doc-number { font-size: 14px; font-weight: bold; }
+
+    .meta-info { font-size: 9px; margin-bottom: 10px; }
+    .meta-row { display: flex; justify-content: space-between; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 9px; margin: 10px 0; }
+    th { border-bottom: 1px solid #000; padding: 3px 0; text-align: left; }
+    td { padding: 3px 0; vertical-align: top; }
+    .qty { width: 10%; text-align: center; }
+    .desc { width: 55%; }
+    .price { width: 15%; text-align: right; }
+    .total { width: 20%; text-align: right; }
+
+    .total-container { text-align: right; margin: 10px 0; }
+    .total-row { font-size: 15px; font-weight: bold; display: flex; justify-content: space-between; }
     
-    .negocio-nombre {
-      font-size: 14px;
+    .legal-msg { 
+      border: 1px solid #000; 
+      padding: 5px; 
+      font-size: 8px; 
+      text-align: center; 
       font-weight: bold;
-      text-align: center;
-      margin-bottom: 2px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      margin: 10px 0;
     }
 
-    .negocio-info {
-      text-align: center;
-      font-size: 9px;
-      color: #333;
-      line-height: 1.4;
-    }
-
-    .separator {
-      border: none;
-      border-top: 1px dashed #000;
-      margin: 6px 0;
-    }
-
-    .separator-double {
-      border: none;
-      border-top: 2px solid #000;
-      margin: 6px 0;
-    }
-
-    .doc-title {
-      text-align: center;
-      font-size: 12px;
-      font-weight: bold;
-      letter-spacing: 2px;
-      margin: 4px 0;
-    }
-
-    .ticket-number {
-      text-align: center;
-      font-size: 13px;
-      font-weight: bold;
-      margin: 2px 0;
-    }
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      margin: 1px 0;
-    }
-
-    .info-label {
-      font-weight: bold;
-      color: #333;
-    }
-
-    .disclaimer {
-      text-align: center;
-      font-size: 8px;
-      font-weight: bold;
-      margin: 4px 0;
-      padding: 3px;
-      border: 1px solid #000;
-    }
-
-    table.items {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 10px;
-    }
-
-    table.items thead th {
-      font-weight: bold;
-      text-align: left;
-      padding: 2px 3px;
-      border-bottom: 1px solid #000;
-      font-size: 9px;
-    }
-
-    table.items tbody td {
-      padding: 2px 3px;
-      vertical-align: top;
-    }
-
-    .total-section {
-      margin-top: 4px;
-    }
-
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 13px;
-      font-weight: bold;
-      padding: 3px 0;
-    }
-
-    .monto-letras {
-      font-size: 9px;
-      font-weight: bold;
-      margin: 2px 0;
-    }
-
-    .pago-info {
-      font-size: 10px;
-      margin: 1px 0;
-    }
-
-    .footer-msg {
-      text-align: center;
-      font-size: 10px;
-      font-weight: bold;
-      margin-top: 8px;
-      letter-spacing: 1px;
-    }
-
-    .cajero-info {
-      font-size: 9px;
-      margin: 2px 0;
-    }
+    .footer { text-align: center; font-size: 9px; margin-top: 15px; }
 
     @media print {
-      body { width: 100%; padding: 0; }
+      body { width: ${anchoMm}mm; }
     }
   </style>
 </head>
 <body>
-  <div class="ticket">
-    <!-- ENCABEZADO DEL NEGOCIO -->
-    <div class="negocio-nombre">${nombreNegocio}</div>
-    ${direccion ? `<div class="negocio-info">${direccion}</div>` : ''}
-    ${telefono ? `<div class="negocio-info">TEL: ${telefono}</div>` : ''}
-    ${ruc ? `<div class="center bold" style="font-size:11px; margin-top:3px">RUC: ${ruc}</div>` : ''}
-
-    <hr class="separator-double">
-
-    <!-- TITULO DEL DOCUMENTO -->
-    <div class="doc-title">NOTA DE VENTA</div>
-    <div class="ticket-number">${sale.ticketNumber || 'PENDIENTE'}</div>
-
-    <hr class="separator">
-
-    <!-- INFO DE LA VENTA -->
-    ${sale.clientName ? `
-    <div class="info-row">
-      <span class="info-label">CLIENTE:</span>
-      <span>${sale.clientName}</span>
-    </div>` : ''}
-    <div class="info-row">
-      <span class="info-label">FECHA EMISIÓN:</span>
-      <span>${date}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">HORA:</span>
-      <span>${time}</span>
-    </div>
-    <div class="info-row">
-      <span class="info-label">MONEDA:</span>
-      <span>SOLES</span>
+  <div class="ticket-wrapper">
+    ${logoUrl ? `<div class="logo-container"><img src="${logoUrl}" class="logo"></div>` : ''}
+    
+    <div class="header">
+      <div class="business-name">${nombreNegocio}</div>
+      <div class="business-info">
+        ${ruc ? `RUC: ${ruc}<br>` : ''}
+        ${direccion ? `${direccion}<br>` : ''}
+        ${telefono ? `CEL: ${telefono}` : ''}
+      </div>
     </div>
 
-    <hr class="separator">
+    <div class="separator-bold"></div>
+    
+    <div class="doc-info">
+      <div class="doc-title">NOTA DE VENTA</div>
+      <div class="doc-number">${sale.ticketNumber || 'PENDIENTE'}</div>
+    </div>
 
-    <div class="disclaimer">ESTE NO ES UN COMPROBANTE DE PAGO VÁLIDO</div>
+    <div class="separator"></div>
 
-    <!-- DETALLE DE PRODUCTOS -->
-    <table class="items">
+    <div class="meta-info">
+      <div class="meta-row"><span>FECHA: ${date}</span> <span>HORA: ${time}</span></div>
+      ${sale.clientName ? `<div class="meta-row"><span>CLIENTE: ${sale.clientName.toUpperCase()}</span></div>` : ''}
+      ${cajero ? `<div class="meta-row"><span>CAJERO: ${cajero.toUpperCase()}</span></div>` : ''}
+    </div>
+
+    <table>
       <thead>
         <tr>
-          <th style="width:35px; text-align:center">CANT.</th>
-          <th>DESCRIPCIÓN</th>
-          <th style="text-align:right">P/U</th>
-          <th style="text-align:right">TOTAL</th>
+          <th class="qty">CANT</th>
+          <th class="desc">DESCRIPCIÓN</th>
+          <th class="price">P/U</th>
+          <th class="total">TOTAL</th>
         </tr>
       </thead>
       <tbody>
@@ -341,42 +240,43 @@ export function usePrintTicket() {
       </tbody>
     </table>
 
-    <hr class="separator-double">
+    <div class="separator-bold"></div>
 
-    <!-- TOTALES -->
-    <div class="total-section">
+    <div class="total-container">
       <div class="total-row">
-        <span>TOTAL S/</span>
-        <span>${total.toFixed(2)}</span>
+        <span>TOTAL:</span>
+        <span>S/ ${total.toFixed(2)}</span>
+      </div>
+      <div style="font-size: 8px; font-weight: bold; margin-top: 5px;">
+        SON: ${montoEnLetras(total)}
       </div>
     </div>
 
-    <hr class="separator">
+    <div class="legal-msg">
+      ESTE NO ES UN COMPROBANTE DE PAGO VÁLIDO
+    </div>
 
-    <!-- MONTO EN LETRAS Y PAGO -->
-    <div class="monto-letras">SON: ${montoEnLetras(total)}</div>
-    <div class="pago-info bold">PAGO CON: ${metodoPago}    MONTO: ${total.toFixed(2)}</div>
-    ${cajero ? `<div class="cajero-info">ATENDIDO POR: ${cajero}</div>` : ''}
-
-    <hr class="separator">
-
-    <!-- PIE -->
-    <div class="footer-msg">¡ GRACIAS POR SU PREFERENCIA !</div>
+    <div class="footer">
+      <div>PAGO CON: ${metodoPago}</div>
+      <div style="margin-top: 5px; font-weight: bold;">¡GRACIAS POR SU PREFERENCIA!</div>
+    </div>
   </div>
 
   <script>
-    window.onload = function() {
+    window.onload = () => {
       window.print();
-    }
+      window.onafterprint = () => window.close();
+    };
   <\/script>
 </body>
 </html>`
 
-        const popupWidth = anchoPx + 40
-        const printWindow = window.open('', '_blank', `width=${popupWidth},height=600`)
+        const printWindow = window.open('', '_blank', 'width=600,height=800,top=100,left=100')
         if (printWindow) {
-            printWindow.document.write(html)
-            printWindow.document.close()
+            printWindow.document.body.innerHTML = html;
+            printWindow.document.open();
+            printWindow.document.write(html);
+            printWindow.document.close();
         }
     }
 
