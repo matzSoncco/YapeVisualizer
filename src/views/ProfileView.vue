@@ -130,6 +130,94 @@
       </aside>
 
       <main class="profile-main">
+
+        <!-- CARD: DATOS DEL NEGOCIO -->
+        <Card class="profile-card negocio-card">
+          <template #header>
+            <div class="card-header">
+              <h3><i class="pi pi-shop"></i> Datos del Negocio</h3>
+            </div>
+          </template>
+          <template #content>
+            <div class="negocio-form">
+
+              <!-- LOGO -->
+              <div class="logo-section">
+                <div class="logo-preview">
+                  <img v-if="store.negocio.logoUrl" :src="store.negocio.logoUrl" alt="Logo" class="logo-img" />
+                  <div v-else class="logo-placeholder">
+                    <i class="pi pi-image"></i>
+                  </div>
+                </div>
+                <div class="logo-actions">
+                  <label for="logo-upload" class="btn-upload-logo">
+                    <i class="pi pi-upload"></i>
+                    {{ store.negocio.logoUrl ? 'Cambiar logo' : 'Subir logo' }}
+                  </label>
+                  <input
+                    id="logo-upload"
+                    type="file"
+                    accept="image/*"
+                    class="logo-input-hidden"
+                    @change="handleLogoUpload"
+                  />
+                  <span class="logo-hint">PNG o JPG, máx. 2MB</span>
+                </div>
+              </div>
+
+              <hr class="negocio-divider" />
+
+              <!-- RUC (solo si hay token configurado) -->
+              <div v-if="negocioComposable.sunatDisponible" class="form-field">
+                <label>RUC</label>
+                <div class="ruc-row">
+                  <InputText
+                    v-model="negocioForm.ruc"
+                    placeholder="11 dígitos"
+                    maxlength="11"
+                    class="input-ruc"
+                    @input="negocioComposable.errorRuc.value = ''"
+                  />
+                  <Button
+                    label="Buscar"
+                    icon="pi pi-search"
+                    :loading="negocioComposable.loadingRuc.value"
+                    :disabled="negocioForm.ruc.length !== 11"
+                    @click="handleBuscarRuc"
+                    size="small"
+                  />
+                </div>
+                <small v-if="negocioComposable.errorRuc.value" class="ruc-error">
+                  {{ negocioComposable.errorRuc.value }}
+                </small>
+              </div>
+
+              <!-- NOMBRE -->
+              <div class="form-field">
+                <label>Nombre del Negocio</label>
+                <InputText
+                  v-model="negocioForm.nombre"
+                  placeholder="Ej. Negocios e Inversiones Vilef S.A.C."
+                  class="input-full"
+                />
+              </div>
+
+              <!-- GUARDAR -->
+              <div class="negocio-save-row">
+                <Button
+                  label="Guardar datos"
+                  icon="pi pi-check"
+                  :loading="negocioComposable.loading.value"
+                  :disabled="!negocioForm.nombre.trim()"
+                  @click="handleGuardarNegocio"
+                />
+              </div>
+
+            </div>
+          </template>
+        </Card>
+
+        <!-- CARD: SUCURSALES -->
         <Card class="profile-card branches-card">
           <template #header>
             <div class="card-header">
@@ -273,6 +361,7 @@ import { useSucursal } from '../composables/useSucursal';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
 import { useSubscription } from '@/composables/useSubscription';
+import { useNegocio } from '@/composables/useNegocio';
 import { store } from '@/store';
 
 import '@/assets/profile.css';
@@ -283,11 +372,54 @@ const confirm = useConfirm();
 const { user, updateAdminPin, loading: loadingAuth } = useAuth();
 const { sucursales, addSucursal, deleteSucursal } = useSucursal();
 const { subscriptionStatus } = useSubscription();
+const negocioComposable = useNegocio();
 
 const securityCardRef = ref(null);
 const showModal = ref(false);
-const isEditing = ref(false); 
+const isEditing = ref(false);
 const form = reactive({ id: null, nombre: '', icono: '' });
+
+// Formulario de datos del negocio
+const negocioForm = reactive({
+  ruc: store.negocio.ruc || '',
+  nombre: store.negocio.nombre || ''
+});
+
+const handleBuscarRuc = async () => {
+  const nombre = await negocioComposable.buscarRuc(negocioForm.ruc);
+  if (nombre) {
+    negocioForm.nombre = nombre;
+    toast.add({ severity: 'success', summary: 'RUC encontrado', detail: nombre, life: 3000 });
+  }
+};
+
+const handleGuardarNegocio = async () => {
+  try {
+    await negocioComposable.guardarNegocio({
+      nombre: negocioForm.nombre.trim(),
+      ruc: negocioForm.ruc.trim(),
+      logoUrl: store.negocio.logoUrl || ''
+    });
+    toast.add({ severity: 'success', summary: 'Guardado', detail: 'Datos del negocio actualizados.', life: 3000 });
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 });
+  }
+};
+
+const handleLogoUpload = async (event) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    toast.add({ severity: 'warn', summary: 'Archivo muy grande', detail: 'El logo debe pesar menos de 2MB.', life: 3000 });
+    return;
+  }
+  try {
+    await negocioComposable.subirLogo(file);
+    toast.add({ severity: 'success', summary: 'Logo actualizado', life: 2000 });
+  } catch (e) {
+    toast.add({ severity: 'error', summary: 'Error al subir logo', detail: e.message, life: 4000 });
+  }
+};
 
 // PIN
 const showChangePinModal = ref(false);
