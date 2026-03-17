@@ -10,6 +10,12 @@ export const store = reactive({
     currentShift: null,
     isAdminAuthenticated: false,
 
+    negocio: {
+        nombre: '',
+        ruc: '',
+        logoUrl: ''
+    },
+
     userProfile: {
         role: 'user',
         adminPin: null,
@@ -77,12 +83,16 @@ export const setUserProfile = (data) => {
                 status: 'loading'
             }
         };
+        store.negocio = { nombre: '', ruc: '', logoUrl: '' };
         return;
     }
     Object.assign(store.userProfile, {
         ...data,
         adminPin: data.adminPin || '1234'
     });
+    if (data.negocio) {
+        Object.assign(store.negocio, data.negocio);
+    }
 };
 
 /**
