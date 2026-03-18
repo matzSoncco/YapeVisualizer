@@ -161,10 +161,11 @@ const obtenerBilletera = (data) => {
  * @param data - Documento de venta para extraer información relevante para la impresión
  */
 const imprimirTicket = (data) => {
-  const sucursal = store.sucursales.find(s => s.id === store.sucursalActual)
   printTicket(data, {
-    nombreNegocio: sucursal?.nombre || 'MI NEGOCIO',
-    cajero: store.currentShift?.cajero || ''
+    nombreNegocio: store.negocio.nombre || store.sucursales.find(s => s.id === store.sucursalActual)?.nombre || 'MI NEGOCIO',
+    ruc: store.negocio.ruc || '',
+    cajero: store.currentShift?.cajero || '',
+    logoUrl: store.negocio.logoUrl || ''
   })
 }
 </script>

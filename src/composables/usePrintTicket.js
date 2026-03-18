@@ -111,6 +111,7 @@ export function usePrintTicket() {
             telefono = '',
             logoUrl = '',
             cajero = '',
+            logoUrl = '',
             anchoMm = 80
         } = options
 
@@ -154,12 +155,33 @@ export function usePrintTicket() {
 
     .ticket-wrapper { width: 100%; }
 
-    .logo-container { text-align: center; margin-bottom: 5px; }
-    .logo { max-width: 40mm; max-height: 20mm; filter: grayscale(1); }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    .bold { font-weight: bold; }
+    
+    .negocio-nombre {
+      font-size: 14px;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-    .header { text-align: center; margin-bottom: 10px; }
-    .business-name { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
-    .business-info { font-size: 9px; }
+    .negocio-logo {
+      display: block;
+      margin: 4px auto 2px;
+      max-width: 80px;
+      max-height: 60px;
+      object-fit: contain;
+    }
+
+    .negocio-info {
+      text-align: center;
+      font-size: 9px;
+      color: #333;
+      line-height: 1.4;
+    }
 
     .separator { border-top: 1px dashed #000; margin: 5px 0; }
     .separator-bold { border-top: 2px solid #000; margin: 5px 0; }
@@ -199,16 +221,31 @@ export function usePrintTicket() {
   </style>
 </head>
 <body>
-  <div class="ticket-wrapper">
-    ${logoUrl ? `<div class="logo-container"><img src="${logoUrl}" class="logo"></div>` : ''}
-    
-    <div class="header">
-      <div class="business-name">${nombreNegocio}</div>
-      <div class="business-info">
-        ${ruc ? `RUC: ${ruc}<br>` : ''}
-        ${direccion ? `${direccion}<br>` : ''}
-        ${telefono ? `CEL: ${telefono}` : ''}
-      </div>
+  <div class="ticket">
+    <!-- ENCABEZADO DEL NEGOCIO -->
+    <div class="negocio-nombre">${nombreNegocio}</div>
+    ${logoUrl ? `<img class="negocio-logo" src="${logoUrl}" alt="logo" />` : ''}
+    ${direccion ? `<div class="negocio-info">${direccion}</div>` : ''}
+    ${telefono ? `<div class="negocio-info">TEL: ${telefono}</div>` : ''}
+    ${ruc ? `<div class="center bold" style="font-size:11px; margin-top:3px">RUC: ${ruc}</div>` : ''}
+
+    <hr class="separator-double">
+
+    <!-- TITULO DEL DOCUMENTO -->
+    <div class="doc-title">NOTA DE VENTA</div>
+    ${sale.ticketNumber ? `<div class="ticket-number">${sale.ticketNumber}</div>` : ''}
+
+    <hr class="separator">
+
+    <!-- INFO DE LA VENTA -->
+    ${sale.clientName ? `
+    <div class="info-row">
+      <span class="info-label">CLIENTE:</span>
+      <span>${sale.clientName}</span>
+    </div>` : ''}
+    <div class="info-row">
+      <span class="info-label">FECHA EMISIÓN:</span>
+      <span>${date}</span>
     </div>
 
     <div class="separator-bold"></div>

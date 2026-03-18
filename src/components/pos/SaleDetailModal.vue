@@ -139,10 +139,11 @@ const obtenerClaseMetodo = (s) => {
  * Obtiene nombre de sucursal y cajero
  */
 const imprimir = () => {
-  const sucursal = store.sucursales.find(s => s.id === store.sucursalActual)
   imprimirTicket(sale.value, {
-    nombreNegocio: sucursal?.nombre || 'MI NEGOCIO',
-    cajero: store.currentShift?.cajero || ''
+    nombreNegocio: store.negocio.nombre || store.sucursales.find(s => s.id === store.sucursalActual)?.nombre || 'MI NEGOCIO',
+    ruc: store.negocio.ruc || '',
+    cajero: store.currentShift?.cajero || '',
+    logoUrl: store.negocio.logoUrl || ''
   })
 }
 
