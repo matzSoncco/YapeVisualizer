@@ -109,6 +109,7 @@ export function usePrintTicket() {
             direccion = '',
             telefono = '',
             cajero = '',
+            logoUrl = '',
             anchoMm = 80
         } = options
 
@@ -170,6 +171,14 @@ export function usePrintTicket() {
       margin-bottom: 2px;
       text-transform: uppercase;
       letter-spacing: 1px;
+    }
+
+    .negocio-logo {
+      display: block;
+      margin: 4px auto 2px;
+      max-width: 80px;
+      max-height: 60px;
+      object-fit: contain;
     }
 
     .negocio-info {
@@ -291,6 +300,7 @@ export function usePrintTicket() {
   <div class="ticket">
     <!-- ENCABEZADO DEL NEGOCIO -->
     <div class="negocio-nombre">${nombreNegocio}</div>
+    ${logoUrl ? `<img class="negocio-logo" src="${logoUrl}" alt="logo" />` : ''}
     ${direccion ? `<div class="negocio-info">${direccion}</div>` : ''}
     ${telefono ? `<div class="negocio-info">TEL: ${telefono}</div>` : ''}
     ${ruc ? `<div class="center bold" style="font-size:11px; margin-top:3px">RUC: ${ruc}</div>` : ''}
@@ -299,7 +309,7 @@ export function usePrintTicket() {
 
     <!-- TITULO DEL DOCUMENTO -->
     <div class="doc-title">NOTA DE VENTA</div>
-    <div class="ticket-number">${sale.ticketNumber || 'PENDIENTE'}</div>
+    ${sale.ticketNumber ? `<div class="ticket-number">${sale.ticketNumber}</div>` : ''}
 
     <hr class="separator">
 

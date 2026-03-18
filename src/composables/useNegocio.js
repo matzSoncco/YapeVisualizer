@@ -20,9 +20,9 @@ export function useNegocio() {
     const errorRuc = ref('')
 
     /**
-     * Indica si el token de SUNAT está configurado en el .env
+     * La búsqueda de RUC está siempre disponible via Cloud Function (Firebase)
      */
-    const sunatDisponible = !!import.meta.env.VITE_SUNAT_TOKEN
+    const sunatDisponible = true
 
     /**
      * Busca la razón social por RUC usando apis.net.pe
@@ -39,17 +39,10 @@ export function useNegocio() {
         errorRuc.value = ''
 
         try {
-            const token = import.meta.env.VITE_SUNAT_TOKEN
-            // TODO: reemplazar con URL de Firebase Cloud Function cuando esté desplegada
-            // Ej: https://us-central1-testing-4ada2.cloudfunctions.net/buscarRuc?ruc=${ruc}
+            // Cloud Function que actúa de proxy a decolecta.com (evita CORS en producción)
             const response = await fetch(
-                `https://api.decolecta.com/v1/sunat/ruc?numero=${ruc}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        Accept: 'application/json'
-                    }
-                }
+                `https://buscarruc-gq2e4h3yvq-uc.a.run.app?ruc=${ruc}`,
+                { headers: { Accept: 'application/json' } }
             )
 
             if (!response.ok) {

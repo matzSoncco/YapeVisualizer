@@ -142,7 +142,8 @@ const imprimir = () => {
   imprimirTicket(sale.value, {
     nombreNegocio: store.negocio.nombre || store.sucursales.find(s => s.id === store.sucursalActual)?.nombre || 'MI NEGOCIO',
     ruc: store.negocio.ruc || '',
-    cajero: store.currentShift?.cajero || ''
+    cajero: store.currentShift?.cajero || '',
+    logoUrl: store.negocio.logoUrl || ''
   })
 }
 
