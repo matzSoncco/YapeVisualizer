@@ -348,7 +348,7 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
       nombreCliente = pagoDigitalConfirmado.senderName;
     }
 
-    const movId = await registrarVenta({
+    const resultadoVenta = await registrarVenta({
       items: itemsFinales,
       payments,
       total: totalReal,
@@ -358,6 +358,8 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
         walletUsed: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.wallet : null 
       }
     });
+
+    const movId = resultadoVenta.id;
 
     if (method === 'DIGITAL' && pagoDigitalConfirmado) {
       await reclamarPagoDigital(pagoDigitalConfirmado.id, movId);

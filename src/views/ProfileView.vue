@@ -192,7 +192,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, nextTick } from 'vue';
+import { computed, ref, onMounted, nextTick, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSucursal } from '../composables/useSucursal';
@@ -221,7 +221,6 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const form = reactive({ id: null, nombre: '', icono: '' });
 
-// Formulario de datos del negocio
 const negocioForm = reactive({
   ruc: store.negocio.ruc || '',
   nombre: store.negocio.nombre || ''

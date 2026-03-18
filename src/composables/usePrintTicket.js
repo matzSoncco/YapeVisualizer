@@ -226,14 +226,9 @@ export function usePrintTicket() {
     ${logoUrl ? `<img class="negocio-logo" src="${logoUrl}" alt="logo" />` : ''}
     ${direccion ? `<div class="negocio-info">${direccion}</div>` : ''}
     ${telefono ? `<div class="negocio-info">TEL: ${telefono}</div>` : ''}
-    ${ruc ? `<div class="center bold" style="font-size:11px; margin-top:3px">RUC: ${ruc}</div>` : ''}
 
     <hr class="separator-double">
-
-    <!-- TITULO DEL DOCUMENTO -->
-    <div class="doc-title">NOTA DE VENTA</div>
-    ${sale.ticketNumber ? `<div class="ticket-number">${sale.ticketNumber}</div>` : ''}
-
+    ${ruc ? `<div class="center bold" style="font-size:11px; margin-top:3px">RUC: ${ruc}</div>` : ''}
     <hr class="separator">
 
     <!-- INFO DE LA VENTA -->
