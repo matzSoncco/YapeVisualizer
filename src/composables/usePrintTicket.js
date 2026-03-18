@@ -109,7 +109,6 @@ export function usePrintTicket() {
             ruc = '',
             direccion = '',
             telefono = '',
-            logoUrl = '',
             cajero = '',
             logoUrl = '',
             anchoMm = 80
