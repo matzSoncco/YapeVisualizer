@@ -1,5 +1,6 @@
 import { db } from "../firebaseConfig";
-import { 
+import {
+    runTransaction,
     collection,
     doc,
     serverTimestamp,
@@ -70,6 +71,7 @@ export function useMovements() {
      */
     const registrarVenta = async ({ items, payments, total, clientName, metadata = {} }) => {
         if (!store.currentShift?.id) throw new Error("Turno cerrado. Abra caja primero.");
+        if (!user.value?.uid) throw new Error("Usuario no autenticado.");
         
         if ((!items || items.length === 0) && !metadata.isQuickSale) {
              throw new Error("Carrito vacío.");
@@ -77,55 +79,70 @@ export function useMovements() {
 
         const shiftId = store.currentShift.id;
         const sucursalId = store.sucursalActual;
-        const batch = writeBatch(db);
 
         try {
-            const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId, 'shifts', shiftId);
-            const movementsRef = collection(shiftRef, 'movements');
-            const newMovRef = doc(movementsRef);
+            const resultado = await runTransaction(db, async (transaction) => {
+                const sucursalRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId);
+                const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId, 'shifts', shiftId);
+                const movementsRef = collection(shiftRef, 'movements');
+                const newMovRef = doc(movementsRef);
 
-            const saleDoc = {
-                type: 'SALE',
-                timestamp: serverTimestamp(),
-                items: items || [],
-                payments: payments.map(p => {
-                    const safeAmount = Math.round((Number(p.amount) || 0) * 100) / 100;
-                    return {
-                        method: p.method,
-                        amount: safeAmount,
-                        refId: p.refId || null,
-                        wallet: p.wallet || (p.method === 'YAPE' ? 'YAPE' : null)
-                    };
-                }),
-                totalAmount: Math.round((Number(total) || 0) * 100) / 100,
-                clientName: clientName || 'Cliente Eventual',
-                totalItems: items ? items.reduce((acc, i) => acc + i.qty, 0) : 0,
-                metadata: {
-                    source: 'WEB_POS',
-                    ...metadata
+                const sucursalSnap = await transaction.get(sucursalRef);
+                if (!sucursalSnap.exists()) {
+                    throw new Error("No se encontró la configuración de la sucursal");
                 }
-            };
 
-            batch.set(newMovRef, saleDoc);
+                const config = sucursalSnap.data() || {};
+                const serie = config.serie || 'NV001';
+                const correlativoActual = config.proximoCorrelativo || 1;
+                const ticketNumber = `${serie}-${String(correlativoActual).padStart(8, '0')}`;
 
-            const statsUpdate = { 'stats.totalTransactions': increment(1) };
-            
-            payments.forEach(p => {
-                const field = p.method === 'CASH' ? 'stats.totalCashSales' : 'stats.totalDigitalSales';
-                const safeAmount = Math.round((Number(p.amount) || 0) * 100) / 100;
-                statsUpdate[field] = increment(safeAmount);
-            });
+                const saleDoc = {
+                    type: 'SALE',
+                    ticketNumber: ticketNumber,
+                    timestamp: serverTimestamp(),
+                    items: items || [],
+                    payments: payments.map(p => {
+                        return {
+                            method: p.method,
+                            amount: Math.round((Number(p.amount) || 0) * 100) / 100,
+                            refId: p.refId || null,
+                            wallet: p.wallet || (p.method === 'YAPE' ? 'YAPE' : null)
+                        };
+                    }),
+                    totalAmount: Math.round((Number(total) || 0) * 100) / 100,
+                    clientName: clientName || 'Cliente Eventual',
+                    totalItems: items ? items.reduce((acc, i) => acc + i.qty, 0) : 0,
+                    metadata: {
+                        source: 'WEB_POS',
+                        ...metadata
+                    }
+                };
 
-            batch.update(shiftRef, statsUpdate);
+                const statsUpdate = { 'stats.totalTransactions': increment(1) };
+                payments.forEach(p => {
+                    const field = p.method === 'CASH' ? 'stats.totalCashSales' : 'stats.totalDigitalSales';
+                    const safeAmount = Math.round((Number(p.amount) || 0) * 100) / 100;
+                    statsUpdate[field] = increment(safeAmount);
+                });
 
-            await batch.commit();
+                transaction.set(newMovRef, saleDoc);
+                transaction.update(shiftRef, statsUpdate);
+                transaction.update(sucursalRef, {
+                    proximoCorrelativo: increment(1)
+                });
+
+                return {
+                    id: newMovRef.id,
+                    ticketNumber
+                }
+            })
 
             if (!metadata.isQuickSale && items) {
                 items.forEach(item => actualizarCatalogo(item));
             }
 
-            return newMovRef.id;
-
+            return resultado;
         } catch (error) {
             console.error("Fallo transaccional:", error);
             throw error;

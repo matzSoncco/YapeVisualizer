@@ -33,7 +33,8 @@ export function useDigitalPayments() {
      * @param {string} nombreSucursal - Nombre de la sede destino
      * @returns {Promise<boolean>}
      */
-    const reclamarPagoDigital = async (yapeId, movementId) => {
+    const reclamarPagoDigital = async (yapeId, movementData) => {
+        const finalMovementId = typeof movementData === 'object' ? movementData.id : movementData;
         const currentShift = store.currentShift;
         const sucursalId = store.sucursalActual;
 
@@ -58,7 +59,7 @@ export function useDigitalPayments() {
                 branchId: sucursalId,
                 branchName: nombreSucursal,
                 sessionId: currentShift.id,
-                movementId: movementId,
+                movementId: finalMovementId,
                 cashierName: currentShift.cajero || 'Cajero no registrado'
             });
             return true;

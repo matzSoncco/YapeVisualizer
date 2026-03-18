@@ -107,7 +107,7 @@ import Tag from 'primevue/tag'
 import { ref, computed } from 'vue'
 import { formatearHora } from '@/utils/dates'
 import { store } from '@/store'
-import { useToast } from 'primevue'
+import { usePrintTicket } from '@/composables/usePrintTicket'
 
 import SaleDetailModal from './SaleDetailModal.vue'
 
@@ -116,7 +116,7 @@ const props = defineProps({
 })
 
 const detalleRef = ref(null)
-const toast = useToast()
+const { imprimirTicket: printTicket } = usePrintTicket()
 
 /**
  * Cálculo del Total
@@ -157,17 +157,21 @@ const obtenerBilletera = (data) => {
 }
 
 /**
- * Funcion temporal, pensada para impresion de tickets en general
- * Imprime nota de venta sin valor real, solo para mostrar la funcionalidad
+ * nota de venta usando el composable de impresión
  * @param data - Documento de venta para extraer información relevante para la impresión
  */
 const imprimirTicket = (data) => {
-  toast.add({
-    severity: 'info',
-    summary: 'Función en Desarrollo',
-    detail: 'La impresión de notas está en desarrollo.',
-    life: 3000,
-  })
+  const sucursalInfo = store.sucursales.find(s => s.id === store.sucursalActual) || {};
+
+  printTicket(data, {
+    nombreNegocio: store.negocio.nombre || sucursalInfo.nombre || 'MI NEGOCIO',
+    ruc: store.negocio.ruc || '',
+    logoUrl: store.negocio.logoUrl || '',
+    cajero: store.currentShift?.cajero || '',
+    
+    direccion: sucursalInfo.direccion || '',
+    telefono: sucursalInfo.telefono || ''
+  });
 }
 </script>
 

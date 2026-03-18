@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 import { db } from "../firebaseConfig";
-import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from './useAuth';
 import { store, setSucursalActual } from '../store'; 
 
@@ -30,12 +30,37 @@ export function useSucursal() {
 
         const newRef = doc(collection(db, 'users', user.value.uid, 'sucursales'));
         await setDoc(newRef, {
-            ...data,
+            nombre: data.nombre,
+            icono: data.icono || '🏪',
+            direccion: data.direccion || '',
+            telefono: data.telefono || '',
+            serie: data.serie || 'NV001',
+            proximoCorrelativo: data.proximoCorrelativo || 1,
             activa: true,
             createdAt: new Date().toISOString()
         });
     };
 
+    /**
+     * Actualiza los datos de una sucursal existente en Firestore
+     * @param {String} id - UID de la sucursal a actualizar
+     * @param {Object} data - Datos actualizados de la sucursal
+     * @returns {Promise<void>} Promesa que se resuelve cuando la operación en la BD finaliza.
+     */
+
+    const updateSucursal = async (id, data) => {
+        if (!user.value?.uid) return;
+        const ref = doc(db, 'users', user.value.uid, 'sucursales', id);
+        await updateDoc(ref, {
+            nombre: data.nombre,
+            icono: data.icono,
+            direccion: data.direccion,
+            telefono: data.telefono,
+            serie: data.serie,
+            proximoCorrelativo: data.proximoCorrelativo
+        });
+    };
+    
     /**
      * Elimina una sucursal de la subcolección del usuario actual en Firestore
      * @param {String} id - UID de la sucursal a eliminar
@@ -104,6 +129,7 @@ export function useSucursal() {
         
         addSucursal,
         deleteSucursal,
+        updateSucursal,
         seleccionar,
         limpiarSucursal
     };

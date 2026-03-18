@@ -83,14 +83,15 @@ import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { formatearFecha } from '@/utils/dates'
-import { useToast } from 'primevue/usetoast'
+import { usePrintTicket } from '@/composables/usePrintTicket'
+import { store } from '@/store'
 
 const isOpen = ref(false)
 const sale = ref(null)
-const toast = useToast()
+const { imprimirTicket } = usePrintTicket()
 
 /**
- * Abre el modal con los detalles del movimiento seleccionado
+ * Abre el modal con los detalles de le venta
  * @param {Object} data - Objeto con la información de la venta o gasto
  */
 const open = (data) => {
@@ -134,17 +135,21 @@ const obtenerClaseMetodo = (s) => {
 }
 
 /**
- * Función de impresión (placeholder) - Aquí iría la lógica para imprimir la nota de venta
- * Actualmente solo muestra un mensaje en toast
- * Se espera que se mueva a otro composable o utilitario relacionado con impresión
+ * impresion de  la nota de venta actual usando el composable de impresión
+ * Obtiene nombre de sucursal y cajero
  */
 const imprimir = () => {
-  toast.add({
-    severity: 'info',
-    summary: 'Función de impresión',
-    detail: 'Aquí se implementaría la lógica para imprimir la nota de venta.',
-    life: 3000,
-  })
+  const sucursalInfo = store.sucursales.find(s => s.id === store.sucursalActual) || {};
+
+  imprimirTicket(sale.value, {
+    nombreNegocio: store.negocio.nombre || sucursalInfo.nombre || 'MI NEGOCIO',
+    ruc: store.negocio.ruc || '',
+    logoUrl: store.negocio.logoUrl || '',
+    cajero: store.currentShift?.cajero || '',
+    
+    direccion: sucursalInfo.direccion || '',
+    telefono: sucursalInfo.telefono || ''
+  });
 }
 
 defineExpose({ open })

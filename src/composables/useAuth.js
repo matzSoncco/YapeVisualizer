@@ -30,6 +30,15 @@ onAuthStateChanged(auth, async (currentUser) => {
                     role: "owner",
                     adminPin: '1234',
                     createdAt: new Date().toISOString(),
+                    isConfigured: false,
+                    businessProfile: {
+                        name: "",
+                        ruc: "",
+                        address: "",
+                        phone: "",
+                        logoUrl: "",
+                        currency: "PEN"
+                    },
                     subscription: {
                         isActive: true,
                         status: 'trial',
@@ -121,7 +130,38 @@ export function useAuth() {
             setUserProfile({ ...store.userProfile, adminPin: newPin });
 
         } catch (err) {
-            console.error("Error updating PIN:", err);
+            console.error("Error actualizando PIN:", err);
+            throw err;
+        } finally {
+            loading.value = false;
+        }
+    };
+
+    /**
+     * Actualiza el perfil del negocio en Firestore y sincroniza con el estado local
+     * @param {*} profileData - Objeto con los datos del perfil del negocio
+     */
+    const updateBusinessProfile = async (profileData) => {
+        if (!user.value) throw new Error("Sesión no válida");
+        
+        loading.value = true;
+        try {
+            const userRef = doc(db, "users", user.value.uid);
+            
+            const updateData = {
+                businessProfile: profileData,
+                isConfigured: true 
+            };
+
+            await setDoc(userRef, updateData, { merge: true });
+
+            setUserProfile({ 
+                ...store.userProfile, 
+                ...updateData 
+            });
+
+        } catch (err) {
+            console.error("Error actualizando perfil del negocio:", err);
             throw err;
         } finally {
             loading.value = false;
@@ -133,6 +173,7 @@ export function useAuth() {
         logInWithGoogle,
         logOut,
         updateAdminPin,
+        updateBusinessProfile,
         error,
         loading
     }

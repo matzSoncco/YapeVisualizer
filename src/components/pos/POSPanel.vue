@@ -100,9 +100,9 @@
               <td class="td-qty">{{ item.qty }}</td>
               <td class="td-desc">
                 <span class="item-name">{{ item.name }}</span>
-                <span class="item-unit">S/ {{ item.price.toFixed(2) }} u.</span>
+                <span class="item-unit">S/ {{ (item.price ?? 0).toFixed(2) }} u.</span>
               </td>
-              <td class="td-total">S/ {{ item.subtotal.toFixed(2) }}</td>
+              <td class="td-total">S/ {{ (item.subtotal ?? 0).toFixed(2) }}</td>
               <td class="td-action">
                 <Button 
                   icon="pi pi-trash" 
@@ -218,7 +218,7 @@ const totalGeneral = computed(() => {
  */
 const puedeAgregar = computed(() => {
   const val = typeof prodName.value === 'object' ? prodName.value.name : prodName.value;
-  return val && val.length > 0 && prodPrice.value >= 0;
+  return val && val.length > 0 && prodPrice.value !== null && prodPrice.value >= 0;
 });
 
 /**
@@ -348,7 +348,7 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
       nombreCliente = pagoDigitalConfirmado.senderName;
     }
 
-    const movId = await registrarVenta({
+    const resultadoVenta = await registrarVenta({
       items: itemsFinales,
       payments,
       total: totalReal,
@@ -358,6 +358,8 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
         walletUsed: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.wallet : null 
       }
     });
+
+    const movId = resultadoVenta.id;
 
     if (method === 'DIGITAL' && pagoDigitalConfirmado) {
       await reclamarPagoDigital(pagoDigitalConfirmado.id, movId);
