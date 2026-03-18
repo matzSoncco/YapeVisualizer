@@ -13,6 +13,14 @@ export const store = reactive({
     userProfile: {
         role: 'user',
         adminPin: null,
+        isConfigured: false,
+        businessProfile: {
+            name: '',
+            logoUrl: '',
+            address: '',
+            phone: '',
+            currency: 'PEN'
+        },
         subscription: {
             isActive: false,
             planName: 'Cargando...',
