@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 import { db } from "../firebaseConfig";
-import { collection, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import { useAuth } from './useAuth';
 import { store, setSucursalActual } from '../store'; 
 

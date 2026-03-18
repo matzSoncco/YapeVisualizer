@@ -34,7 +34,7 @@
             </div>
           </template>
           <template #content>
-            <p class="text-sm mt-2">Nivel: <b>{{ subscriptionStatus.planName }}</b></p>
+            <p class="text-sm mt-2">Nivel: {{ subscriptionStatus.planName }}</p>
             <p class="text-sm">Sedes: {{ sucursales.length }} / {{ subscriptionStatus.limitSucursales }}</p>
           </template>
         </Card>
@@ -62,7 +62,6 @@
 
       <main class="profile-main">
 
-        <!-- CARD: DATOS DEL NEGOCIO -->
         <Card class="profile-card negocio-card">
           <template #header>
             <div class="card-header">
@@ -71,8 +70,6 @@
           </template>
           <template #content>
             <div class="negocio-form">
-
-              <!-- LOGO -->
               <div class="logo-section">
                 <div class="logo-preview">
                   <img v-if="store.negocio.logoUrl" :src="store.negocio.logoUrl" alt="Logo" class="logo-img" />
@@ -98,7 +95,6 @@
 
               <hr class="negocio-divider" />
 
-              <!-- RUC (solo si hay token configurado) -->
               <div v-if="negocioComposable.sunatDisponible" class="form-field">
                 <label>RUC</label>
                 <div class="ruc-row">
@@ -123,7 +119,6 @@
                 </small>
               </div>
 
-              <!-- NOMBRE -->
               <div class="form-field">
                 <label>Nombre del Negocio</label>
                 <InputText
@@ -133,7 +128,6 @@
                 />
               </div>
 
-              <!-- GUARDAR -->
               <div class="negocio-save-row">
                 <Button
                   label="Guardar datos"
@@ -148,7 +142,6 @@
           </template>
         </Card>
 
-        <!-- CARD: SUCURSALES -->
         <Card class="profile-card branches-card">
           <template #header>
             <div class="card-header">
@@ -172,7 +165,7 @@
                 <div class="branch-icon"><span>{{ sucursal.icono || '🏪' }}</span></div>
                 <div class="branch-info">
                   <h4>{{ sucursal.nombre }}</h4>
-                  <span class="text-xs text-gray-500">Serie: {{ sucursal.serie || 'NV01' }}</span>
+                  <span class="text-xs text-gray-500">Serie: {{ sucursal.serie || 'NV001' }}</span>
                 </div>
                 <div class="branch-actions">
                   <Button v-if="!subscriptionStatus.isHardBlocked" icon="pi pi-pencil" text rounded @click="sucursalModalRef.open(sucursal)" v-tooltip.top="'Editar'" />
@@ -187,8 +180,7 @@
 
     <ChangePinModal ref="pinModalRef" />
     <SucursalModal ref="sucursalModalRef" />
-    <BusinessConfigModal ref="businessModalRef" />
-    </div>
+  </div>
 </template>
 
 <script setup>
@@ -204,7 +196,6 @@ import { store } from '@/store';
 
 import ChangePinModal from '@/components/profile/ChangePinModal.vue';
 import SucursalModal from '@/components/profile/SucursalModal.vue';
-import BusinessConfigModal from '@/components/profile/BusinessConfigModal.vue';
 
 import '@/assets/profile.css';
 
@@ -217,9 +208,10 @@ const { subscriptionStatus } = useSubscription();
 const negocioComposable = useNegocio();
 
 const securityCardRef = ref(null);
-const showModal = ref(false);
-const isEditing = ref(false);
-const form = reactive({ id: null, nombre: '', icono: '' });
+
+// Referencias vitales para que los modales funcionen
+const pinModalRef = ref(null);
+const sucursalModalRef = ref(null);
 
 const negocioForm = reactive({
   ruc: store.negocio.ruc || '',
@@ -262,9 +254,6 @@ const handleLogoUpload = async (event) => {
   }
 };
 
-// PIN
-const showChangePinModal = ref(false);
-const pinForm = reactive({ current: '', new: '' });
 const isDefaultPin = computed(() => store.userProfile?.adminPin === '1234');
 const userName = computed(() => user.value?.displayName || 'Usuario');
 const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
@@ -276,10 +265,6 @@ onMounted(async () => {
   }
 });
 
-/**
- * Funcion para manejar la creación de una nueva sucursal
- * Valida el límite de sucursales según el plan de suscripción antes de abrir el modal
- */
 const handleOpenCreation = () => {
   const limite = subscriptionStatus.value.limitSucursales;
   const actual = sucursales.value.length;
@@ -297,10 +282,6 @@ const handleOpenCreation = () => {
   sucursalModalRef.value.open();
 };
 
-/**
- * Funcion para manejar la eliminación de una sucursal con confirmación
- * @param id - ID de la sucursal a eliminar
- */
 const deleteSucursalModal = (id) => {
   confirm.require({
     message: '¿Estás seguro de eliminar esta sucursal? Se perderá el acceso a sus ventas.',

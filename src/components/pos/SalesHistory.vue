@@ -161,12 +161,17 @@ const obtenerBilletera = (data) => {
  * @param data - Documento de venta para extraer información relevante para la impresión
  */
 const imprimirTicket = (data) => {
+  const sucursalInfo = store.sucursales.find(s => s.id === store.sucursalActual) || {};
+
   printTicket(data, {
-    nombreNegocio: store.negocio.nombre || store.sucursales.find(s => s.id === store.sucursalActual)?.nombre || 'MI NEGOCIO',
+    nombreNegocio: store.negocio.nombre || sucursalInfo.nombre || 'MI NEGOCIO',
     ruc: store.negocio.ruc || '',
+    logoUrl: store.negocio.logoUrl || '',
     cajero: store.currentShift?.cajero || '',
-    logoUrl: store.negocio.logoUrl || ''
-  })
+    
+    direccion: sucursalInfo.direccion || '',
+    telefono: sucursalInfo.telefono || ''
+  });
 }
 </script>
 

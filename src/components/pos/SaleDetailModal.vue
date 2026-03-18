@@ -139,12 +139,17 @@ const obtenerClaseMetodo = (s) => {
  * Obtiene nombre de sucursal y cajero
  */
 const imprimir = () => {
+  const sucursalInfo = store.sucursales.find(s => s.id === store.sucursalActual) || {};
+
   imprimirTicket(sale.value, {
-    nombreNegocio: store.negocio.nombre || store.sucursales.find(s => s.id === store.sucursalActual)?.nombre || 'MI NEGOCIO',
+    nombreNegocio: store.negocio.nombre || sucursalInfo.nombre || 'MI NEGOCIO',
     ruc: store.negocio.ruc || '',
+    logoUrl: store.negocio.logoUrl || '',
     cajero: store.currentShift?.cajero || '',
-    logoUrl: store.negocio.logoUrl || ''
-  })
+    
+    direccion: sucursalInfo.direccion || '',
+    telefono: sucursalInfo.telefono || ''
+  });
 }
 
 defineExpose({ open })
