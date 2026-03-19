@@ -1,7 +1,14 @@
 <template>
-  <div class="apk-status" :class="statusClass" :title="statusText">
+  <div 
+    class="apk-status" 
+    :class="statusClass" 
+    v-tooltip.bottom="tooltipText"
+  >
     <div class="status-indicator"></div>
-    <span class="status-label" v-if="showLabel">{{ statusText }}</span>
+    <span class="status-label" v-if="showLabel">
+      <span class="status-title">{{ isOnline ? 'APK Conectada' : 'APK Desconectada' }}</span>
+      <span class="status-time"> • Últ. vez {{ formattedLastSeen }}</span>
+    </span>
   </div>
 </template>
 
@@ -30,8 +37,9 @@ onUnmounted(() => {
   if (interval) clearInterval(interval);
 });
 
-// 2.5 minutos de tolerancia máxima (150,000 ms)
-const MAX_HEARTBEAT_AGE = 150000;
+// Como el latido se envía cada 1 minuto (60,000 ms), damos 2 minutos (120,000 ms) 
+// de tolerancia máxima antes de considerar que hay un problema.
+const MAX_HEARTBEAT_AGE = 120000;
 
 const isOnline = computed(() => {
   const { deviceOnline, lastHeartbeat } = store.userProfile;
@@ -44,8 +52,29 @@ const isOnline = computed(() => {
   return age <= MAX_HEARTBEAT_AGE;
 });
 
+const formattedLastSeen = computed(() => {
+  const { lastHeartbeat } = store.userProfile;
+  if (!lastHeartbeat) return 'Desconocida';
+  
+  const isToday = new Date().toDateString() === lastHeartbeat.toDateString();
+  const timeString = lastHeartbeat.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+  
+  if (isToday) {
+    return `hoy a las ${timeString}`;
+  }
+  
+  return `${lastHeartbeat.toLocaleDateString('es-PE')} a las ${timeString}`;
+});
+
 const statusClass = computed(() => isOnline.value ? 'status-online' : 'status-offline');
-const statusText = computed(() => isOnline.value ? 'APK Conectada' : 'APK Desconectada');
+
+const tooltipText = computed(() => {
+  if (isOnline.value) {
+    return 'La aplicación se está comunicando correctamente. Aun asi si la app Android no responde hace más de 2 minutos. Revise que la app esté abierta y con internet';
+  } else {
+    return '⚠️ App desconectada, vuelve a activar el servicio en la aplicacion para escuchar los yapeos.';
+  }
+});
 </script>
 
 <style scoped>
@@ -61,6 +90,15 @@ const statusText = computed(() => isOnline.value ? 'APK Conectada' : 'APK Descon
   font-weight: 600;
   transition: all 0.3s ease;
   cursor: help;
+}
+
+.status-title {
+  font-weight: 700;
+}
+
+.status-time {
+  font-weight: 500;
+  opacity: 0.85;
 }
 
 .status-indicator {
