@@ -92,7 +92,9 @@ watch(user, (newUser) => {
       setUserProfile({
         role: data.role,
         subscription: subData,
-        adminPin: data.adminPin
+        adminPin: data.adminPin,
+        deviceOnline: data.deviceOnline || false,
+        lastHeartbeat: data.lastHeartbeat ? data.lastHeartbeat.toDate() : null
       });
     }
   }, (error) => {
