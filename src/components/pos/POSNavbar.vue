@@ -13,6 +13,8 @@
             <i class="pi pi-user"></i>
             <span class="cashier-name">{{ nombreCajero }}</span>
           </div>
+          <span class="context-divider">|</span>
+          <ApkStatusIndicator :show-label="true" />
         </div>
       </div>
     </div>
@@ -59,6 +61,7 @@
 <script setup>
 import { computed } from 'vue';
 import Button from 'primevue/button';
+import ApkStatusIndicator from '@/components/shared/ApkStatusIndicator.vue';
 
 const props = defineProps({
   nombreSucursal: String,
