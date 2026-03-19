@@ -20,6 +20,8 @@ export const store = reactive({
         role: 'user',
         adminPin: null,
         isConfigured: false,
+        deviceOnline: false,
+        lastHeartbeat: null,
         subscription: {
             isActive: false,
             planName: 'Cargando...',
@@ -77,6 +79,8 @@ export const setUserProfile = (data) => {
         store.userProfile = {
             role: 'user',
             adminPin: null,
+            deviceOnline: false,
+            lastHeartbeat: null,
             subscription: {
                 isActive: false,
                 planName: '',
