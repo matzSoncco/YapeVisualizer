@@ -87,6 +87,10 @@
               />
             </div>
 
+            <div v-else-if="activeTab === 'inventory'">
+              <AdminInventory />
+            </div>
+
           </div>
         </Transition>
       </section>
@@ -111,6 +115,7 @@ import Avatar from 'primevue/avatar';
 import AdminTable from '@/components/admin/AdminTable.vue';
 import AdminStats from '@/components/admin/AdminStats.vue';
 import AdminCharts from '@/components/admin/AdminCharts.vue';
+import AdminInventory from '@/components/admin/AdminInventory.vue';
 
 import '@/assets/admin.css';
 
@@ -122,6 +127,7 @@ const tabs = [
   { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
   { id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' },
   { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
+  { id: 'inventory', label: 'Inventario', icon: 'pi pi-box' },
 ];
 
 const router = useRouter();

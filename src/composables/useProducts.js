@@ -57,6 +57,7 @@ export function useProducts() {
             await setDoc(productRef, {
                 name: item.name.toUpperCase(),
                 lastPrice: Number(item.price),
+                codEAN: "", // Campo nuevo para inventario
                 updatedAt: serverTimestamp(),
                 frequency: increment(1)
             }, { merge: true });
@@ -65,9 +66,90 @@ export function useProducts() {
         }
     };
 
+    /**
+     * Actualizar manualmente un producto desde el inventario
+     */
+    const actualizarProducto = async (productId, newData) => {
+        if (!user.value?.uid || !productId) return false;
+        try {
+            const productRef = doc(db, 'users', user.value.uid, 'products', productId);
+            await setDoc(productRef, {
+                ...newData,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+            return true;
+        } catch (error) {
+            console.error("Error actualizando producto:", error);
+            return false;
+        }
+    };
+
+    /**
+     * Crear un producto manualmente desde el inventario con ID dinámico
+     */
+    const crearProducto = async (newData) => {
+        if (!user.value?.uid) return null;
+        try {
+            const productsRef = collection(db, 'users', user.value.uid, 'products');
+            const newDocRef = doc(productsRef); // Auto-genera ID único
+            const fullData = {
+                ...newData,
+                updatedAt: serverTimestamp(),
+                frequency: 0 // Inicia con 0 ventas
+            };
+            await setDoc(newDocRef, fullData);
+            return { id: newDocRef.id, ...fullData };
+        } catch (error) {
+            console.error("Error creando producto:", error);
+            return null;
+        }
+    };
+
+    /**
+     * Búsqueda por Código de Barras (EAN)
+     */
+    const buscarPorCodigoBarras = async (codigo) => {
+        if (!user.value?.uid || !codigo) return null;
+        try {
+            const productsRef = collection(db, 'users', user.value.uid, 'products');
+            const q = query(productsRef, where('codEAN', '==', codigo), limit(1));
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                const doc = snapshot.docs[0];
+                return { id: doc.id, ...doc.data() };
+            }
+            return null;
+        } catch (error) {
+            console.error("Error buscando por código:", error);
+            return null;
+        }
+    };
+
+    /**
+     * Obtiene todo el catálogo de productos (Módulo Inventario)
+     */
+    const obtenerTodosLosProductos = async () => {
+        if (!user.value?.uid) return [];
+        try {
+            const productsRef = collection(db, 'users', user.value.uid, 'products');
+            const snapshot = await getDocs(productsRef);
+            return snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error("Error obteniendo inventario:", error);
+            return [];
+        }
+    };
+
     return {
         suggestions,
         buscarProductos,
-        actualizarCatalogo
+        buscarPorCodigoBarras,
+        actualizarProducto,
+        crearProducto,
+        actualizarCatalogo,
+        obtenerTodosLosProductos
     };
 }

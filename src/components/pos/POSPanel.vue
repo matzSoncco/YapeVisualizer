@@ -8,8 +8,9 @@
           :suggestions="suggestions" 
           @complete="search" 
           @item-select="onProductSelect" 
+          @keyup.enter="onEnterBusqueda"
           optionLabel="name" 
-          placeholder="Buscar producto..." 
+          placeholder="Buscar producto o escanear código..." 
           class="full-width-search" 
           ref="mainInput" 
         />
@@ -158,7 +159,7 @@ import { useMatcher } from '@/composables/useMatcher';
 import { cartStorageKey } from '@/store'
 import "@/assets/pospanel.css";
 
-const { suggestions, buscarProductos } = useProducts();
+const { suggestions, buscarProductos, buscarPorCodigoBarras } = useProducts();
 const { registrarVenta } = useMovements();
 const { reclamarPagoDigital } = useDigitalPayments();
 const { iniciarEspera, cancelarEspera, matcherState } = useMatcher();
@@ -234,6 +235,28 @@ const puedeProcederAlPago = computed(() => {
 
 const search = (e) => buscarProductos(e.query);
 const onProductSelect = (e) => { prodPrice.value = e.value.lastPrice; };
+
+const onEnterBusqueda = async () => {
+  const text = typeof prodName.value === 'string' ? prodName.value.trim() : '';
+  
+  // Si tipearon un texto y dieron enter, buscamos a ver si coincide con algún código de barras EAN
+  if (text.length > 0) {
+    const productByEAN = await buscarPorCodigoBarras(text);
+    if (productByEAN) {
+      prodName.value = productByEAN.name;
+      prodPrice.value = productByEAN.lastPrice;
+      agregarAlCarrito();
+      toast.add({ severity: 'success', summary: 'Escaneado', detail: productByEAN.name, life: 2000 });
+      return;
+    }
+  }
+
+  // Si no es un código EAN, pero el usuario seleccionó un producto existente usando las flechas y dio Enter
+  // Y los campos están listos para agregar, lo agregamos como atajo:
+  if (typeof prodName.value === 'object' && puedeAgregar.value) {
+    agregarAlCarrito();
+  }
+};
 
 const agregarAlCarrito = () => {
   if (!puedeAgregar.value) return;
