@@ -1,192 +1,229 @@
-import { computed, reactive } from 'vue';
-import { db } from "../firebaseConfig";
+import { computed, reactive } from 'vue'
+import { db } from '../firebaseConfig'
 import {
-    onSnapshot,
-    collection,
-    addDoc,
-    doc,
-    updateDoc,
-    query,
-    where,
-    getDoc,
-    limit,
-    serverTimestamp,
-} from "firebase/firestore";
-import { useAuth } from './useAuth';
-import { store, setCurrentShift, setLoading } from '@/store';
+  onSnapshot,
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  query,
+  where,
+  getDoc,
+  limit,
+  serverTimestamp,
+} from 'firebase/firestore'
+import { useAuth } from './useAuth'
+import { store, setCurrentShift, setLoading } from '@/store'
 
 /**
  * Estado para el proceso de arqueo al cerrar turno
  */
 const arqueoState = reactive({
-    isOpen: false,
-    monto: null,
-    loading: false
+  isOpen: false,
+  monto: null,
+  loading: false,
+  summaryVisible: false, // <-- NUEVO: Controla el modal final
+  summaryData: null, // <-- NUEVO: Guarda la data calculada
 })
 
 export function useShift() {
-    const { user } = useAuth();
+  const { user } = useAuth()
 
-    const isShiftOpen = computed(() => store.currentShift !== null);
-    const currentShift = computed(() => store.currentShift);
-    const sucursalId = computed(() => store.sucursalActual);
+  const isShiftOpen = computed(() => store.currentShift !== null)
+  const currentShift = computed(() => store.currentShift)
+  const sucursalId = computed(() => store.sucursalActual)
 
-    /**
-     * Verifica si existe un turno abierta para la sucursal actual
-     * Se debe llamar al montar el Dashboard
-     */
-    const verificarTurnoActivo = async () => {
-        setCurrentShift(null);
-        if (!user.value?.uid || !sucursalId.value || sucursalId.value === 'ADMIN') return;
-        setLoading(true);
+  /**
+   * Verifica si existe un turno abierta para la sucursal actual
+   * Se debe llamar al montar el Dashboard
+   */
+  const verificarTurnoActivo = async () => {
+    setCurrentShift(null)
+    if (!user.value?.uid || !sucursalId.value || sucursalId.value === 'ADMIN') return
+    setLoading(true)
 
-        try {
-            const shiftsRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts');
-            const q = query(shiftsRef, where('status', '==', 'OPEN'), limit(1));
-            
-            return onSnapshot(q, (snapshot) => {
-                if (!snapshot.empty) {
-                    const docData = snapshot.docs[0];
-                    setCurrentShift({ id: docData.id, ...docData.data() });
-                } else {
-                    setCurrentShift(null);
-                }
-                setLoading(false);
-            }, (error) => {
-                console.error("Error en el stream del turno:", error);
-                setLoading(false);
-            });
-        } catch (error) {
-            console.error("Error verificando turno activo:", error);
-            setLoading(false);
-        }
-    };
+    try {
+      const shiftsRef = collection(
+        db,
+        'users',
+        user.value.uid,
+        'sucursales',
+        sucursalId.value,
+        'shifts',
+      )
+      const q = query(shiftsRef, where('status', '==', 'OPEN'), limit(1))
 
-    /**
-     * Abre un nuevo turno de caja
-     * @param {number} montoInicial - Monto inicial declarado para el turno
-     * @param {string} nombreCajero - Nombre de quien abre el turno
-     */
-    const abrirTurno = async (montoInicial, cajeroNombre) => {
-        if (!user.value?.uid || !sucursalId.value) throw new Error("Error de contexto: No hay sucursal");
-
-        const nuevoTurno = {
-            status: 'OPEN',
-            cajero: cajeroNombre,
-            fechaApertura: new Date().toISOString(),
-            timestampApertura: serverTimestamp(),
-
-            stats: {
-                fund: Number(montoInicial),
-                totalCashSales: 0,
-                totalDigitalSales: 0,
-                totalExpenses: 0,
-                totalTransactions: 0
-            },
-            
-            fechaCierre: null,
-            timestampCierre: null,
-            audit: null
-        };
-
-        try {
-            const shiftsRef = collection(db, 'users', user.value.uid, 'sucursales', sucursalId.value, 'shifts');
-            const docRef = await addDoc(shiftsRef, nuevoTurno);
-
-            setCurrentShift({ id: docRef.id, ...nuevoTurno });
-            return docRef.id;
-        } catch (error) {
-            console.error("Error al abrir turno:", error);
-            throw error;
-        }
-    };
-
-    const abrirArqueo = () => {
-        arqueoState.monto = null;
-        arqueoState.isOpen = true;
-    };
-
-    /**
-     * Cierra el turno actual
-     */
-    const cerrarTurno = async () => {
-        const localShift = store.currentShift;
-        const currentSucursalId = store.sucursalActual;
-
-        if (!localShift?.id || !currentSucursalId) {
-            arqueoState.loading = false;
-            throw new Error("Contexto inválido para cierre");
-        }
-
-        arqueoState.loading = true;
-
-        try {
-            const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', currentSucursalId, 'shifts', localShift.id);
-            const shiftSnap = await getDoc(shiftRef);
-            
-            if (!shiftSnap.exists()) {
-                throw new Error("El turno no existe en la base de datos");
+      return onSnapshot(
+        q,
+        (snapshot) => {
+          if (!snapshot.empty) {
+            const docData = snapshot.docs[0]
+            setCurrentShift({ id: docData.id, ...docData.data() })
+          } else {
+            if (!arqueoState.summaryVisible && !arqueoState.isOpen) {
+              setCurrentShift(null)
             }
+          }
+          setLoading(false)
+        },
+        (error) => {
+          console.error('Error en el stream del turno:', error)
+          setLoading(false)
+        },
+      )
+    } catch (error) {
+      console.error('Error verificando turno activo:', error)
+      setLoading(false)
+    }
+  }
 
-            const freshData = shiftSnap.data();
-            const stats = freshData.stats || {};
+  /**
+   * Abre un nuevo turno de caja
+   * @param {number} montoInicial - Monto inicial declarado para el turno
+   * @param {string} nombreCajero - Nombre de quien abre el turno
+   */
+  const abrirTurno = async (montoInicial, cajeroNombre) => {
+    if (!user.value?.uid || !sucursalId.value) throw new Error('Error de contexto: No hay sucursal')
 
-            const fnd = Number(stats.fund || 0);
-            const cash = Number(stats.totalCashSales || 0);
-            const digital = Number(stats.totalDigitalSales || 0);
-            const exp = Number(stats.totalExpenses || 0);
+    const nuevoTurno = {
+      status: 'OPEN',
+      cajero: cajeroNombre,
+      fechaApertura: new Date().toISOString(),
+      timestampApertura: serverTimestamp(),
 
-            const declarado = Number(arqueoState.monto) || 0;
-            const efectivoTeorico = Math.round((fnd + cash - exp) * 100) / 100;
-            const diferencia = Math.round((declarado - efectivoTeorico) * 100) / 100;
-            
-            const nombreSede = store.sucursales.find(s => s.id === currentSucursalId)?.nombre || 'Sucursal';
+      stats: {
+        fund: Number(montoInicial),
+        totalCashSales: 0,
+        totalDigitalSales: 0,
+        totalExpenses: 0,
+        totalTransactions: 0,
+      },
 
-            const cierreData = {
-                status: 'CLOSED',
-                userId: user.value.uid,
-                fechaCierre: new Date().toISOString(),
-                timestampCierre: serverTimestamp(),
-                sucursalId: currentSucursalId,
-                sedeNombre: nombreSede,
+      fechaCierre: null,
+      timestampCierre: null,
+      audit: null,
+    }
 
-                audit: {
-                    fund: fnd,
-                    totalSystemCash: efectivoTeorico,
-                    declaredCash: Number(arqueoState.monto),
-                    difference: diferencia,
-                    isBalanced: Math.round(diferencia * 100) === 0
-                },
+    try {
+      const shiftsRef = collection(
+        db,
+        'users',
+        user.value.uid,
+        'sucursales',
+        sucursalId.value,
+        'shifts',
+      )
+      const docRef = await addDoc(shiftsRef, nuevoTurno)
 
-                totalIngresosDia: Math.round((cash + digital) * 100) / 100,
-                totalDigital: digital,
-                totalEfectivoFinal: cash
-            };
+      setCurrentShift({ id: docRef.id, ...nuevoTurno })
+      return docRef.id
+    } catch (error) {
+      console.error('Error al abrir turno:', error)
+      throw error
+    }
+  }
 
-            await updateDoc(shiftRef, cierreData);
+  const abrirArqueo = () => {
+    arqueoState.monto = null
+    arqueoState.isOpen = true
+  }
 
-            setCurrentShift(null);
-            setTimeout(() => {
-                arqueoState.isOpen = false;
-                arqueoState.monto = null;
-            }, 100);
+  /**
+   * Cierra el turno actual
+   */
+  const cerrarTurno = async () => {
+    const localShift = store.currentShift
+    const currentSucursalId = store.sucursalActual
 
-            return cierreData;
-        } catch (error) {
-            console.error("Error al cerrar turno:", error);
-            throw error;
-        } finally {
-            arqueoState.loading = false;
-        }
-    };
+    if (!localShift?.id || !currentSucursalId) {
+      arqueoState.loading = false
+      throw new Error('Contexto inválido para cierre')
+    }
 
-    return {
-        currentShift,
-        isShiftOpen,
-        verificarTurnoActivo,
-        abrirTurno,
-        arqueoState,
-        abrirArqueo,
-        cerrarTurno
-    };
+    arqueoState.loading = true
+
+    try {
+      const shiftRef = doc(
+        db,
+        'users',
+        user.value.uid,
+        'sucursales',
+        currentSucursalId,
+        'shifts',
+        localShift.id,
+      )
+      const shiftSnap = await getDoc(shiftRef)
+
+      if (!shiftSnap.exists()) {
+        throw new Error('El turno no existe en la base de datos')
+      }
+
+      const freshData = shiftSnap.data()
+      const stats = freshData.stats || {}
+
+      const fnd = Number(stats.fund || 0)
+      const cash = Number(stats.totalCashSales || 0)
+      const digital = Number(stats.totalDigitalSales || 0)
+      const exp = Number(stats.totalExpenses || 0)
+
+      const declarado = Number(arqueoState.monto) || 0
+      const efectivoTeorico = Math.round((fnd + cash - exp) * 100) / 100
+      const diferencia = Math.round((declarado - efectivoTeorico) * 100) / 100
+
+      const nombreSede =
+        store.sucursales.find((s) => s.id === currentSucursalId)?.nombre || 'Sucursal'
+
+      const cierreData = {
+        status: 'CLOSED',
+        userId: user.value.uid,
+        fechaCierre: new Date().toISOString(),
+        timestampCierre: serverTimestamp(),
+        sucursalId: currentSucursalId,
+        sedeNombre: nombreSede,
+
+        audit: {
+          fund: fnd,
+          totalSystemCash: efectivoTeorico,
+          declaredCash: Number(arqueoState.monto),
+          difference: diferencia,
+          isBalanced: Math.round(diferencia * 100) === 0,
+        },
+
+        totalIngresosDia: Math.round((cash + digital) * 100) / 100,
+        totalDigital: digital,
+        totalEfectivoFinal: cash,
+      }
+
+      await updateDoc(shiftRef, cierreData)
+
+      arqueoState.isOpen = false
+      arqueoState.summaryData = cierreData
+      arqueoState.summaryVisible = true
+
+      return cierreData
+    } catch (error) {
+      console.error('Error al cerrar turno:', error)
+      throw error
+    } finally {
+      arqueoState.loading = false
+    }
+  }
+
+  const finalizarCierrePorCompleto = () => {
+    arqueoState.summaryVisible = false
+    arqueoState.summaryData = null
+    arqueoState.monto = null
+    setCurrentShift(null)
+  }
+
+  return {
+    currentShift,
+    isShiftOpen,
+    verificarTurnoActivo,
+    abrirTurno,
+    arqueoState,
+    abrirArqueo,
+    cerrarTurno,
+    finalizarCierrePorCompleto,
+  }
 }

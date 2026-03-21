@@ -21,10 +21,10 @@
     <div v-else class="table-wrapper">
       <DataTable
         :value="ventas"
-        :paginator="ventas.length > 12"
-        :rows="12"
-        responsiveLayout="scroll"
+        scrollable 
+        scrollHeight="flex"
         class="p-datatable-sm custom-table"
+        dataKey="id"
       >
         <Column field="timestamp" header="Hora" class="col-time">
           <template #body="slotProps">
@@ -33,11 +33,12 @@
         </Column>
         <Column header="Concepto / Cliente" class="col-client">
           <template #body="slotProps">
-            <div v-if="slotProps.data.type === 'EXPENSE'" class="expense-label">
+            <div v-if="slotProps.data.type === 'EXPENSE'" class="expense-row-info">
               <span>GASTO OPERATIVO</span>
             </div>
             <div v-else class="client-info">
               <span class="client-name">{{ slotProps.data.clientName || 'Cliente Eventual' }}</span>
+              <span v-if="slotProps.data.ticketNumber" class="ticket-ref">{{ slotProps.data.ticketNumber }}</span>
             </div>
           </template>
         </Column>
@@ -62,7 +63,7 @@
           </template>
         </Column>
 
-        <Column field="totalAmount" header="Monto" class="col-amount">
+        <Column header="Monto" class="col-amount">
           <template #body="slotProps">
             <span class="amount-text" :class="{ 'is-expense': slotProps.data.type === 'EXPENSE' }">
               {{ slotProps.data.type === 'EXPENSE' ? '-' : '' }} S/
@@ -70,7 +71,7 @@
             </span>
           </template>
         </Column>
-        <Column header="Acciones" class="col-actions" :style="{ width: '100px' }">
+        <Column header="Acciones" class="col-actions">
           <template #body="slotProps">
             <div class="actions-group">
               <Button
@@ -177,6 +178,7 @@ const imprimirTicket = (data) => {
 
 <style scoped>
 .history-container {
+  flex: 1;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -184,11 +186,17 @@ const imprimirTicket = (data) => {
 }
 
 .history-header {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.5rem;
+  background: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+:deep(.p-datatable-tbody > tr:has(.is-expense)) {
+  background-color: #fffafb !important;
 }
 
 .header-info {
@@ -231,7 +239,11 @@ const imprimirTicket = (data) => {
 /* TABLA: Personalización profunda de PrimeVue */
 .table-wrapper {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 :deep(.custom-table .p-datatable-thead > tr > th) {
@@ -271,7 +283,14 @@ const imprimirTicket = (data) => {
   font-size: 0.9rem;
 }
 
-.expense-label {
+.ticket-ref {
+  display: block;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-family: monospace;
+}
+
+.expense-row-info {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -288,6 +307,26 @@ const imprimirTicket = (data) => {
 
 .amount-text.is-expense {
   color: #ef4444;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.col-time { width: 90px; }
+.col-amount { text-align: right; width: 110px; }
+.col-actions { width: 90px; }
+
+:deep(.p-tag) {
+  font-size: 0.6rem !important;
+  padding: 0.15rem 0.5rem !important;
 }
 
 .actions-group {

@@ -1,3 +1,10 @@
+.dashboard {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 .loading-overlay-full {
     position: fixed;
     inset: 0;
@@ -23,7 +30,10 @@
 }
 
 .pos-layout-wrapper {
-    animation: fadeIn 0.3s ease-in-out;
+    flex: 1; /* Toma todo el espacio debajo del Navbar */
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* 👈 CRUCIAL: Permite que los hijos manejen su propio scroll */
 }
 
 @keyframes fadeIn {
@@ -43,25 +53,39 @@
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
+.pos-grid-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; 
+    height: 100%; /* Por si las moscas */
+}
+
 /* EL ESCENARIO PRINCIPAL: INVERSIÓN DE PROPORCIONES */
 .pos-main-stage {
     flex: 1;
+    min-height: 0; /* 👈 Obligatorio para que los hijos no desborden */
+    
     display: flex; 
     overflow: hidden;
 }
 
 /* POSPanel: Ahora es el panel que ocupa "lo necesario" */
 .stage-left {
-    width: 420px; /* Ancho suficiente para el formulario y botones sin verse apretado */
+    width: 420px;
+    height: 100%;
     border-right: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
     overflow: hidden; 
     background: var(--bg-app);
-    flex-shrink: 0; /* Evita que el historial lo aplaste */
+    flex-shrink: 0;
 }
 
 /* SalesHistory: Ahora es el panel "maestro" que crece */
 .stage-right {
-    flex: 1; /* Ocupa todo el resto del ancho de la pantalla */
+    flex: 1;
+    height: 100%;
     background: var(--bg-surface);
     overflow: hidden;
     display: flex;

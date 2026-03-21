@@ -11,7 +11,7 @@ import ProgressSpinner from 'primevue/progressspinner'
 defineProps({
   mensaje: {
     type: String,
-    default: 'Sincronizando caja...',
+    default: 'Sincronizando datos, por favor espera...',
   },
 })
 </script>
@@ -29,7 +29,6 @@ defineProps({
   justify-content: center;
   background: var(--bg-surface);
   z-index: 9999;
-  /* Efecto de cristal opcional para que se vea pro */
   backdrop-filter: blur(4px);
 }
 

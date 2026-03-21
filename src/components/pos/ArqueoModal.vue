@@ -84,16 +84,10 @@ const ejecutarCierre = async () => {
   try {
     await cerrarTurno()
     detenerTodo()
-    toast.add({
-      severity: 'success',
-      summary: 'Turno Cerrado',
-      detail: 'Arqueo registrado correctamente.',
-      life: 3000,
-    })
   } catch (e) {
     toast.add({
       severity: 'error',
-      summary: 'Error',
+      summary: 'Error al cerrar',
       detail: e.message,
       life: 5000,
     })
