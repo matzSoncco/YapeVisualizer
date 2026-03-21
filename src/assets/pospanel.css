@@ -122,8 +122,8 @@
 }
 
 .detail-field.price-group .currency {
-    color: #64748b; /* Slate 500 o el color que prefieras para el POS */
-    font-size: 1rem;
+  color: #64748b;
+  font-size: 1rem;
 }
 
 .qty-group { flex: 0 0 100px; }
@@ -181,6 +181,7 @@
 /* CARRITO */
 .pos-cart-area {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   background: white;
 }
@@ -188,6 +189,22 @@
 .cart-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.th-qty {
+  width: 12%;
+}
+.th-desc {
+  width: 50%;
+}
+.th-total {
+  width: 23%;
+  text-align: right;
+}
+.th-action {
+  width: 15%;
+  text-align: center;
 }
 
 .cart-table thead th {
@@ -199,6 +216,9 @@
   font-weight: 800;
   text-transform: uppercase;
   border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .cart-item-row {
@@ -228,6 +248,10 @@
   font-weight: 700;
   color: var(--color-primary);
   font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
 }
 
 .item-unit {
@@ -332,4 +356,19 @@
 .unlock-footer {
   text-align: center;
   margin-top: 0.75rem;
+}
+
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
