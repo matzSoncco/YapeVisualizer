@@ -6,7 +6,7 @@
   >
     <div class="status-indicator"></div>
     <span class="status-label" v-if="showLabel">
-      <span class="status-title">{{ isOnline ? 'APK Conectada' : 'APK Desconectada' }}</span>
+      <span class="status-title">{{ stateText }}</span>
       <span class="status-time"> • Últ. vez {{ formattedLastSeen }}</span>
     </span>
   </div>
@@ -37,19 +37,24 @@ onUnmounted(() => {
   if (interval) clearInterval(interval);
 });
 
-// Como el latido se envía cada 1 minuto (60,000 ms), damos 2 minutos (120,000 ms) 
-// de tolerancia máxima antes de considerar que hay un problema.
-const MAX_HEARTBEAT_AGE = 120000;
+// Zonas de tolerancia (en milisegundos) basadas en tiempo de latido
+// App envía latido cada 5 minutos (300,000 ms)
+const MINUTES_TO_MS = 60000;
+const LIMIT_OK = 6 * MINUTES_TO_MS;       // 0 a 6 min (verde)
+const LIMIT_WARNING = 10 * MINUTES_TO_MS; // 7 a 10 min (amarillo)
 
-const isOnline = computed(() => {
+const connectionState = computed(() => {
   const { deviceOnline, lastHeartbeat } = store.userProfile;
   
-  if (!deviceOnline) return false;
-  if (!lastHeartbeat) return false;
+  if (!deviceOnline) return 'offline'; // apagador directo
+  if (!lastHeartbeat) return 'offline'; // estado inicial o vacio
   
   // lastHeartbeat es Date porque App.vue lo convierte usando .toDate()
   const age = now.value - lastHeartbeat.getTime();
-  return age <= MAX_HEARTBEAT_AGE;
+  
+  if (age <= LIMIT_OK) return 'online';
+  if (age <= LIMIT_WARNING) return 'warning';
+  return 'offline'; // Más de 10 min
 });
 
 const formattedLastSeen = computed(() => {
@@ -66,13 +71,26 @@ const formattedLastSeen = computed(() => {
   return `${lastHeartbeat.toLocaleDateString('es-PE')} a las ${timeString}`;
 });
 
-const statusClass = computed(() => isOnline.value ? 'status-online' : 'status-offline');
+const statusClass = computed(() => `status-${connectionState.value}`);
+
+const stateText = computed(() => {
+  switch (connectionState.value) {
+    case 'online': return 'APK Conectada';
+    case 'warning': return 'Revisar celular';
+    case 'offline': return 'APK Desconectada';
+    default: return 'APK Desconectada';
+  }
+});
 
 const tooltipText = computed(() => {
-  if (isOnline.value) {
-    return 'La aplicación se está comunicando correctamente. Aun asi si la app Android no responde hace más de 2 minutos. Revise que la app esté abierta y con internet';
-  } else {
-    return '⚠️ App desconectada, vuelve a activar el servicio en la aplicacion para escuchar los yapeos.';
+  switch (connectionState.value) {
+    case 'online': 
+      return '🟢 Todo está perfecto. La app se sincroniza correctamente.';
+    case 'warning':
+      return '🟡 Alerta: Se saltó un latido. Posible retardo por wifi o ahorro de energía en el celular.';
+    case 'offline':
+    default:
+      return '🔴 Confirma que tu app de Android esté encendida con el permiso de notificaciones.';
   }
 });
 </script>
@@ -108,6 +126,7 @@ const tooltipText = computed(() => {
   transition: all 0.3s ease;
 }
 
+/* ONLINE (VERDE) */
 .status-online {
   background: #ecfdf5;
   color: #059669;
@@ -118,6 +137,18 @@ const tooltipText = computed(() => {
   animation: pulse-green 2s infinite;
 }
 
+/* WARNING (AMARILLO) */
+.status-warning {
+  background: #fefce8;
+  color: #ca8a04;
+}
+.status-warning .status-indicator {
+  background: #eab308;
+  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+  animation: pulse-yellow 2s infinite;
+}
+
+/* OFFLINE (ROJO) */
 .status-offline {
   background: #fef2f2;
   color: #dc2626;
@@ -131,5 +162,11 @@ const tooltipText = computed(() => {
   0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
   70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
   100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulse-yellow {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(234, 179, 8, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
 }
 </style>
