@@ -223,7 +223,6 @@ const confirmarVinculo = async () => {
     await posPanelRef.value.finalizarVentaDigitalConfirmada(matcherState.candidate)
 
     resetMatcher()
-    toast.add({ severity: 'success', summary: 'Venta Procesada', life: 2000 })
   } catch (error) {
     console.error('Error al confirmar vínculo:', error)
     toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 5000 })
