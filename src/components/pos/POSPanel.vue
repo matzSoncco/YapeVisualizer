@@ -131,16 +131,16 @@
         @click="procesarPago('CASH', null)"
         :disabled="!puedeProcederAlPago || matcherState.isLocked"
         >
-          <i class="pi pi-money-bill"></i>
-          <span>EFECTIVO</span>
+          <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
+          <span>{{ loading ? 'PROCESANDO...' : 'EFECTIVO' }}</span>
         </button>
         <button
         class="pay-btn-custom yape-bg"
         @click="iniciarFlujo"
-        :disabled="!puedeProcederAlPago"
+        :disabled="!puedeProcederAlPago || loading"
         >
-          <i :class="matcherState.isListening ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
-          <span>YAPE / PLIN</span>
+          <i :class="(matcherState.isListening || loading) ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
+          <span>{{ loading ? 'REGISTRANDO...' : 'YAPE / PLIN' }}</span>
           <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
         </button>
       </div>
@@ -259,7 +259,7 @@ const removerItem = (idx) => cart.value.splice(idx, 1);
 const iniciarFlujo = () => {
   if (matcherState.isListening) {
     cancelarEspera();
-    toast.add({ severity: 'info', summary: 'Escucha cancelada' });
+    toast.add({ severity: 'info', summary: 'Escucha cancelada', life: 3000 });
   } else {
     const exito = iniciarEspera(totalGeneral.value);
 
@@ -305,7 +305,9 @@ const prellenarCarrito = (monto) => {
  * @param pagoDigitalConfirmado - Objeto de la transacción Yape confirmada
  */
 const procesarPago = async (method, pagoDigitalConfirmado = null) => {
+  if (loading.value) return;
   loading.value = true;
+
   try {
     let itemsFinales = [];
     let esVentaRapida = false;
@@ -367,9 +369,12 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
 
     cart.value = [];
     quickAmount.value = null;
+    prodName.value = '';
+    toast.add({ severity: 'success', summary: 'Venta exitosa', life: 3000 });
     
     emit('transaction-completed');
   } catch (e) {
+    console.error("Error en el flujo de pago:", e);
     throw e;
   } finally {
     loading.value = false;

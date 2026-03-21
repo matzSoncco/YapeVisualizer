@@ -165,6 +165,7 @@ export function useShift() {
       const cash = Number(stats.totalCashSales || 0)
       const digital = Number(stats.totalDigitalSales || 0)
       const exp = Number(stats.totalExpenses || 0)
+      const trans = Number(stats.totalTransactions || 0)
 
       const declarado = Number(arqueoState.monto) || 0
       const efectivoTeorico = Math.round((fnd + cash - exp) * 100) / 100
@@ -192,6 +193,8 @@ export function useShift() {
         totalIngresosDia: Math.round((cash + digital) * 100) / 100,
         totalDigital: digital,
         totalEfectivoFinal: cash,
+        totalGastos: exp,
+        totalTransacciones: trans
       }
 
       await updateDoc(shiftRef, cierreData)
