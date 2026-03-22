@@ -146,6 +146,59 @@
         </button>
       </div>
     </footer>
+
+    <!-- WIZARD PARA CÓDIGO DESCONOCIDO -->
+    <Dialog v-model:visible="showUnknownBarcodeWizard" :modal="true" :style="{width: '450px'}" header="Código Detectado" class="p-fluid">
+      
+      <!-- MODO CHOOSE (Elección) -->
+      <div v-if="wizardMode === 'CHOOSE'" class="text-center py-4">
+        <i class="pi pi-question-circle text-5xl text-orange-500 mb-4 block"></i>
+        <p class="mb-5 text-lg">El código <strong>{{ scannedUnknownBarcode }}</strong> no está en tu inventario. ¿Qué deseas hacer?</p>
+        <div class="flex flex-col gap-3">
+          <Button label="Enlazar a producto existente" icon="pi pi-link" outlined @click="wizardMode = 'LINK'" />
+          <Button label="Crear producto nuevo" icon="pi pi-plus" severity="success" @click="wizardMode = 'CREATE'" />
+        </div>
+      </div>
+
+      <!-- MODO LINK (Vincular) -->
+      <div v-else-if="wizardMode === 'LINK'">
+        <p class="mb-4 text-sm text-slate-600">Busca el producto de tu inventario al cual le guardaremos el código permanente <strong>{{ scannedUnknownBarcode }}</strong>.</p>
+        <div class="field mb-5">
+          <label class="font-bold block mb-2">Buscar Producto Físico</label>
+          <AutoComplete 
+            v-model="linkTarget" 
+            :suggestions="suggestions" 
+            @complete="search" 
+            optionLabel="name" 
+            placeholder="Escribe su nombre..." 
+            class="w-full"
+            autofocus
+          />
+        </div>
+        <div class="flex justify-between gap-2 mt-4">
+          <Button label="Atrás" icon="pi pi-arrow-left" text severity="secondary" @click="wizardMode = 'CHOOSE'" />
+          <Button label="Vincular y Cobrar" icon="pi pi-check" :disabled="!linkTarget || !linkTarget.id" @click="confirmarVinculacion" />
+        </div>
+      </div>
+
+      <!-- MODO CREATE (Crear) -->
+      <div v-else-if="wizardMode === 'CREATE'">
+        <p class="mb-4 text-sm text-slate-600">Este producto quedará guardado para siempre en tu inventario y saltará directamente al carrito.</p>
+        <div class="field mb-3">
+          <label class="font-bold block mb-1">Nombre</label>
+          <InputText v-model="newProdName" autofocus placeholder="Ej. Galletas Soda" />
+        </div>
+        <div class="field mb-4">
+          <label class="font-bold block mb-1">Precio Unitario</label>
+          <InputNumber v-model="newProdPrice" mode="currency" currency="PEN" locale="es-PE" placeholder="0.00" />
+        </div>
+        <div class="flex justify-between gap-2 mt-4">
+          <Button label="Atrás" icon="pi pi-arrow-left" text severity="secondary" @click="wizardMode = 'CHOOSE'" />
+          <Button label="Guardar y Cobrar" icon="pi pi-check" severity="success" :disabled="!newProdName || newProdPrice === null" @click="confirmarCreacion" />
+        </div>
+      </div>
+    </Dialog>
+
   </div>
 </template>
 
@@ -159,7 +212,7 @@ import { useMatcher } from '@/composables/useMatcher';
 import { cartStorageKey } from '@/store'
 import "@/assets/pospanel.css";
 
-const { suggestions, buscarProductos, buscarPorCodigoBarras } = useProducts();
+const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto, crearProducto } = useProducts();
 const { registrarVenta } = useMovements();
 const { reclamarPagoDigital } = useDigitalPayments();
 const { iniciarEspera, cancelarEspera, matcherState } = useMatcher();
@@ -172,6 +225,14 @@ const prodName = ref('');
 const prodQty = ref(1);
 const prodPrice = ref(null);
 const emit = defineEmits(['transaction-completed']);
+
+// Asistente Inteligente de Códigos (Wizard)
+const showUnknownBarcodeWizard = ref(false);
+const wizardMode = ref('CHOOSE');
+const scannedUnknownBarcode = ref('');
+const linkTarget = ref(null);
+const newProdName = ref('');
+const newProdPrice = ref(null);
 
 /**
  * 
@@ -248,6 +309,16 @@ const onEnterBusqueda = async () => {
       agregarAlCarrito();
       toast.add({ severity: 'success', summary: 'Escaneado', detail: productByEAN.name, life: 2000 });
       return;
+    } else if (/^\d{4,}$/.test(text)) {
+      // Si son puros números y al menos 4 dígitos, asumimos que es un código no encontrado
+      scannedUnknownBarcode.value = text;
+      wizardMode.value = 'CHOOSE';
+      linkTarget.value = null;
+      newProdName.value = '';
+      newProdPrice.value = null;
+      showUnknownBarcodeWizard.value = true;
+      prodName.value = ''; // limpiar el buscador
+      return;
     }
   }
 
@@ -256,6 +327,45 @@ const onEnterBusqueda = async () => {
   if (typeof prodName.value === 'object' && puedeAgregar.value) {
     agregarAlCarrito();
   }
+};
+
+const confirmarVinculacion = async () => {
+    if (!linkTarget.value || !linkTarget.value.id) return;
+    
+    // Vincular en la BD en tiempo real
+    await actualizarProducto(linkTarget.value.id, { codEAN: scannedUnknownBarcode.value });
+    
+    // Disparar venta al carrito
+    prodName.value = linkTarget.value.name;
+    prodPrice.value = linkTarget.value.lastPrice;
+    agregarAlCarrito();
+
+    toast.add({ severity: 'success', summary: 'Código Vinculado', detail: `El código se guardó en ${linkTarget.value.name}`, life: 3000 });
+    showUnknownBarcodeWizard.value = false;
+};
+
+const confirmarCreacion = async () => {
+    if (!newProdName.value || newProdPrice.value === null) return;
+
+    // Crear en la BD en tiempo real
+    const savedProd = await crearProducto({
+        name: newProdName.value.toUpperCase().trim(),
+        lastPrice: newProdPrice.value,
+        codEAN: scannedUnknownBarcode.value,
+        stock: 0
+    });
+
+    if (savedProd) {
+        // Disparar venta al carrito
+        prodName.value = savedProd.name;
+        prodPrice.value = savedProd.lastPrice;
+        agregarAlCarrito();
+        toast.add({ severity: 'success', summary: 'Producto Creado', detail: savedProd.name, life: 3000 });
+    } else {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear el producto', life: 3000 });
+    }
+    
+    showUnknownBarcodeWizard.value = false;
 };
 
 const agregarAlCarrito = () => {

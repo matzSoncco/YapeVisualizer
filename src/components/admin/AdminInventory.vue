@@ -6,7 +6,7 @@
         <Button label="Nuevo Producto" icon="pi pi-plus" severity="success" @click="openNew" class="p-button-sm" />
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search text-slate-400" />
-          <InputText v-model="globalFilter" placeholder="Buscar producto..." class="p-inputtext-sm w-full sm:w-auto" />
+          <InputText ref="searchInput" v-model="globalFilter" @keyup.enter="onSearchEnter" placeholder="Buscar producto o código..." class="p-inputtext-sm w-full sm:w-auto" />
         </IconField>
       </div>
     </div>
@@ -36,9 +36,19 @@
           {{ slotProps.data.codEAN || '---' }}
         </template>
       </Column>
-      <Column field="frequency" header="Vendidos" :sortable="true">
+      <Column header="Stock Inicial" :sortable="true">
         <template #body="slotProps">
-          <Badge :value="slotProps.data.frequency || 0" severity="info" />
+          {{ calcularStockInicial(slotProps.data) }}
+        </template>
+      </Column>
+      <Column header="Vendidos Hoy" :sortable="true">
+        <template #body="slotProps">
+          <Badge :value="calcularVendidosHoy(slotProps.data)" severity="warn" />
+        </template>
+      </Column>
+      <Column header="Stock Real" :sortable="true">
+        <template #body="slotProps">
+          <Badge :value="slotProps.data.stock || 0" :severity="(slotProps.data.stock || 0) > 0 ? 'success' : 'danger'" />
         </template>
       </Column>
       <Column header="Acciones" :exportable="false" style="min-width: 5rem">
@@ -54,9 +64,15 @@
         <InputText id="name" v-model.trim="product.name" required="true" autofocus :invalid="submitted && !product.name" />
         <small class="p-error" v-if="submitted && !product.name">El nombre es requerido.</small>
       </div>
-      <div class="field mb-3">
-        <label for="price" class="font-bold block mb-1">Precio Unitario</label>
-        <InputNumber id="price" v-model="product.lastPrice" mode="currency" currency="PEN" locale="es-PE" />
+      <div class="field mb-3 grid grid-cols-2 gap-3" style="display:flex; gap:1rem;">
+        <div style="flex: 1;">
+          <label for="price" class="font-bold block mb-1">Precio Unitario</label>
+          <InputNumber id="price" v-model="product.lastPrice" mode="currency" currency="PEN" locale="es-PE" />
+        </div>
+        <div style="flex: 1;">
+          <label for="stock" class="font-bold block mb-1">Stock Físico Real</label>
+          <InputNumber id="stock" v-model="product.stock" showButtons :min="0" />
+        </div>
       </div>
       <div class="field mb-3">
         <label for="barcode" class="font-bold block mb-1">Código de Barras (EAN)</label>
@@ -72,7 +88,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, nextTick } from 'vue';
 import { useProducts } from '@/composables/useProducts';
 import { useToast } from 'primevue/usetoast';
 import { FilterMatchMode } from '@primevue/core/api';
@@ -92,6 +108,7 @@ const toast = useToast();
 const productos = ref([]);
 const loading = ref(true);
 const globalFilter = ref('');
+const searchInput = ref(null);
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
@@ -104,6 +121,16 @@ const loadData = async () => {
     loading.value = true;
     productos.value = await obtenerTodosLosProductos();
     loading.value = false;
+};
+
+// Funciones lógicas para cálculo de stock dinámico
+const calcularVendidosHoy = (p) => {
+    const hoy = new Date().toLocaleDateString('en-CA');
+    return p.lastDateSold === hoy ? (p.soldToday || 0) : 0;
+};
+
+const calcularStockInicial = (p) => {
+    return (p.stock || 0) + calcularVendidosHoy(p);
 };
 
 watch(globalFilter, (val) => {
@@ -134,7 +161,8 @@ const saveProduct = async () => {
         const newData = {
             name: product.value.name.toUpperCase(),
             lastPrice: product.value.lastPrice || 0,
-            codEAN: product.value.codEAN || ""
+            codEAN: product.value.codEAN || "",
+            stock: product.value.stock || 0
         };
 
         if (product.value.id) {
@@ -166,8 +194,44 @@ const saveProduct = async () => {
     }
 };
 
+const onSearchEnter = () => {
+    const text = globalFilter.value.trim();
+    if (!text) return;
+
+    // Verificar si el texto ingresado coincide con algún código EAN o nombre de los productos listados
+    const exactMatchEAN = productos.value.some(p => p.codEAN === text);
+    const partialMatchName = productos.value.some(p => p.name.toUpperCase().includes(text.toUpperCase()));
+
+    // Si no existe ni por EAN ni por nombre, lanzamos la creación
+    if (!exactMatchEAN && !partialMatchName) {
+        openNew();
+        
+        // Si el texto parece un código numérico (al menos 4 dígitos), lo ponemos en codEAN. 
+        // Si no, asumimos que escribió un nombre (lo ponemos como nombre).
+        if (/^\d{4,}$/.test(text)) {
+            product.value.codEAN = text;
+        } else {
+            product.value.name = text;
+        }
+        
+        toast.add({ severity: 'info', summary: 'No existe', detail: 'Vamos a agregar este producto nuevo', life: 3000 });
+        globalFilter.value = ''; // Limpiar buscador
+    } else {
+        // En caso de que exista, la tabla ya está mostrando el resultado gracias al v-model="globalFilter". No hacer nada.
+        toast.add({ severity: 'success', summary: 'Encontrado', detail: 'Mostrando producto(s) en la tabla', life: 1500 });
+    }
+};
+
 onMounted(() => {
     loadData();
+    nextTick(() => {
+        if (searchInput.value) {
+            const el = searchInput.value.$el || searchInput.value;
+            if (el && el.focus) {
+                el.focus();
+            }
+        }
+    });
 });
 </script>
 

@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import { db } from "../firebaseConfig";
 import { 
     collection, query, where, getDocs, limit, setDoc, doc, 
-    increment, serverTimestamp 
+    increment, serverTimestamp, runTransaction 
 } from "firebase/firestore";
 import { useAuth } from './useAuth';
 
@@ -44,25 +44,50 @@ export function useProducts() {
     };
 
     /**
-     * Auto-aprendizaje del Catálogo
-     * Si el cajero vende "X", el sistema aprende "X" para la próxima
+     * Auto-aprendizaje del Catálogo y Control de Stock Diario
      */
     const actualizarCatalogo = async (item) => {
         if (!user.value?.uid || !item.name) return;
 
-        const productId = item.name.trim().toUpperCase().replace(/\s+/g, '_'); 
+        // Si el item viene con ID de Firebase (fue seleccionado o escaneado), usarlo directo
+        const productId = item.id || item.name.trim().toUpperCase().replace(/\s+/g, '_'); 
         const productRef = doc(db, 'users', user.value.uid, 'products', productId);
 
         try {
-            await setDoc(productRef, {
-                name: item.name.toUpperCase(),
-                lastPrice: Number(item.price),
-                codEAN: "", // Campo nuevo para inventario
-                updatedAt: serverTimestamp(),
-                frequency: increment(1)
-            }, { merge: true });
+            await runTransaction(db, async (transaction) => {
+                const docSnap = await transaction.get(productRef);
+                const hoy = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD formato local
+                const qtySold = item.qty || 1;
+
+                let pData = docSnap.exists() ? docSnap.data() : {
+                    name: item.name.toUpperCase(),
+                    codEAN: item.barcode || "",
+                    stock: 0,
+                    soldToday: 0,
+                    lastDateSold: hoy,
+                    frequency: 0
+                };
+
+                let newSoldToday = pData.soldToday || 0;
+                if (pData.lastDateSold !== hoy) {
+                    newSoldToday = qtySold; // Reset matemático si es nuevo día
+                } else {
+                    newSoldToday += qtySold;
+                }
+
+                transaction.set(productRef, {
+                    name: item.name.toUpperCase(),
+                    lastPrice: Number(item.price),
+                    codEAN: item.barcode || pData.codEAN || "", 
+                    stock: (pData.stock || 0) - qtySold,
+                    soldToday: newSoldToday,
+                    lastDateSold: hoy,
+                    updatedAt: serverTimestamp(),
+                    frequency: (pData.frequency || 0) + qtySold
+                }, { merge: true });
+            });
         } catch (error) {
-            console.error("Error aprendiendo producto:", error);
+            console.error("Error actualizando stock y ventas del producto:", error);
         }
     };
 
