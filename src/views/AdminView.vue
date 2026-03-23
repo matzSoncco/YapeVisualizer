@@ -104,6 +104,10 @@
 
             <div v-else-if="activeTab === 'table'">
               <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
+              <CierreDetailModal 
+                v-model:visible="isDetailVisible" 
+                :data="selectedCierre" 
+              />
             </div>
           </div>
         </Transition>
@@ -115,20 +119,19 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/core/useAuth'
-import { useSucursal } from '../composables/admin/useSucursal'
+import { useAuth } from '@/composables/core/useAuth'
+import { useSucursal } from '@/composables/admin/useSucursal'
 import { useAdmin } from '@/composables/admin/useAdmin'
 import { useToast } from 'primevue/usetoast'
 import { store } from '@/store'
 
-import Button from 'primevue/button'
-import DatePicker from 'primevue/datepicker'
-import Select from 'primevue/select'
-import Avatar from 'primevue/avatar'
-
 import AdminTable from '@/components/admin/AdminTable.vue'
 import AdminStats from '@/components/admin/AdminStats.vue'
 import AdminCharts from '@/components/admin/AdminCharts.vue'
+import CierreDetailModal from '@/components/admin/modals/CierreDetailModal.vue';
+
+const isDetailVisible = ref(false);
+const selectedCierre = ref(null);
 
 import '@/assets/admin.css'
 
@@ -190,8 +193,9 @@ const handleSearch = () => {
  * Función para mostrar el detalle de cierre
  * TODO: Implementar la vista de detalle con información completa del cierre seleccionado
  */
-const verDetalle = () => {
-  toast.add({ severity: 'info', summary: 'Detalle', detail: 'Próximamente', life: 3000 })
+const verDetalle = (data) => {
+  selectedCierre.value = data;
+  isDetailVisible.value = true;
 }
 
 // Carga inicial
