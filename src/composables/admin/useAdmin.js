@@ -64,6 +64,7 @@ export function useAdmin() {
           montoApertura: Number(data.stats?.fund || 0),
           diferencia: Number(data.stats?.difference || 0),
           efectivoEsperado: Number(data.stats?.systemCash || 0),
+          efectivoDeclarado: Number(data.stats?.declaredCash || 0),
           estado: data.stats?.isBalanced ? 'Cuadrado' : 'Descuadrado',
 
           sucursalId: data.sucursalId,
