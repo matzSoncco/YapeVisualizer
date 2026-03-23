@@ -59,18 +59,20 @@ export function useAdmin() {
                 const data = doc.data();
                 return {
                     id: doc.id,
-                    fecha: data.timestampCierre?.toDate() || new Date(),
+                    fecha: data.timestampCierre ? data.timestampCierre.toDate() : null,
                     sedeNombre: data.sedeNombre || 'Desconocida',
                     cajero: data.cajero || 'Desconocido',
                     
-                    montoYape: Number(data.totalYape || 0),
-                    montoEfectivo: Number(data.audit?.declaredCash || 0),
+                    montoDigital: Number(data.totalDigital || 0),
+                    montoEfectivo: Number(data.totalEfectivoFinal || 0),
                     totalIngresosDia: Number(data.totalIngresosDia || 0),
                     
                     diferencia: Number(data.audit?.difference || 0),
                     estado: data.audit?.isBalanced ? 'Cuadrado' : 'Descuadrado',
                     
-                    sucursalId: data.sucursalId
+                    sucursalId: data.sucursalId,
+
+                    raw: data
                 };
             });
 
@@ -89,15 +91,15 @@ export function useAdmin() {
      * KPI Cards: Cálculos agregados
      */
     const kpis = computed(() => {
-        const totalVentas = reportes.value.reduce((acc, r) => acc + r.totalIngresosDia, 0);
-        const totalYape = reportes.value.reduce((acc, r) => acc + r.montoYape, 0);
-        const totalDiferencia = reportes.value.reduce((acc, r) => acc + r.diferencia, 0);
+        const totalVentas = reportes.value.reduce((acc, r) => acc + (Number(r.totalIngresosDia) || 0), 0);
+        const totalDigital = reportes.value.reduce((acc, r) => acc + (Number(r.montoDigital) || 0), 0);
+        const totalDiferencia = reportes.value.reduce((acc, r) => acc + (Number(r.diferencia) || 0), 0);
         const count = reportes.value.length || 1;
 
         return {
             totalVentas,
-            totalYape,
-            porcentajeDigital: totalVentas > 0 ? (totalYape / totalVentas) * 100 : 0,
+            totalDigital,
+            porcentajeDigital: totalVentas > 0 ? (totalDigital / totalVentas) * 100 : 0,
             diferenciaNeta: totalDiferencia,
             ticketPromedio: totalVentas / count
         };
