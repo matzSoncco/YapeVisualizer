@@ -2,7 +2,7 @@
   <div class="shift-open-container">
     <div class="shift-split-layout">
       <aside class="shift-info-side">
-        <h1 class="shift-title">Apertura de Turno</h1>
+        <h1 class="shift-title">Apertura de Turno en {{ nombreSucursalActual }}</h1>
         <p class="shift-subtitle">
           Bienvenido al sistema. Por favor, verifica el efectivo físico antes de declarar el fondo
           inicial.
@@ -72,7 +72,8 @@ import { useToast } from 'primevue/usetoast'
 import { useSucursal } from '@/composables/admin/useSucursal'
 
 const { abrirTurno } = useShift()
-const { limpiarSucursal } = useSucursal()
+const { limpiarSucursal, nombreSucursalActual } = useSucursal()
+
 const toast = useToast()
 
 const nombreCajero = ref('')
