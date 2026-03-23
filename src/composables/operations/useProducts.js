@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { db } from '../firebaseConfig'
+import { db } from '@/firebaseConfig'
 import {
   collection,
   query,
@@ -11,7 +11,7 @@ import {
   increment,
   serverTimestamp,
 } from 'firebase/firestore'
-import { useAuth } from './core/useAuth'
+import { useAuth } from '@/composables/core/useAuth'
 
 export function useProducts() {
   const { user } = useAuth()

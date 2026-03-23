@@ -1,4 +1,4 @@
-import { db } from '../firebaseConfig'
+import { db } from '@/firebaseConfig'
 import {
   runTransaction,
   collection,
@@ -10,8 +10,8 @@ import {
   query,
   orderBy,
 } from 'firebase/firestore'
-import { useAuth } from './core/useAuth'
-import { store } from '../store'
+import { useAuth } from '@/composables/core/useAuth'
+import { store } from '@/store'
 import { useProducts } from './useProducts'
 import { ref, reactive } from 'vue'
 

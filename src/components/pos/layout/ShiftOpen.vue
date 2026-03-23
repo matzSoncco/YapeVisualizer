@@ -67,7 +67,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useShift } from '@/composables/useShift'
+import { useShift } from '@/composables/operations/useShift'
 import { useToast } from 'primevue/usetoast'
 import { useSucursal } from '@/composables/admin/useSucursal'
 

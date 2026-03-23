@@ -148,9 +148,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { useProducts } from '@/composables/useProducts'
-import { useMovements } from '@/composables/useMovements'
-import { useDigitalPayments } from '@/composables/useDigitalPayments'
+import { useProducts } from '@/composables/operations/useProducts'
+import { useMovements } from '@/composables/operations/useMovements'
+import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
 import { useMatcher } from '@/composables/operations/useMatcher'
 import { cartStorageKey } from '@/store'
 import '@/assets/pospanel.css'

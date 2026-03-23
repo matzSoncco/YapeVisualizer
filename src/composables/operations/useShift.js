@@ -1,5 +1,5 @@
 import { computed, reactive } from 'vue'
-import { db } from '../firebaseConfig'
+import { db } from '@/firebaseConfig'
 import {
   onSnapshot,
   collection,
@@ -12,7 +12,7 @@ import {
   limit,
   serverTimestamp,
 } from 'firebase/firestore'
-import { useAuth } from './core/useAuth'
+import { useAuth } from '@/composables/core/useAuth'
 import { store, setCurrentShift, setLoading } from '@/store'
 
 /**

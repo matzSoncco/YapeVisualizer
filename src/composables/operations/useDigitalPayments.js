@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import { db } from '../firebaseConfig'
+import { db } from '@/firebaseConfig'
 import {
   collection,
   query,
@@ -11,8 +11,8 @@ import {
   updateDoc,
   serverTimestamp,
 } from 'firebase/firestore'
-import { store } from '../store'
-import { useAuth } from './core/useAuth'
+import { store } from '@/store'
+import { useAuth } from '@/composables/core/useAuth'
 
 /**
  * Composable para manejar las transacciones de Yape

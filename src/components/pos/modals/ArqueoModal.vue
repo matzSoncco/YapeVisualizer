@@ -63,11 +63,8 @@
 </template>
 
 <script setup>
-import Dialog from 'primevue/dialog'
-import InputNumber from 'primevue/inputnumber'
-import Button from 'primevue/button'
-import { useShift } from '@/composables/useShift'
-import { useDigitalPayments } from '@/composables/useDigitalPayments'
+import { useShift } from '@/composables/operations/useShift'
+import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 

@@ -70,7 +70,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useShift } from '@/composables/useShift'
+import { useShift } from '@/composables/operations/useShift'
 import { formatearFecha, formatearHora } from '@/utils/dates'
 
 const { arqueoState, finalizarCierrePorCompleto } = useShift()

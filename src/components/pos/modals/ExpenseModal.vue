@@ -63,11 +63,7 @@
 </template>
 
 <script setup>
-import Dialog from 'primevue/dialog'
-import InputText from 'primevue/inputtext'
-import InputNumber from 'primevue/inputnumber'
-import Button from 'primevue/button'
-import { useMovements } from '@/composables/useMovements'
+import { useMovements } from '@/composables/operations/useMovements'
 import { useToast } from 'primevue/usetoast'
 
 const toast = useToast()
