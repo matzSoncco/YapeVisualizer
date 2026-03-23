@@ -1,10 +1,10 @@
 <template>
-  <Dialog 
-    v-model:visible="visible" 
-    :header="isEditing ? 'Editar Sucursal' : 'Nueva Sucursal'" 
-    modal 
-    class="custom-dialog" 
-    :style="{ width: '450px' }" 
+  <Dialog
+    v-model:visible="visible"
+    :header="isEditing ? 'Editar Sucursal' : 'Nueva Sucursal'"
+    modal
+    class="custom-dialog"
+    :style="{ width: '450px' }"
     :draggable="false"
   >
     <div class="form-grid flex flex-column gap-3 py-3">
@@ -42,7 +42,13 @@
 
     <template #footer>
       <div class="flex justify-content-end gap-2">
-        <Button label="Cancelar" icon="pi pi-times" text @click="visible = false" severity="secondary" />
+        <Button
+          label="Cancelar"
+          icon="pi pi-times"
+          text
+          @click="visible = false"
+          severity="secondary"
+        />
         <Button label="Guardar" icon="pi pi-check" @click="handleSave" :disabled="!form.nombre" />
       </div>
     </template>
@@ -51,7 +57,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useSucursal } from '@/composables/useSucursal'
+import { useSucursal } from '@/composables/admin/useSucursal'
 import { useToast } from 'primevue/usetoast'
 
 const { addSucursal, updateSucursal } = useSucursal()
@@ -76,19 +82,34 @@ const form = reactive({
  */
 const handleSave = async () => {
   if (!form.nombre.trim()) {
-    toast.add({ severity: 'error', summary: 'Error', detail: 'El nombre es obligatorio', life: 3000 })
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'El nombre es obligatorio',
+      life: 3000,
+    })
     return
   }
 
   try {
     if (isEditing.value) {
-      await updateSucursal(form.id, form) 
-      toast.add({ severity: 'success', summary: 'Actualizado', detail: 'Sucursal actualizada correctamente', life: 3000 })
+      await updateSucursal(form.id, form)
+      toast.add({
+        severity: 'success',
+        summary: 'Actualizado',
+        detail: 'Sucursal actualizada correctamente',
+        life: 3000,
+      })
     } else {
       await addSucursal(form)
-      toast.add({ severity: 'success', summary: 'Creado', detail: 'Sucursal creada correctamente', life: 3000 })
+      toast.add({
+        severity: 'success',
+        summary: 'Creado',
+        detail: 'Sucursal creada correctamente',
+        life: 3000,
+      })
     }
-    visible.value = false 
+    visible.value = false
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 })
   }

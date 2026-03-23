@@ -14,14 +14,14 @@
       </div>
       <h2>Suscripción Expirada</h2>
       <p>
-        El periodo de acceso de tu plan <strong>{{ sub.planName }}</strong> ha finalizado. 
-        Por favor, regulariza tu cuenta para seguir administrando tus sucursales y ventas.
+        El periodo de acceso de tu plan <strong>{{ sub.planName }}</strong> ha finalizado. Por
+        favor, regulariza tu cuenta para seguir administrando tus sucursales y ventas.
       </p>
-      <Button 
-        label="Contacta para Renovar" 
-        icon="pi pi-whatsapp" 
-        @click="contactarRenovacion" 
-        severity="warning" 
+      <Button
+        label="Contacta para Renovar"
+        icon="pi pi-whatsapp"
+        @click="contactarRenovacion"
+        severity="warning"
         class="w-full mt-4"
       />
     </div>
@@ -29,21 +29,23 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
-import { useSubscription } from '@/composables/useSubscription';
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { useSubscription } from '@/composables/core/useSubscription'
 
-const route = useRoute();
-const { subscriptionStatus: sub } = useSubscription();
+const route = useRoute()
+const { subscriptionStatus: sub } = useSubscription()
 
 const isNotProfileOrLogin = computed(() => {
-  return route.name !== 'profile' && route.name !== 'login';
-});
+  return route.name !== 'profile' && route.name !== 'login'
+})
 
 const contactarRenovacion = () => {
-  const numeroTelefono = '51940832417';
-  const mensaje = encodeURIComponent('Hola Max, mi suscripción del sistema POS ha expirado. Quiero renovar.');
-  window.open(`https://wa.me/${numeroTelefono}?text=${mensaje}`, '_blank');
+  const numeroTelefono = '51940832417'
+  const mensaje = encodeURIComponent(
+    'Hola Max, mi suscripción del sistema POS ha expirado. Quiero renovar.',
+  )
+  window.open(`https://wa.me/${numeroTelefono}?text=${mensaje}`, '_blank')
 }
 </script>
 
@@ -95,7 +97,7 @@ const contactarRenovacion = () => {
   border-radius: 12px;
   max-width: 400px;
   text-align: center;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
 .blocker-icon {

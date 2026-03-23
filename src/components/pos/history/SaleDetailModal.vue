@@ -83,7 +83,7 @@ import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { formatearFecha, formatearHora } from '@/utils/dates'
-import { usePrintTicket } from '@/composables/usePrintTicket'
+import { usePrintTicket } from '@/composables/operations/usePrintTicket'
 import { store } from '@/store'
 
 const isOpen = ref(false)
@@ -139,17 +139,17 @@ const obtenerClaseMetodo = (s) => {
  * Obtiene nombre de sucursal y cajero
  */
 const imprimir = () => {
-  const sucursalInfo = store.sucursales.find(s => s.id === store.sucursalActual) || {};
+  const sucursalInfo = store.sucursales.find((s) => s.id === store.sucursalActual) || {}
 
   imprimirTicket(sale.value, {
     nombreNegocio: store.negocio.nombre || sucursalInfo.nombre || 'MI NEGOCIO',
     ruc: store.negocio.ruc || '',
     logoUrl: store.negocio.logoUrl || '',
     cajero: store.currentShift?.cajero || '',
-    
+
     direccion: sucursalInfo.direccion || '',
-    telefono: sucursalInfo.telefono || ''
-  });
+    telefono: sucursalInfo.telefono || '',
+  })
 }
 
 defineExpose({ open })

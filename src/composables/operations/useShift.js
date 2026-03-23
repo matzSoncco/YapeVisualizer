@@ -12,7 +12,7 @@ import {
   limit,
   serverTimestamp,
 } from 'firebase/firestore'
-import { useAuth } from './useAuth'
+import { useAuth } from './core/useAuth'
 import { store, setCurrentShift, setLoading } from '@/store'
 
 /**
@@ -194,7 +194,7 @@ export function useShift() {
         totalDigital: digital,
         totalEfectivoFinal: cash,
         totalGastos: exp,
-        totalTransacciones: trans
+        totalTransacciones: trans,
       }
 
       await updateDoc(shiftRef, cierreData)

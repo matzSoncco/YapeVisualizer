@@ -21,7 +21,7 @@
     <div v-else class="table-wrapper">
       <DataTable
         :value="ventas"
-        scrollable 
+        scrollable
         scrollHeight="flex"
         class="p-datatable-sm custom-table"
         dataKey="id"
@@ -38,7 +38,9 @@
             </div>
             <div v-else class="client-info">
               <span class="client-name">{{ slotProps.data.clientName || 'Cliente Eventual' }}</span>
-              <span v-if="slotProps.data.ticketNumber" class="ticket-ref">{{ slotProps.data.ticketNumber }}</span>
+              <span v-if="slotProps.data.ticketNumber" class="ticket-ref">{{
+                slotProps.data.ticketNumber
+              }}</span>
             </div>
           </template>
         </Column>
@@ -108,7 +110,7 @@ import Tag from 'primevue/tag'
 import { ref, computed } from 'vue'
 import { formatearHora } from '@/utils/dates'
 import { store } from '@/store'
-import { usePrintTicket } from '@/composables/usePrintTicket'
+import { usePrintTicket } from '@/composables/operations/usePrintTicket'
 
 import SaleDetailModal from './SaleDetailModal.vue'
 
@@ -162,17 +164,17 @@ const obtenerBilletera = (data) => {
  * @param data - Documento de venta para extraer información relevante para la impresión
  */
 const imprimirTicket = (data) => {
-  const sucursalInfo = store.sucursales.find(s => s.id === store.sucursalActual) || {};
+  const sucursalInfo = store.sucursales.find((s) => s.id === store.sucursalActual) || {}
 
   printTicket(data, {
     nombreNegocio: store.negocio.nombre || sucursalInfo.nombre || 'MI NEGOCIO',
     ruc: store.negocio.ruc || '',
     logoUrl: store.negocio.logoUrl || '',
     cajero: store.currentShift?.cajero || '',
-    
+
     direccion: sucursalInfo.direccion || '',
-    telefono: sucursalInfo.telefono || ''
-  });
+    telefono: sucursalInfo.telefono || '',
+  })
 }
 </script>
 
@@ -320,9 +322,16 @@ const imprimirTicket = (data) => {
   border-radius: 10px;
 }
 
-.col-time { width: 90px; }
-.col-amount { text-align: right; width: 110px; }
-.col-actions { width: 90px; }
+.col-time {
+  width: 90px;
+}
+.col-amount {
+  text-align: right;
+  width: 110px;
+}
+.col-actions {
+  width: 90px;
+}
 
 :deep(.p-tag) {
   font-size: 0.6rem !important;
