@@ -64,7 +64,7 @@
         </div>
       </header>
 
-      <section class="admin-viewport custom-scrollbar">
+      <section class="admin-viewport">
         <Transition name="fade-slide" mode="out-in">
           <div :key="activeTab" class="view-wrapper">
             

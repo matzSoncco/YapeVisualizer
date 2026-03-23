@@ -16,10 +16,10 @@
           <h2 class="op-number">
             {{ sale.ticketNumber || (sale.type === 'EXPENSE' ? 'Ref. Gasto' : 'Pendiente') }}
           </h2>
-          <span class="db-id">ID: {{ sale.id?.substring(0, 10) }}</span>
         </div>
         <div class="op-status">
           <span class="op-date">{{ formatearFecha(sale.timestamp) }}</span>
+          <span class="op-datetime">{{ formatearHora(sale.timestamp) }}</span>
         </div>
       </header>
 
@@ -82,7 +82,7 @@
 import { ref } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
-import { formatearFecha } from '@/utils/dates'
+import { formatearFecha, formatearHora } from '@/utils/dates'
 import { usePrintTicket } from '@/composables/usePrintTicket'
 import { store } from '@/store'
 
@@ -189,10 +189,25 @@ defineExpose({ open })
   color: #cbd5e1;
   font-family: monospace;
 }
+.op-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 .op-date {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+  line-height: 1;
+}
+
+.op-datetime {
   font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
 }
 
 /* Cuerpo */
