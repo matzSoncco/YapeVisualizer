@@ -56,10 +56,10 @@ export function useAdmin() {
           sedeNombre: data.sedeNombre || 'Desconocida',
           cajero: data.cajero || 'Desconocido',
 
-          montoDigital: Number(data.totalDigital || 0),
-          montoEfectivo: Number(data.totalEfectivoFinal || 0),
-          totalIngresosDia: Number(data.totalIngresosDia || 0),
-          totalGastos: Number(data.totalGastos || 0),
+          montoDigital: Number(data.stats?.totalDigitalSales|| 0),
+          montoEfectivo: Number(data.stats?.totalCashSales || 0),
+          totalIngresosDia: Number((data.stats?.totalCashSales || 0) + (data.stats?.totalDigitalSales || 0)),
+          totalGastos: Number(data.stats?.totalExpenses || 0),
 
           montoApertura: Number(data.stats?.fund || 0),
           diferencia: Number(data.stats?.difference || 0),

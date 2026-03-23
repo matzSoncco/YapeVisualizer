@@ -193,12 +193,6 @@ export function useShift() {
           difference: diferencia,           // La resta
           isBalanced: Math.round(diferencia * 100) === 0,
         },
-
-        // Mantenemos estos en la raíz solo para consultas rápidas (KPIs)
-        totalIngresosDia: Math.round((cash + digital) * 100) / 100,
-        totalDigital: digital,
-        totalEfectivoFinal: cash,
-        totalGastos: exp,
       }
 
       await updateDoc(shiftRef, cierreData)
