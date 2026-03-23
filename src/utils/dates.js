@@ -7,35 +7,26 @@ export const formatearFecha = (fechaInput) => {
   if (!fechaInput) return 'Indefinido';
 
   let fecha;
-
   if (fechaInput && typeof fechaInput.toDate === 'function') {
     fecha = fechaInput.toDate();
-  }
-  else if (fechaInput instanceof Date) {
+  } else if (fechaInput instanceof Date) {
     fecha = fechaInput;
-  } 
-  else if (typeof fechaInput === 'string') {
+  } else if (typeof fechaInput === 'string') {
     fecha = new Date(fechaInput.includes('T') ? fechaInput : `${fechaInput}T12:00:00`);
-  }
-  else if (typeof fechaInput === 'number') {
+  } else if (typeof fechaInput === 'number') {
     fecha = new Date(fechaInput);
-  }
-  else if (fechaInput.seconds) {
+  } else if (fechaInput.seconds) {
     fecha = new Date(fechaInput.seconds * 1000);
-  }
-  else {
+  } else {
     fecha = new Date(fechaInput);
   }
 
   if (isNaN(fecha.getTime())) return 'Fecha inválida';
 
-  return fecha.toLocaleString('es-PE', {
+  return fecha.toLocaleDateString('es-PE', {
     day: '2-digit', 
     month: 'short', 
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: true
+    year: 'numeric'
   });
 };
 
