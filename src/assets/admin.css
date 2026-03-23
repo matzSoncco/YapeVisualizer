@@ -1,5 +1,3 @@
-/* src/assets/admin.css */
-
 .admin-layout {
   display: flex;
   height: 100vh;
@@ -15,8 +13,7 @@
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  z-index: 50; /* Para que esté sobre el contenido principal */
-  /* NO PONGAS overflow: hidden AQUÍ GLOBALMENTE */
+  z-index: 50;
 }
 
 .sidebar-collapsed .admin-sidebar {
@@ -142,16 +139,15 @@
   position: absolute;
   bottom: 70px;
   left: 10px;
-  /* right: 10px;  <--- BORRA ESTA LÍNEA, es la culpable */
-  width: 220px;    /* <--- AGREGA ESTA LÍNEA: Ancho fijo siempre */
+  width: 220px;
   background: white;
   border-radius: 12px;
   padding: 0.5rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15); /* Sombra más fuerte para resaltar */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
   display: flex;
   flex-direction: column;
   gap: 2px;
-  z-index: 1000;   /* <--- Asegura que flote sobre todo */
+  z-index: 1000;
   border: 1px solid #e2e8f0;
 }
 
@@ -309,29 +305,39 @@
   color: #0f172a !important;
 }
 
-/* Estilos de inputs compactos */
-:deep(.compact-date .p-inputtext),
-:deep(.compact-select .p-select-label) {
-  border: none !important;
-  background: transparent !important;
-  font-size: 0.8rem !important;
-  font-weight: 700 !important;
-  padding: 6px 12px !important;
-  box-shadow: none !important;
-}
 .sep { color: #cbd5e1; font-weight: bold; }
 
 /* VIEWPORT */
 .admin-viewport {
   flex: 1;
-  padding: 2rem;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .view-wrapper {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  overflow-y: auto;
+  padding: 1.5rem;
+  min-height: 0;
+}
+
+.view-wrapper > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.view-wrapper:has(.admin-datatable) {
+  overflow-y: hidden;
+  padding: 0.5rem; /* Menos padding para que la tabla brille */
+}
+
+.view-wrapper > .report-table-card {
+  flex: 1;
 }
 
 /* Transición de Vistas */
@@ -344,6 +350,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  padding-bottom: 3rem; /* Espacio de cortesía al final */
 }
 
 .charts-preview-container {

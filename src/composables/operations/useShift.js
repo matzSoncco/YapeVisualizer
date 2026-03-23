@@ -1,5 +1,5 @@
 import { computed, reactive } from 'vue'
-import { db } from '../firebaseConfig'
+import { db } from '@/firebaseConfig'
 import {
   onSnapshot,
   collection,
@@ -12,7 +12,7 @@ import {
   limit,
   serverTimestamp,
 } from 'firebase/firestore'
-import { useAuth } from './useAuth'
+import { useAuth } from '@/composables/core/useAuth'
 import { store, setCurrentShift, setLoading } from '@/store'
 
 /**
@@ -182,19 +182,17 @@ export function useShift() {
         sucursalId: currentSucursalId,
         sedeNombre: nombreSede,
 
-        audit: {
-          fund: fnd,
-          totalSystemCash: efectivoTeorico,
-          declaredCash: Number(arqueoState.monto),
-          difference: diferencia,
+        stats: {
+          fund: fnd,                        // Apertura
+          totalCashSales: cash,             // Ventas Efectivo
+          totalDigitalSales: digital,       // Ventas Digital
+          totalExpenses: exp,               // Gastos
+          totalTransactions: trans,         // N° Transacciones
+          systemCash: efectivoTeorico,      // Lo que debería haber
+          declaredCash: declarado,          // Lo que el cajero dijo que hay
+          difference: diferencia,           // La resta
           isBalanced: Math.round(diferencia * 100) === 0,
         },
-
-        totalIngresosDia: Math.round((cash + digital) * 100) / 100,
-        totalDigital: digital,
-        totalEfectivoFinal: cash,
-        totalGastos: exp,
-        totalTransacciones: trans
       }
 
       await updateDoc(shiftRef, cierreData)

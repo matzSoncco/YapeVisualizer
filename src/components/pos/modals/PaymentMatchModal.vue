@@ -68,7 +68,7 @@
 <script setup>
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
-import { useMatcher } from '@/composables/useMatcher'
+import { useMatcher } from '@/composables/operations/useMatcher'
 
 const { matcherState } = useMatcher()
 
@@ -130,8 +130,14 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
 }
 
 @keyframes pulse-ring-geo {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(1.8); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
 .match-title-group h3 {
@@ -157,8 +163,14 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
   color: #64748b;
 }
 
-.match-tag.yape { background: #7b2e9120; color: #7b2e91; }
-.match-tag.plin { background: #00d1ce20; color: #00b5b2; }
+.match-tag.yape {
+  background: #7b2e9120;
+  color: #7b2e91;
+}
+.match-tag.plin {
+  background: #00d1ce20;
+  color: #00b5b2;
+}
 
 /* Card de Datos */
 .match-data-card {

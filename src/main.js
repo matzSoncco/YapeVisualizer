@@ -46,6 +46,7 @@ import AutoComplete from 'primevue/autocomplete'
 import Tooltip from 'primevue/tooltip'
 import ProgressSpinner from 'primevue/progressspinner'
 import FileUpload from 'primevue/fileupload'
+import Drawer from 'primevue/drawer'
 
 import 'primeicons/primeicons.css'
 
@@ -126,5 +127,6 @@ app.component('Tab', Tab)
 app.component('AutoComplete', AutoComplete)
 app.component('ProgressSpinner', ProgressSpinner)
 app.component('FileUpload', FileUpload)
+app.component('Drawer', Drawer)
 
 app.mount('#app')

@@ -1,11 +1,13 @@
 <template>
   <div class="shift-open-container">
     <div class="shift-split-layout">
-      
       <aside class="shift-info-side">
-        <h1 class="shift-title">Apertura de Turno</h1>
-        <p class="shift-subtitle">Bienvenido al sistema. Por favor, verifica el efectivo físico antes de declarar el fondo inicial.</p>
-        
+        <h1 class="shift-title">Apertura de Turno en {{ nombreSucursalActual }}</h1>
+        <p class="shift-subtitle">
+          Bienvenido al sistema. Por favor, verifica el efectivo físico antes de declarar el fondo
+          inicial.
+        </p>
+
         <footer class="shift-footer">
           <div class="secure-badge">
             <i class="pi pi-shield"></i>
@@ -18,10 +20,10 @@
         <div class="shift-card">
           <div class="input-group">
             <label for="cajero">Responsable del Turno</label>
-            <InputText 
-              id="cajero" 
-              v-model="nombreCajero" 
-              placeholder="Nombre del cajero" 
+            <InputText
+              id="cajero"
+              v-model="nombreCajero"
+              placeholder="Nombre del cajero"
               class="custom-input"
             />
           </div>
@@ -29,10 +31,10 @@
           <div class="input-group">
             <label for="monto">Fondo Inicial</label>
             <div class="currency-display">
-              <InputNumber 
-                id="monto" 
-                v-model="montoInicial" 
-                mode="decimal" 
+              <InputNumber
+                id="monto"
+                v-model="montoInicial"
+                mode="decimal"
                 :minFractionDigits="2"
                 class="currency-input-field"
                 inputClass="amount-input"
@@ -42,72 +44,87 @@
           </div>
 
           <div class="shift-actions">
-            <Button 
-              label="ABRIR CAJA" 
-              icon="pi pi-check" 
-              class="btn-open" 
-              @click="handleAbrirTurno" 
+            <Button
+              label="ABRIR CAJA"
+              icon="pi pi-check"
+              class="btn-open"
+              @click="handleAbrirTurno"
               :loading="loading"
             />
-            <Button 
-              label="CANCELAR Y VOLVER" 
-              icon="pi pi-arrow-left" 
-              text 
+            <Button
+              label="CANCELAR Y VOLVER"
+              icon="pi pi-arrow-left"
+              text
               class="btn-back"
               @click="handleVolver"
             />
           </div>
         </div>
       </main>
-
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useShift } from '@/composables/useShift';
-import { useToast } from 'primevue/usetoast';
-import { useSucursal } from '@/composables/useSucursal';
+import { ref } from 'vue'
+import { useShift } from '@/composables/operations/useShift'
+import { useToast } from 'primevue/usetoast'
+import { useSucursal } from '@/composables/admin/useSucursal'
 
-const { abrirTurno } = useShift();
-const { limpiarSucursal } = useSucursal();
-const toast = useToast();
+const { abrirTurno } = useShift()
+const { limpiarSucursal, nombreSucursalActual } = useSucursal()
 
-const nombreCajero = ref('');
-const montoInicial = ref(0);
-const loading = ref(false);
-const error = ref(false);
+const toast = useToast()
+
+const nombreCajero = ref('')
+const montoInicial = ref(0)
+const loading = ref(false)
+const error = ref(false)
 
 /**
  * Maneja la apertura del turno al hacer clic en "ABRIR TURNO"
  */
 const handleAbrirTurno = async () => {
   if (!nombreCajero.value.trim()) {
-    error.value = true;
-    toast.add({ severity: 'warn', summary: 'Falta información', detail: 'Ingresa el nombre del responsable', life: 3000 });
-    return;
+    error.value = true
+    toast.add({
+      severity: 'warn',
+      summary: 'Falta información',
+      detail: 'Ingresa el nombre del responsable',
+      life: 3000,
+    })
+    return
   }
 
-  loading.value = true;
+  loading.value = true
   try {
-    const monto = montoInicial.value || 0;
-    await abrirTurno(monto, nombreCajero.value);
-    
-    toast.add({ severity: 'success', summary: 'Turno Abierto', detail: 'Ya puedes registrar ventas', life: 3000 });
+    const monto = montoInicial.value || 0
+    await abrirTurno(monto, nombreCajero.value)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Turno Abierto',
+      detail: 'Ya puedes registrar ventas',
+      life: 3000,
+    })
   } catch (e) {
-    console.error(e);
-    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo abrir el turno. Revisa tu conexión.', life: 5000 });
+    console.error(e)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'No se pudo abrir el turno. Revisa tu conexión.',
+      life: 5000,
+    })
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 /**
  * Maneja el clic en "VOLVER" para regresar a la selección de sucursal
  */
 const handleVolver = () => {
-    limpiarSucursal();
+  limpiarSucursal()
 }
 </script>
 
@@ -217,7 +234,7 @@ const handleVolver = () => {
   align-items: center;
   /* Quitamos el borde total y dejamos solo una línea inferior elegante */
   border: none;
-  border-bottom: 2px solid var(--color-border); 
+  border-bottom: 2px solid var(--color-border);
   padding: 0.25rem 0;
   transition: border-color 0.3s ease;
 }

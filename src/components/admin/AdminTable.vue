@@ -1,187 +1,211 @@
 <template>
-  <Card class="report-table-card">
-    <template #content>
-      <DataTable
-        :value="data"
-        :loading="loading"
-        :paginator="data.length > 10"
-        :rows="10"
-        responsiveLayout="scroll"
-        class="admin-datatable"
-      >
-        <Column field="fecha" header="Fecha" sortable class="col-date">
-          <template #body="{ data }">
-            <span class="date-cell">{{ formatearFecha(data.fecha) }}</span>
-          </template>
-        </Column>
+  <DataTable
+    :value="data"
+    :loading="loading"
+    :paginator="data.length > 10"
+    :rows="10"
+    scrollable 
+    scrollHeight="flex" 
+    class="admin-datatable report-table-card"
+  >
+    <Column header="Operación" class="col-identity">
+      <template #body="{ data }">
+        <div class="identity-cell">
+          <span class="branch-text">{{ data.sedeNombre }}</span>
+          <span class="cashier-text">Cajero: {{ data.cajero || '---' }}</span>
+        </div>
+      </template>
+    </Column>
 
-        <Column field="sedeNombre" header="Sede" sortable>
-          <template #body="{ data }">
-            <span class="branch-cell">{{ data.sedeNombre }}</span>
-          </template>
-        </Column>
+    <Column header="Fecha / Hora" sortable field="fecha" class="col-date">
+      <template #body="{ data }">
+        <div class="date-wrapper">
+          <span class="date-main">{{ formatearFecha(data.fecha) }}</span>
+          <span class="date-sub">{{ formatearHora(data.fecha) }}</span>
+        </div>
+      </template>
+    </Column>
 
-        <Column field="cajero" header="Cajero">
-          <template #body="{ data }">
-            <span class="cashier-cell">{{ data.cajero || '---' }}</span>
-          </template>
-        </Column>
+    <Column header="Venta Total" class="col-amount">
+      <template #body="{ data }">
+        <span class="total-amount-hero">S/ {{ Number(data.totalIngresosDia || 0).toFixed(2) }}</span>
+      </template>
+    </Column>
 
-        <Column field="totalIngresosDia" header="Ingreso Total" class="col-amount">
-          <template #body="{ data }">
-            <span class="total-amount">S/ {{ Number(data.totalIngresosDia || 0).toFixed(2) }}</span>
-          </template>
-        </Column>
+    <Column header="Estado de Caja" class="col-status">
+      <template #body="{ data }">
+        <div :class="['status-pill', getDiffClass(data.diferencia)]">
+          <i :class="getDiffIcon(data.diferencia)"></i>
+          <span>{{ getDiffLabel(data.diferencia) }}</span>
+        </div>
+      </template>
+    </Column>
 
-        <Column field="montoYape" header="Total Yape" class="col-amount">
-          <template #body="{ data }">
-            <span class="yape-amount">S/ {{ Number(data.montoYape || 0).toFixed(2) }}</span>
-          </template>
-        </Column>
+    <Column header="Acciones" class="col-action">
+      <template #body="{ data }">
+        <Button
+          icon="pi pi-eye"
+          label="Detalles"
+          text
+          class="btn-view-more"
+          @click="$emit('ver-detalle', data)"
+        />
+      </template>
+    </Column>
 
-        <Column field="montoEfectivo" header="Efectivo" class="col-amount">
-          <template #body="{ data }">
-            <span class="cash-amount">S/ {{ Number(data.montoEfectivo || 0).toFixed(2) }}</span>
-          </template>
-        </Column>
-
-        <Column field="diferencia" header="Diferencia" class="col-amount">
-          <template #body="{ data }">
-            <span :class="['diff-badge', getDiffClass(data.diferencia)]">
-              {{ data.diferencia > 0 ? '+' : '' }}S/ {{ Number(data.diferencia || 0).toFixed(2) }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="estado" header="Auditoría" class="col-status">
-          <template #body="{ data }">
-            <Tag 
-              :value="data.estado"
-              :severity="data.estado === 'Cuadrado' ? 'success' : 'danger'"
-              rounded
-              class="status-tag"
-            />
-          </template>
-        </Column>
-
-        <Column header="Acción" class="col-action">
-          <template #body="{ data }">
-            <Button
-              icon="pi pi-search-plus"
-              text
-              rounded
-              class="btn-detail"
-              @click="$emit('ver-detalle', data)"
-            />
-          </template>
-        </Column>
-
-        <template #empty>
-          <div class="empty-table-state">
-            <i class="pi pi-filter-slash"></i>
-            <p>No hay cierres registrados en este rango.</p>
-          </div>
-        </template>
-      </DataTable>
+    <template #empty>
+      <div class="empty-container">
+        <div class="empty-icon-circle">
+          <i class="pi pi-search-plus"></i>
+        </div>
+        <div class="empty-text">
+          <h3>No se encontraron cierres</h3>
+          <p>Prueba ajustando los filtros de fecha o seleccionando otra sede.</p>
+        </div>
+      </div>
     </template>
-  </Card>
+  </DataTable>
 </template>
 
 <script setup>
-import { formatearFecha } from '@/utils/dates';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
-import Button from 'primevue/button';
-import Tag from 'primevue/tag';
-import Card from 'primevue/card';
+import { formatearFecha, formatearHora } from '@/utils/dates';
 
-/**
- * Componente AdminTable
- * - Recibe un array de datos y un estado de carga
- */
 defineProps({
-  data: {
-    type: Array,
-    required: true,
-    default: () => []
-  },
-  loading: {
-    type: Boolean,
-    default: false
-  }
+  data: { type: Array, required: true },
+  loading: { type: Boolean, default: false }
 });
 
-/**
- * Emite un evento 'ver-detalle' cuando se hace clic en el botón de acción
- * TODO: Implementar la lógica para mostrar el detalle del cierre seleccionado en una vista o modal aparte
- */
 defineEmits(['ver-detalle']);
 
-const getDiffClass = (val) => {
-  if (val < -0.5) return 'diff-negative';
-  if (val > 0.5) return 'diff-positive';
-  return 'diff-neutral';
+const getDiffClass = (v) => {
+  if (v === 0) return 'pill-ok';
+  if (Math.abs(v) <= 1) return 'pill-warn';
+  return v < 0 ? 'pill-error' : 'pill-info';
+};
+
+const getDiffIcon = (v) => {
+  if (v === 0) return 'pi pi-check-circle';
+  if (v < 0) return 'pi pi-minus-circle';
+  return 'pi pi-plus-circle';
+};
+
+const getDiffLabel = (v) => {
+  if (v === 0) return 'Cuadrado';
+  return `S/ ${v.toFixed(2)}`;
 };
 </script>
 
 <style scoped>
-/* TABLA DE REPORTES */
 .report-table-card {
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 16px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
   overflow: hidden;
+  min-height: 0;
+  padding: 1rem;
 }
 
-:deep(.admin-datatable .p-datatable-thead > tr > th) {
-  background: #f8fafc !important;
-  color: #64748b !important;
-  font-size: 0.75rem !important;
-  font-weight: 800 !important;
-  text-transform: uppercase !important;
-  padding: 1rem !important;
-  border-bottom: 2px solid #e2e8f0 !important;
+/* CELDA DE IDENTIDAD (Doble línea) */
+.identity-cell { display: flex; flex-direction: column; gap: 2px; }
+.branch-text { font-weight: 800; color: #0f172a; font-size: 0.9rem; }
+.cashier-text { font-size: 0.75rem; color: #64748b; font-weight: 600; text-transform: capitalize; }
+
+/* CELDA DE FECHA */
+.date-wrapper { display: flex; flex-direction: column; }
+.date-main { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #334155; font-size: 0.85rem; }
+.date-sub { font-size: 0.7rem; color: #94a3b8; font-weight: 600; }
+
+/* MONTO PRINCIPAL */
+.total-amount-hero {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: -0.03em;
 }
 
-:deep(.admin-datatable .p-datatable-tbody > tr > td) {
-  padding: 1rem !important;
-  border-bottom: 1px solid #f1f5f9 !important;
-  font-size: 0.875rem !important;
-}
-
-/* CELDAS ESTILIZADAS */
-.date-cell { color: #64748b; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
-.branch-cell { font-weight: 800; color: #0f172a; }
-.cashier-cell { text-transform: capitalize; color: #475569; }
-
-.total-amount { font-weight: 800; color: #0f172a; }
-.yape-amount { font-weight: 800; color: #7c3aed; }
-.cash-amount { font-weight: 600; color: #334155; }
-
-/* BADGES DE DIFERENCIA */
-.diff-badge {
-  padding: 4px 8px;
-  border-radius: 6px;
+/* PILLS DE ESTADO (Modernas) */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 0.75rem;
   font-weight: 800;
-  font-size: 0.8rem;
+  text-transform: uppercase;
 }
-.diff-negative { background: #fef2f2; color: #ef4444; }
-.diff-positive { background: #eff6ff; color: #3b82f6; }
-.diff-neutral { background: #f0fdf4; color: #22c55e; }
 
-.status-tag { font-weight: 800 !important; font-size: 0.7rem !important; }
+.pill-ok { background: #d1fae5; color: #065f46; }
+.pill-error { background: #fee2e2; color: #991b1b; }
+.pill-warn { background: #fffbeb; color: #92400e; }
+.pill-info { background: #e0f2fe; color: #075985; }
 
-.btn-detail { color: #64748b !important; }
-.btn-detail:hover { background: #f1f5f9 !important; color: #0f172a !important; }
+/* BOTÓN DETALLES */
+.btn-view-more {
+  font-weight: 800 !important;
+  font-size: 0.8rem !important;
+  color: #3b82f6 !important;
+}
 
-.empty-table-state {
+:deep(.p-datatable-thead > tr > th) {
+  background: #f8fafc !important;
+  font-size: 0.7rem !important;
+  letter-spacing: 0.05em;
+  padding: 1.25rem 1rem !important;
+}
+
+.col-amount { text-align: right; }
+
+/* Eliminamos el estilo por defecto de la celda de "no data" */
+:deep(.p-datatable-emptymessage td) {
+  padding: 0 !important;
+  background: #f8fafc !important; /* Un gris muy tenue para diferenciarlo de las filas */
+  border: none !important;
+}
+
+.empty-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 4rem;
+  justify-content: center;
+  padding: 5rem 1rem;
+  gap: 1.5rem;
+}
+
+.empty-icon-circle {
+  width: 70px;
+  height: 70px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.empty-icon-circle i {
+  font-size: 2rem;
   color: #94a3b8;
 }
-.empty-table-state i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
 
-.col-amount { text-align: right; }
+.empty-text {
+  text-align: center;
+}
+
+.empty-text h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.empty-text p {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  max-width: 300px;
+  line-height: 1.4;
+}
 </style>

@@ -22,7 +22,7 @@
 
         <div class="fund-row">
           <span class="fund-text"
-            >Efectivo Inicial: S/ {{ arqueoState.summaryData.audit.fund.toFixed(2) }}</span
+            >Efectivo Inicial: S/ {{ formatMonto(arqueoState.summaryData.fund) }}</span
           >
           <div :class="['variation-badge', differenceBoxClass]">
             <i :class="diffIconClass"></i>
@@ -35,26 +35,26 @@
         <div class="metric-card highlight-card">
           <span class="metric-label">Ventas del Día</span>
           <span class="metric-value text-primary"
-            >S/ {{ arqueoState.summaryData.totalIngresosDia.toFixed(2) }}</span
+            >S/ {{ formatMonto(arqueoState.summaryData.totalIngresosDia) }}</span
           >
-          <span class="metric-subtext">{{ totalTransacciones }} ventas en total</span>
+          <span class="metric-subtext">{{ arqueoState.summaryData?.stats?.totalTransactions }} ventas en total</span>
         </div>
 
         <div class="metric-card">
           <span class="metric-label">Yape / Plin</span>
-          <span class="metric-value">S/ {{ arqueoState.summaryData.totalDigital.toFixed(2) }}</span>
+          <span class="metric-value">S/ {{ formatMonto(arqueoState.summaryData.totalDigital) }}</span>
         </div>
 
         <div class="metric-card">
           <span class="metric-label">Efectivo en Caja</span>
           <span class="metric-value"
-            >S/ {{ arqueoState.summaryData.totalEfectivoFinal.toFixed(2) }}</span
+            >S/ {{ formatMonto(arqueoState.summaryData.totalEfectivoFinal) }}</span
           >
         </div>
 
         <div class="metric-card">
           <span class="metric-label">Gastos</span>
-          <span class="metric-value color-error">S/ {{ totalGastos.toFixed(2) }}</span>
+          <span class="metric-value color-error">S/ {{ formatMonto(arqueoState.summaryData.totalGastos) }}</span>
         </div>
       </div>
 
@@ -70,14 +70,13 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useShift } from '@/composables/useShift'
+import { useShift } from '@/composables/operations/useShift'
 import { formatearFecha, formatearHora } from '@/utils/dates'
+import { formatMonto } from '@/utils/formatters'
 
 const { arqueoState, finalizarCierrePorCompleto } = useShift()
 
-const diff = computed(() => arqueoState.summaryData?.audit?.difference || 0)
-const totalTransacciones = computed(() => arqueoState.summaryData?.totalTransacciones || 0)
-const totalGastos = computed(() => arqueoState.summaryData?.totalGastos || 0)
+const diff = computed(() => arqueoState.summaryData?.stats?.difference || 0)
 
 /**
  * Lógica para determinar el mensaje de estado

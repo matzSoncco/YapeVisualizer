@@ -22,9 +22,7 @@
       </div>
 
       <div class="login-footer">
-        <span class="secure-tag">
-          <i class="pi pi-lock"></i> Acceso Seguro
-        </span>
+        <span class="secure-tag"> <i class="pi pi-lock"></i> Acceso Seguro </span>
         <p>Autenticación oficial mediante Google Cloud</p>
       </div>
     </div>
@@ -32,17 +30,17 @@
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
-import { useAuth } from "@/composables/useAuth";
-import Button from 'primevue/button';
+import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/core/useAuth'
+import Button from 'primevue/button'
 
-const router = useRouter();
-const { logInWithGoogle, error, loading } = useAuth();
+const router = useRouter()
+const { logInWithGoogle, error, loading } = useAuth()
 
 const handleLogin = async () => {
   try {
-    await logInWithGoogle();
-    router.push('/dashboard');
+    await logInWithGoogle()
+    router.push('/dashboard')
   } catch (err) {
     // el error se maneja en el composable
   }
@@ -158,7 +156,7 @@ const handleLogin = async () => {
     padding: 2rem 1rem;
     background: transparent;
   }
-  
+
   .login-container {
     background: var(--bg-app);
     align-items: flex-start;

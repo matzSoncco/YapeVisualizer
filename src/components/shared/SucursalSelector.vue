@@ -16,9 +16,9 @@
 
       <div v-else class="branches-wrapper">
         <div class="branches-grid">
-          <div 
-            v-for="tienda in sucursales" 
-            :key="tienda.id" 
+          <div
+            v-for="tienda in sucursales"
+            :key="tienda.id"
             class="branch-card"
             @click="handleSelect(tienda.nombre)"
           >
@@ -27,10 +27,7 @@
             <i class="pi pi-chevron-right arrow-icon"></i>
           </div>
 
-          <div 
-            class="branch-card admin-variant"
-            @click="handleSelect('ADMIN')"
-          >
+          <div class="branch-card admin-variant" @click="handleSelect('ADMIN')">
             <span class="branch-name">PANEL ADMINISTRADOR</span>
             <i class="pi pi-shield arrow-icon"></i>
           </div>
@@ -57,7 +54,12 @@
         </div>
         <div class="pin-actions">
           <Button label="Cancelar" severity="secondary" text @click="showPinModal = false" />
-          <Button label="Acceder" @click="verificarPin" :loading="loadingPin" :disabled="pin.length < 4" />
+          <Button
+            label="Acceder"
+            @click="verificarPin"
+            :loading="loadingPin"
+            :disabled="pin.length < 4"
+          />
         </div>
       </div>
     </Dialog>
@@ -65,19 +67,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useSucursal } from '../../composables/useSucursal';
-import { useToast } from 'primevue/usetoast';
-import { setAdminAuth, store } from '@/store';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useSucursal } from '../../composables/admin/useSucursal'
+import { useToast } from 'primevue/usetoast'
+import { setAdminAuth, store } from '@/store'
 
-const router = useRouter();
-const toast = useToast();
-const { sucursales, seleccionar, loading } = useSucursal();
+const router = useRouter()
+const toast = useToast()
+const { sucursales, seleccionar, loading } = useSucursal()
 
-const showPinModal = ref(false);
-const pin = ref('');
-const loadingPin = ref(false);
+const showPinModal = ref(false)
+const pin = ref('')
+const loadingPin = ref(false)
 
 /**
  * Maneja la selección de una sucursal
@@ -85,35 +87,40 @@ const loadingPin = ref(false);
  */
 const handleSelect = (valorSeleccionado) => {
   if (valorSeleccionado === 'ADMIN') {
-    pin.value = '';
-    showPinModal.value = true;
-    return;
+    pin.value = ''
+    showPinModal.value = true
+    return
   }
 
-  const existe = sucursales.value.find(s => s.nombre === valorSeleccionado);
+  const existe = sucursales.value.find((s) => s.nombre === valorSeleccionado)
   if (existe) {
-    seleccionar(existe.id);
+    seleccionar(existe.id)
   }
-};
+}
 
 const verificarPin = async () => {
-  if (pin.value.length < 4) return;
-  loadingPin.value = true;
-  await new Promise(r => setTimeout(r, 600));
+  if (pin.value.length < 4) return
+  loadingPin.value = true
+  await new Promise((r) => setTimeout(r, 600))
 
-  const pinCorrecto = store.userProfile.adminPin;
+  const pinCorrecto = store.userProfile.adminPin
 
   if (pin.value === String(pinCorrecto)) {
-    setAdminAuth(true); 
-    seleccionar('ADMIN'); 
-    showPinModal.value = false;
-    toast.add({ severity: 'success', summary: 'Acceso Concedido', life: 2000 });
-    router.push({ name: 'admin' });
+    setAdminAuth(true)
+    seleccionar('ADMIN')
+    showPinModal.value = false
+    toast.add({ severity: 'success', summary: 'Acceso Concedido', life: 2000 })
+    router.push({ name: 'admin' })
   } else {
-    toast.add({ severity: 'error', summary: 'Acceso Denegado', detail: 'PIN Incorrecto', life: 3000 });
-    pin.value = '';
+    toast.add({
+      severity: 'error',
+      summary: 'Acceso Denegado',
+      detail: 'PIN Incorrecto',
+      life: 3000,
+    })
+    pin.value = ''
   }
-  loadingPin.value = false;
+  loadingPin.value = false
 }
 </script>
 
@@ -238,7 +245,7 @@ const verificarPin = async () => {
 .admin-variant:hover {
   border-color: var(--color-accent);
   /* Un brillo sutil amarillo al pasar el mouse sobre la de Admin */
-  box-shadow: 0 0 15px rgba(250, 204, 21, 0.2); 
+  box-shadow: 0 0 15px rgba(250, 204, 21, 0.2);
 }
 
 /* MODAL DE SEGURIDAD (PIN) */

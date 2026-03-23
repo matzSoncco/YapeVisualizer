@@ -20,10 +20,10 @@
       <template #content>
         <div class="stat-inner">
           <div class="stat-data">
-            <span class="stat-label">Digitalización (Yape)</span>
+            <span class="stat-label">Digitalización</span>
             <div class="stat-value">{{ kpis.porcentajeDigital.toFixed(1) }}%</div>
             <div class="stat-footer">
-              <span class="highlight">S/ {{ formatMoney(kpis.totalYape) }}</span> por Yape
+              <span class="highlight">S/ {{ formatMoney(kpis.totalDigital) }}</span> por Yape
             </div>
           </div>
           <div class="stat-icon-box">
@@ -81,7 +81,7 @@ const props = defineProps({
     default: () => ({
       totalVentas: 0,
       porcentajeDigital: 0,
-      totalYape: 0,
+      totalDigital: 0,
       ticketPromedio: 0,
       diferenciaNeta: 0
     })
