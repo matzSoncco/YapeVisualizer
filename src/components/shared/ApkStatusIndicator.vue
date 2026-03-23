@@ -1,7 +1,7 @@
 <template>
-  <div 
-    class="apk-status" 
-    :class="statusClass" 
+  <div
+    class="apk-status"
+    :class="statusClass"
     v-tooltip.bottom="tooltipText"
   >
     <div class="status-indicator"></div>
@@ -45,13 +45,13 @@ const LIMIT_WARNING = 10 * MINUTES_TO_MS; // 7 a 10 min (amarillo)
 
 const connectionState = computed(() => {
   const { deviceOnline, lastHeartbeat } = store.userProfile;
-  
+
   if (!deviceOnline) return 'offline'; // apagador directo
   if (!lastHeartbeat) return 'offline'; // estado inicial o vacio
-  
+
   // lastHeartbeat es Date porque App.vue lo convierte usando .toDate()
   const age = now.value - lastHeartbeat.getTime();
-  
+
   if (age <= LIMIT_OK) return 'online';
   if (age <= LIMIT_WARNING) return 'warning';
   return 'offline'; // Más de 10 min
@@ -60,14 +60,14 @@ const connectionState = computed(() => {
 const formattedLastSeen = computed(() => {
   const { lastHeartbeat } = store.userProfile;
   if (!lastHeartbeat) return 'Desconocida';
-  
+
   const isToday = new Date().toDateString() === lastHeartbeat.toDateString();
   const timeString = lastHeartbeat.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
-  
+
   if (isToday) {
     return `hoy a las ${timeString}`;
   }
-  
+
   return `${lastHeartbeat.toLocaleDateString('es-PE')} a las ${timeString}`;
 });
 
@@ -84,7 +84,7 @@ const stateText = computed(() => {
 
 const tooltipText = computed(() => {
   switch (connectionState.value) {
-    case 'online': 
+    case 'online':
       return '🟢 Todo está perfecto. La app se sincroniza correctamente.';
     case 'warning':
       return '🟡 Alerta: Se saltó un latido. Posible retardo por wifi o ahorro de energía en el celular.';
