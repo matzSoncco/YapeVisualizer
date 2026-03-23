@@ -182,19 +182,23 @@ export function useShift() {
         sucursalId: currentSucursalId,
         sedeNombre: nombreSede,
 
-        audit: {
-          fund: fnd,
-          totalSystemCash: efectivoTeorico,
-          declaredCash: Number(arqueoState.monto),
-          difference: diferencia,
+        stats: {
+          fund: fnd,                        // Apertura
+          totalCashSales: cash,             // Ventas Efectivo
+          totalDigitalSales: digital,       // Ventas Digital
+          totalExpenses: exp,               // Gastos
+          totalTransactions: trans,         // N° Transacciones
+          systemCash: efectivoTeorico,      // Lo que debería haber
+          declaredCash: declarado,          // Lo que el cajero dijo que hay
+          difference: diferencia,           // La resta
           isBalanced: Math.round(diferencia * 100) === 0,
         },
 
+        // Mantenemos estos en la raíz solo para consultas rápidas (KPIs)
         totalIngresosDia: Math.round((cash + digital) * 100) / 100,
         totalDigital: digital,
         totalEfectivoFinal: cash,
         totalGastos: exp,
-        totalTransacciones: trans,
       }
 
       await updateDoc(shiftRef, cierreData)

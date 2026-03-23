@@ -59,12 +59,14 @@ export function useAdmin() {
           montoDigital: Number(data.totalDigital || 0),
           montoEfectivo: Number(data.totalEfectivoFinal || 0),
           totalIngresosDia: Number(data.totalIngresosDia || 0),
+          totalGastos: Number(data.totalGastos || 0),
 
-          diferencia: Number(data.audit?.difference || 0),
-          estado: data.audit?.isBalanced ? 'Cuadrado' : 'Descuadrado',
+          montoApertura: Number(data.stats?.fund || 0),
+          diferencia: Number(data.stats?.difference || 0),
+          efectivoEsperado: Number(data.stats?.systemCash || 0),
+          estado: data.stats?.isBalanced ? 'Cuadrado' : 'Descuadrado',
 
           sucursalId: data.sucursalId,
-
           raw: data,
         }
       })
