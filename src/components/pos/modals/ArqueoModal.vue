@@ -4,18 +4,20 @@
     modal
     append-to="body"
     :showHeader="false"
-    :style="{ width: '420px', border: 'none' }"
+    :style="{ width: '400px', border: 'none' }"
     class="arqueo-dialog"
     :closable="!arqueoState.loading"
   >
     <div class="arqueo-wrapper">
-      <div class="arqueo-hero">
+      <header class="arqueo-hero">
         <div class="arqueo-badge">
-          <i class="pi pi-verified"></i>
+          <i class="pi pi-lock"></i>
         </div>
-        <h3>Cierre de Auditoría</h3>
-        <p>Ingresa el efectivo total presente en caja para validar contra el sistema.</p>
-      </div>
+        <h3 class="arqueo-title">Cierre de Auditoría</h3>
+        <p class="arqueo-description">
+          Verifica el efectivo físico en caja y decláralo para finalizar el turno.
+        </p>
+      </header>
 
       <div class="arqueo-display">
         <span class="display-label">EFECTIVO FÍSICO</span>
@@ -30,18 +32,17 @@
             inputClass="display-input-raw"
             :disabled="arqueoState.loading"
             autofocus
-            @input="(e) => (arqueoState.monto = e.value)"
             @keyup.enter="confirmarCierreUI"
           />
         </div>
       </div>
 
-      <div class="arqueo-footer-info">
+      <div class="arqueo-info-banner">
         <i class="pi pi-info-circle"></i>
         <span>Este proceso es irreversible y cerrará tu sesión actual.</span>
       </div>
 
-      <div class="arqueo-btns">
+      <footer class="arqueo-btns">
         <Button
           label="VOLVER"
           text
@@ -50,16 +51,24 @@
           class="btn-back"
         />
         <Button
-          label="CONFIRMAR Y CERRAR"
-          icon="pi pi-lock"
+          label="FINALIZAR TURNO"
           @click="confirmarCierreUI"
           :loading="arqueoState.loading"
-          :disabled="arqueoState.monto === null || arqueoState.monto === undefined"
+          :disabled="arqueoState.monto === null"
           class="btn-submit-arqueo"
         />
-      </div>
+      </footer>
     </div>
   </Dialog>
+
+  <ConfirmDialog group="mini" class="mini-confirm">
+    <template #message="slotProps">
+      <div class="mini-confirm-body">
+        <i :class="slotProps.message.icon"></i>
+        <p>{{ slotProps.message.message }}</p>
+      </div>
+    </template>
+  </ConfirmDialog>
 </template>
 
 <script setup>
@@ -99,14 +108,14 @@ const confirmarCierreUI = async () => {
 
   if (Number(arqueoState.monto) === 0) {
     confirm.require({
-      header: 'Confirmación de Caja',
-      message:
-        'Has declarado S/ 0.00 en efectivo. ¿Confirmas que no hubo ingresos físicos en este turno?',
-      icon: 'pi pi-exclamation-circle',
+      group: 'mini',
+      header: 'Caja en cero',
+      message: '¿Confirmas que no hay efectivo físico?',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'SÍ, CERRAR',
       rejectLabel: 'REVISAR',
-      acceptLabel: 'CONFIRMAR CIERRE EN CERO',
-      acceptClass: 'p-button-danger p-button-sm', // Clase de PrimeVue
-      rejectClass: 'p-button-secondary p-button-text p-button-sm',
+      acceptClass: 'btn-mini-accept', 
+      rejectClass: 'btn-mini-reject',
       accept: () => ejecutarCierre(),
     })
   } else {
@@ -116,179 +125,263 @@ const confirmarCierreUI = async () => {
 </script>
 
 <style scoped>
-/* Limpieza de contenedores de PrimeVue */
+/* =========================================
+   1. DIÁLOGO PRINCIPAL (ARQUEO)
+========================================= */
 :deep(.p-dialog-content) {
-  padding: 0 !important;
-  border-radius: 28px !important;
+  padding: 0;
+  border-radius: var(--radius-xl);
   overflow: hidden;
+  background: var(--bg-app);
+  border: none;
 }
 
 .arqueo-wrapper {
-  padding: 1.5rem 1rem 1rem 1rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  background: #ffffff;
-  gap: 0.5rem;
+  gap: 1.5rem;
 }
 
-/* Hero Section */
+/* Cabecera / Hero */
 .arqueo-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  gap: 0.75rem;
 }
 
 .arqueo-badge {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, #facc15 0%, #eab308 100%);
-  color: #0f172a;
-  border-radius: 20px;
+  width: 48px;
+  height: 48px;
+  background: var(--color-accent);
+  color: var(--color-primary);
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1.25rem auto;
-  font-size: 1.75rem;
-  box-shadow: 0 8px 20px rgba(234, 179, 8, 0.3);
-  transform: rotate(-5deg); /* Un toque de diseño moderno */
+  font-size: 1.3rem;
+  box-shadow: var(--shadow-interactive);
 }
 
-.arqueo-hero h3 {
+.arqueo-title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.03em;
+  color: var(--color-primary);
+  letter-spacing: -0.02em;
 }
 
-.arqueo-hero p {
-  font-size: 0.9rem;
-  color: #64748b;
-  margin-top: 0.5rem;
-  line-height: 1.5;
+.arqueo-description {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.4;
+  font-weight: 500;
   padding: 0 1rem;
 }
 
-/* El Visor "Dark Mode" */
+/* Visor de Monto */
 .arqueo-display {
-  background: #0f172a;
-  border-radius: 24px;
-  padding: 2rem 1.5rem;
+  background: var(--color-primary);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 4px solid #1e293b;
-  box-shadow:
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    inset 0 4px 12px rgba(0, 0, 0, 0.5);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Efecto de brillo de pantalla */
-.arqueo-display::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
-  pointer-events: none;
+  border: 1px solid var(--color-primary-mid);
+  box-shadow: var(--shadow-card);
 }
 
 .display-label {
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  color: #64748b;
-  letter-spacing: 0.15em;
-  margin-bottom: 1rem;
-  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
 }
 
 .display-input-group {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
+  justify-content: center;
 }
 
 .display-currency {
-  color: #facc15;
-  font-size: 2rem;
+  color: var(--color-accent);
+  font-size: 1.5rem;
   font-weight: 900;
-  opacity: 0.9;
 }
 
-/* Input Minimalista pero Gigante */
-:deep(.display-input-raw) {
-  font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace !important;
-  font-size: 3rem !important;
-  font-weight: 800 !important;
-  color: #ffffff !important;
-  text-align: center !important;
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  width: 100% !important;
-  padding: 0 !important;
+/* InputNumber de PrimeVue (Limpieza visual) */
+:deep(.p-inputnumber.display-input-comp) {
+  width: auto;
 }
 
-/* Footer de información */
-.arqueo-footer-info {
+:deep(.display-input-raw.p-inputtext) {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--bg-app);
+  text-align: center;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  outline: none;
+  width: 100%;
+}
+
+:deep(.display-input-raw.p-inputtext:focus) {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Banner de Información */
+.arqueo-info-banner {
   display: flex;
   align-items: flex-start;
-  gap: 0.85rem;
-  background: #f8fafc;
-  padding: 1rem;
-  border-radius: 16px;
-  border: 1px solid #f1f5f9;
+  gap: 0.75rem;
+  background: var(--bg-surface);
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
-.arqueo-footer-info i {
-  color: #ef4444; /* Rojo para denotar irreversibilidad */
-  font-size: 1.1rem;
+.arqueo-info-banner i {
+  color: var(--color-error);
+  font-size: 1rem;
   margin-top: 2px;
 }
 
-.arqueo-footer-info span {
-  font-size: 0.8rem;
-  color: #475569;
-  font-weight: 500;
+.arqueo-info-banner span {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
   line-height: 1.4;
 }
 
-/* Botones */
+/* Botones principales */
 .arqueo-btns {
   display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
+  gap: 0.75rem;
 }
 
-.btn-back {
+:deep(.btn-back.p-button) {
   flex: 1;
-  font-weight: 700 !important;
-  color: #94a3b8 !important;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  color: var(--color-text-muted);
 }
 
-.btn-submit-arqueo {
+:deep(.btn-submit-arqueo.p-button) {
   flex: 2;
-  background: #0f172a !important;
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border: none;
+  height: 50px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  transition: background-color 0.2s ease;
+}
+
+:deep(.btn-submit-arqueo.p-button:not(:disabled):hover) {
+  background: var(--color-primary-mid);
+}
+
+/* =========================================
+   2. CONFIRM DIALOG "MINI" (ESTRUCTURA)
+========================================= */
+:deep(.mini-confirm.p-dialog) {
+  width: 320px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+:deep(.mini-confirm .p-dialog-header) {
+  padding: 1.25rem 1.25rem 0.5rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  border: none;
+}
+
+:deep(.mini-confirm .p-dialog-content) {
+  padding: 0.5rem 1.25rem 1rem 1.25rem;
+  background: var(--bg-app);
+}
+
+.mini-confirm-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mini-confirm-body i {
+  font-size: 1.5rem;
+  color: var(--color-warning);
+}
+
+.mini-confirm-body p {
+  font-size: 0.85rem;
+  color: var(--color-text-main);
+  margin: 0;
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+:deep(.mini-confirm .p-dialog-footer) {
+  padding: 0 1.25rem 1.25rem 1.25rem;
+  display: flex;
+  gap: 0.5rem;
+  border: none;
+}
+</style>
+
+<style>
+/* =========================================
+   3. ESTILOS GLOBALES PARA BOTONES TELEPORTADOS
+========================================= */
+.mini-confirm .btn-mini-reject {
+  background-color: var(--color-primary) !important;
+  color: var(--color-accent) !important;
   border: none !important;
-  font-weight: 800 !important;
-  height: 56px !important;
-  border-radius: 18px !important;
-  color: #ffffff !important;
-  font-size: 0.95rem !important;
-  box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.3) !important;
-  transition: all 0.2s ease !important;
+  flex: 1;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.6rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
 }
 
-.btn-submit-arqueo:not(:disabled):hover {
-  background: #1e293b !important;
-  transform: translateY(-2px);
-  box-shadow: 0 15px 20px -5px rgba(15, 23, 42, 0.4) !important;
+.mini-confirm .btn-mini-reject:hover {
+  background-color: var(--color-primary-mid) !important;
+  box-shadow: var(--shadow-interactive) !important;
 }
 
-.btn-submit-arqueo:not(:disabled):active {
-  transform: translateY(0);
+.mini-confirm .btn-mini-accept {
+  background-color: var(--bg-surface-alt) !important;
+  color: var(--color-text-muted) !important;
+  border: none !important;
+  flex: 1;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.6rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.mini-confirm .btn-mini-accept:hover {
+  background-color: var(--color-border) !important;
+}
+
+.mini-confirm .btn-mini-accept:focus,
+.mini-confirm .btn-mini-reject:focus {
+  box-shadow: none !important;
+  outline: none !important;
 }
 </style>
