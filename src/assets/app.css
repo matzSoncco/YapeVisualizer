@@ -46,6 +46,10 @@
   --color-error-soft: #fee2e2;
   --color-error-border: #fecaca;
   --color-error-dark: #dc2626;   /* Para el btn-exit hover */
+
+  --color-primary-hover: #1e293b;
+  --shadow-interactive: 0 6px 15px rgba(0, 0, 0, 0.08);
+  --bg-input-focus: #ffffff;
 }
 
 
