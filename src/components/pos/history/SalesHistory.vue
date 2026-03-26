@@ -23,7 +23,7 @@
         :value="ventas"
         scrollable
         scrollHeight="flex"
-        class="p-datatable-sm custom-table"
+        class="custom-table"
         dataKey="id"
       >
         <Column field="timestamp" header="Hora" class="col-time">
@@ -78,7 +78,8 @@
             <div class="actions-group">
               <Button
                 icon="pi pi-info-circle"
-                text rounded
+                text
+                rounded
                 @click="detalleRef?.open(slotProps.data)"
                 v-tooltip.top="'Ver Detalle'"
                 class="btn-action-info"
@@ -86,7 +87,8 @@
               <Button
                 v-if="slotProps.data.type !== 'EXPENSE'"
                 icon="pi pi-print"
-                text rounded
+                text
+                rounded
                 severity="success"
                 @click="imprimirTicket(slotProps.data)"
                 v-tooltip.top="'Imprimir Ticket'"
@@ -177,7 +179,7 @@ const imprimirTicket = (data) => {
 </script>
 
 <style scoped>
-/* Layout Base */
+/* Layout y Contenedor Principal */
 .history-container {
   flex: 1;
   height: 100%;
@@ -194,12 +196,6 @@ const imprimirTicket = (data) => {
   align-items: center;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-}
-
-/* Identificación visual de gastos en la fila */
-:deep(.p-datatable-tbody > tr:has(.is-expense)) {
-  background-color: var(--color-error-soft) !important;
-  opacity: 0.9;
 }
 
 .header-info {
@@ -234,49 +230,54 @@ const imprimirTicket = (data) => {
   color: var(--color-primary);
 }
 
-/* Tabla: Personalización profunda */
+/* Tabla: Personalización mediante especificidad de clases */
 .table-wrapper {
   flex: 1;
   min-height: 0;
   width: 100%;
 }
 
-:deep(.custom-table) {
-  /* Cabecera */
+:deep(.p-datatable.custom-table) {
+  /* Cabecera de tabla */
   .p-datatable-thead > tr > th {
-    background: var(--bg-surface) !important;
-    color: var(--color-text-muted) !important;
-    font-size: 0.7rem !important;
-    font-weight: 800 !important;
-    text-transform: uppercase !important;
-    padding: 0.75rem 1rem !important;
-    border: none !important;
+    background: var(--bg-surface);
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 0.75rem 1rem;
+    border: none;
   }
 
-  /* Filas */
+  /* Filas y Celdas */
   .p-datatable-tbody > tr {
-    background: transparent !important;
-    transition: background 0.2s;
-    
+    background: transparent;
+    transition: background 0.2s ease;
+
     &:hover {
-      background: var(--bg-surface) !important;
+      background: var(--bg-surface);
+    }
+
+    /* Fila de Gasto: Usamos la clase para teñir el fondo */
+    &:has(.is-expense) {
+      background-color: var(--color-error-soft);
     }
 
     > td {
-      padding: 0.85rem 1rem !important;
-      border-bottom: 1px solid var(--color-border) !important;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--color-border);
     }
   }
 
-  /* Badges generales */
+  /* Etiquetas (Tags) dentro de la tabla */
   .p-tag {
-    font-size: 0.65rem !important;
-    font-weight: 800 !important;
-    padding: 0.2rem 0.6rem !important;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
   }
 }
 
-/* Tipografía y Celdas */
+/* Tipografía y Estados de Celda */
 .time-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
@@ -306,41 +307,57 @@ const imprimirTicket = (data) => {
   font-weight: 800;
   font-size: 0.95rem;
   color: var(--color-primary);
-  
+
   &.is-expense {
     color: var(--color-error-dark);
   }
 }
 
-/* Columnas */
+/* Control de Anchos de Columna */
 .col-time { width: 90px; }
 .col-amount { text-align: right; width: 110px; }
 .col-actions { width: 90px; }
 
-/* Botones de acción */
+/* Botones de Acción Refactorizados con :deep */
 .actions-group {
   display: flex;
   gap: 0.25rem;
   justify-content: center;
 }
 
-.btn-action-info { color: var(--color-text-muted) !important; }
-.btn-action-print { color: var(--color-success) !important; }
-
-.btn-action-info:hover { background: var(--bg-surface-alt) !important; }
-.btn-action-print:hover { background: var(--color-cash-soft) !important; }
-
-/* Badges de Métodos (Clases dinámicas) */
-:deep(.tag-yape) {
-  background: var(--color-yape-soft) !important;
-  color: var(--color-yape) !important;
-  border: 1px solid var(--color-border) !important;
+:deep(.p-button.btn-action-info) {
+  color: var(--color-text-muted);
 }
 
-:deep(.tag-cash) {
-  background: var(--color-cash-soft) !important;
-  color: var(--color-cash) !important;
-  border: 1px solid var(--color-border) !important;
+:deep(.p-button.btn-action-print) {
+  color: var(--color-success);
+}
+
+:deep(.p-button.btn-action-info:hover) {
+  background: var(--bg-surface-alt);
+}
+
+:deep(.p-button.btn-action-print:hover) {
+  background: var(--color-cash-soft);
+}
+
+/* Badges de Métodos (Clases Dinámicas) */
+:deep(.p-tag.tag-yape) {
+  background: var(--color-yape-soft);
+  color: var(--color-yape);
+  border: 1px solid var(--color-border);
+}
+
+:deep(.p-tag.tag-plin) {
+  background: var(--color-plin-soft);
+  color: var(--color-plin);
+  border: 1px solid var(--color-border);
+}
+
+:deep(.p-tag.tag-cash) {
+  background: var(--color-cash-soft);
+  color: var(--color-cash);
+  border: 1px solid var(--color-border);
 }
 
 /* Estado Vacío */
@@ -349,14 +366,20 @@ const imprimirTicket = (data) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
 }
 
 .empty-visual {
   text-align: center;
   color: var(--color-text-muted);
-  
-  i { font-size: 3rem; margin-bottom: 1rem; }
-  p { font-weight: 700; font-size: 0.9rem; }
+  opacity: 0.6;
+
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  p {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
 }
 </style>
