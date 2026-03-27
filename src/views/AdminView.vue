@@ -1,125 +1,79 @@
 <template>
-  <div class="admin-layout" :class="{ 'sidebar-collapsed': !isSidebarExpanded }">
-    <aside class="admin-sidebar">
-      <button class="sidebar-toggle" @click="toggleSidebar">
-        <i :class="isSidebarExpanded ? 'pi pi-chevron-left' : 'pi pi-chevron-right'"></i>
-      </button>
-
-      <div class="sidebar-brand">
-        <i class="pi pi-shield"></i>
-        <span v-if="isSidebarExpanded">ADMIN</span>
-      </div>
-
-      <nav class="sidebar-nav">
-        <button
+  <div class="admin-view-container">
+    <header class="admin-toolbar">
+      <div class="toolbar-left">
+        <Button
           v-for="tab in tabs"
           :key="tab.id"
-          :class="['nav-item', { active: activeTab === tab.id }]"
+          :label="tab.label"
+          :icon="tab.icon"
+          :severity="activeTab === tab.id ? 'primary' : 'secondary'"
+          :outlined="activeTab !== tab.id"
           @click="activeTab = tab.id"
-          :title="!isSidebarExpanded ? tab.label : ''"
-        >
-          <i :class="tab.icon"></i>
-          <span v-if="isSidebarExpanded">{{ tab.label }}</span>
-        </button>
-      </nav>
-
-      <div class="sidebar-footer">
-        <Transition name="menu-pop">
-          <div v-if="isUserMenuOpen" class="custom-user-menu">
-            <button @click="router.push('/profile')">
-              <i class="pi pi-user"></i> <span>Perfil</span>
-            </button>
-            <button @click="router.push('/dashboard')">
-              <i class="pi pi-arrow-left"></i> <span>Monitor</span>
-            </button>
-            <div class="menu-sep"></div>
-            <button class="logout-btn" @click="handleLogout">
-              <i class="pi pi-sign-out"></i> <span>Salir</span>
-            </button>
-          </div>
-        </Transition>
-
-        <Avatar
-          :label="userInitial"
-          shape="circle"
-          @click="toggleUserMenu"
-          class="admin-avatar bg-slate-700 text-white"
+          size="small"
         />
       </div>
-    </aside>
 
-    <main class="admin-main">
-      <header class="admin-toolbar">
-        <div class="toolbar-left">
-          <h1>{{ currentTabLabel }}</h1>
-        </div>
+      <div class="toolbar-right">
+        <DatePicker
+          v-model="filters.startDate"
+          dateFormat="dd/mm"
+          placeholder="Inicio"
+          class="compact-date"
+        />
+        <span class="date-sep">—</span>
+        <DatePicker
+          v-model="filters.endDate"
+          dateFormat="dd/mm"
+          placeholder="Fin"
+          class="compact-date"
+        />
+        <Select
+          v-model="filters.branchId"
+          :options="sedeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Sede"
+          class="compact-select"
+        />
+        <Button
+          icon="pi pi-refresh"
+          @click="handleSearch"
+          :loading="loadingReportes"
+          v-tooltip.top="'Actualizar'"
+          text
+          rounded
+        />
+      </div>
+    </header>
 
-        <div class="toolbar-right">
-          <div class="toolbar-filters">
-            <DatePicker
-              v-model="filters.startDate"
-              dateFormat="dd/mm"
-              placeholder="Ini"
-              class="compact-date"
-            />
-            <span class="sep">-</span>
-            <DatePicker
-              v-model="filters.endDate"
-              dateFormat="dd/mm"
-              placeholder="Fin"
-              class="compact-date"
-            />
-            <Select
-              v-model="filters.branchId"
-              :options="sedeOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Sede"
-              class="compact-select"
-            />
-            <Button
-              icon="pi pi-refresh"
-              @click="handleSearch"
-              :loading="loadingReportes"
-              text
-              rounded
-            />
-          </div>
-        </div>
-      </header>
-
-      <section class="admin-viewport">
-        <Transition name="fade-slide" mode="out-in">
-          <div :key="activeTab" :class="['view-wrapper', { 'has-table': activeTab === 'table' }]">
-            <div v-if="activeTab === 'overview'" class="view-content overview-section">
-              <AdminStats :kpis="kpis" />
-              <div class="charts-preview-container">
-                <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
-              </div>
-            </div>
-
-            <div v-else-if="activeTab === 'charts'" class="view-content">
+    <section class="admin-viewport">
+      <Transition name="fade-slide" mode="out-in">
+        <div :key="activeTab" class="view-wrapper">
+          <div v-if="activeTab === 'overview'" class="view-content">
+            <AdminStats :kpis="kpis" />
+            <div class="charts-card">
               <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
             </div>
-
-            <div v-else-if="activeTab === 'table'" class="view-content">
-              <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
-              <CierreDetailModal 
-                v-model:visible="isDetailVisible" 
-                :data="selectedCierre" 
-              />
-            </div>
           </div>
-        </Transition>
-      </section>
-    </main>
+
+          <div v-else-if="activeTab === 'charts'" class="view-content">
+            <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
+          </div>
+
+          <div v-else-if="activeTab === 'table'" class="view-content">
+            <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
+          </div>
+        </div>
+      </Transition>
+    </section>
+    <CierreDetailModal v-model:visible="isDetailVisible" :data="selectedCierre" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/core/useAuth'
 import { useSucursal } from '@/composables/admin/useSucursal'
 import { useAdmin } from '@/composables/admin/useAdmin'
 import { useToast } from 'primevue/usetoast'
@@ -128,16 +82,17 @@ import { store } from '@/store'
 import AdminTable from '@/components/admin/AdminTable.vue'
 import AdminStats from '@/components/admin/AdminStats.vue'
 import AdminCharts from '@/components/admin/AdminCharts.vue'
-import CierreDetailModal from '@/components/admin/modals/CierreDetailModal.vue';
+import CierreDetailModal from '@/components/admin/modals/CierreDetailModal.vue'
 
-const isDetailVisible = ref(false);
-const selectedCierre = ref(null);
-
-import '@/assets/admin.css'
+const router = useRouter()
+const toast = useToast()
+const { sucursales } = useSucursal()
+const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } =
+  useAdmin()
 
 const activeTab = ref('overview')
-const isSidebarExpanded = ref(false)
-const isUserMenuOpen = ref(false)
+const isDetailVisible = ref(false)
+const selectedCierre = ref(null)
 
 const tabs = [
   { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
@@ -145,60 +100,34 @@ const tabs = [
   { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
 ]
 
-const router = useRouter()
-const toast = useToast()
-const { user, logOut } = useAuth()
-const { sucursales, limpiarSucursal } = useSucursal()
-const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } =
-  useAdmin()
-
 const filters = ref({
   startDate: new Date(),
   endDate: new Date(),
   branchId: '',
 })
 
-const currentTabLabel = computed(() => tabs.find((t) => t.id === activeTab.value)?.label)
-
-const userName = computed(() => user.value?.displayName || 'Admin')
-const userInitial = computed(() => (userName.value || 'A').charAt(0).toUpperCase())
-
 const sedeOptions = computed(() => [
   { label: 'Todas las sedes', value: '' },
   ...sucursales.value.map((s) => ({ label: s.nombre, value: s.id })),
 ])
 
-const toggleSidebar = () => {
-  isSidebarExpanded.value = !isSidebarExpanded.value
-}
+const handleSearch = () => buscarCuadres(filters.value)
 
-const toggleUserMenu = () => {
-  isUserMenuOpen.value = !isUserMenuOpen.value
-}
-
-/**
- * Función para cerrar sesión, limpiar datos relacionados con la sucursal y redirigir al login
- */
-const handleLogout = async () => {
-  await logOut()
-  limpiarSucursal()
-  router.push('/')
-}
-
-const handleSearch = () => {
-  buscarCuadres(filters.value)
-}
-
-/**
- * Función para mostrar el detalle de cierre
- * TODO: Implementar la vista de detalle con información completa del cierre seleccionado
- */
 const verDetalle = (data) => {
-  selectedCierre.value = data;
-  isDetailVisible.value = true;
+  selectedCierre.value = data
+  isDetailVisible.value = true
 }
 
-// Carga inicial
+/**
+ * TODO: Al montar, verificar, comparando con el backend
+ * si el admin tiene un PIN por defecto (ej. '1234')
+ * y forzar a cambiarlo antes de acceder.
+ * Esto es crucial para la seguridad, ya que muchos podrían
+ * olvidar cambiar su PIN después de crear su cuenta.
+ * - Si el PIN es por defecto, mostrar un toast de advertencia y redirigir al perfil para cambiarlo.
+ * - Si el PIN es seguro, cargar los datos normalmente.
+ */
+
 onMounted(() => {
   if (store.userProfile?.adminPin === '1234') {
     toast.add({
@@ -207,10 +136,160 @@ onMounted(() => {
       detail: 'Por seguridad, debes cambiar tu PIN antes de administrar.',
       life: 6000,
     })
-
-    router.push('/profile')
+    router.push('/admin/profile')
     return
   }
   handleSearch()
 })
 </script>
+
+<style scoped>
+.admin-view-container {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Toolbar ── */
+.admin-toolbar {
+  height: 64px;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+/* ── Filtros en píldora ── */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 3px 6px 3px 10px;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+  flex-shrink: 0;
+}
+
+.toolbar-right:hover {
+  border-color: var(--color-primary-mid);
+  background: var(--bg-app);
+}
+
+.date-sep {
+  color: var(--color-border);
+  font-size: 0.75rem;
+  user-select: none;
+  padding: 0 2px;
+}
+
+/* Datepicker compacto */
+.compact-date :deep(.p-inputtext) {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  color: var(--color-primary-mid);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.25rem;
+  width: 68px;
+  text-align: center;
+}
+
+.compact-date :deep(.p-inputtext:focus) {
+  color: var(--color-primary);
+}
+
+/* Select compacto */
+.compact-select :deep(.p-select) {
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--color-border);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.compact-select :deep(.p-select-label) {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-primary-mid);
+  padding: 0.25rem 0.5rem;
+}
+
+.compact-select :deep(.p-select-dropdown) {
+  width: 1.5rem;
+  color: var(--color-text-muted);
+}
+
+/* Botón refresh */
+.toolbar-right :deep(.p-button.p-button-icon-only) {
+  width: 30px;
+  height: 30px;
+  color: var(--color-text-muted);
+  border-radius: var(--radius-xl);
+}
+
+.toolbar-right :deep(.p-button:hover) {
+  background: var(--color-border);
+  color: var(--color-primary);
+}
+
+/* ── Viewport ── */
+.admin-viewport {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.view-wrapper {
+  height: 100%;
+}
+
+.view-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Card contenedor para los charts en overview */
+.charts-card {
+  background: var(--bg-app);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+/* Transición entre tabs */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+</style>
