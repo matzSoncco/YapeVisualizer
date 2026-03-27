@@ -90,19 +90,19 @@
 
       <section class="admin-viewport">
         <Transition name="fade-slide" mode="out-in">
-          <div :key="activeTab" class="view-wrapper">
-            <div v-if="activeTab === 'overview'" class="overview-section">
+          <div :key="activeTab" :class="['view-wrapper', { 'has-table': activeTab === 'table' }]">
+            <div v-if="activeTab === 'overview'" class="view-content overview-section">
               <AdminStats :kpis="kpis" />
               <div class="charts-preview-container">
                 <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
               </div>
             </div>
 
-            <div v-else-if="activeTab === 'charts'">
+            <div v-else-if="activeTab === 'charts'" class="view-content">
               <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
             </div>
 
-            <div v-else-if="activeTab === 'table'">
+            <div v-else-if="activeTab === 'table'" class="view-content">
               <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
               <CierreDetailModal 
                 v-model:visible="isDetailVisible" 

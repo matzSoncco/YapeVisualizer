@@ -12,7 +12,7 @@
           class="full-width-search"
           ref="mainInput"
         />
-        <Button icon="pi pi-times" severity="secondary" @click="prodName = ''" />
+        <Button icon="pi pi-minus-circle" severity="secondary" @click="prodName = ''" />
       </div>
 
       <div class="input-level details-row">
@@ -27,23 +27,21 @@
         </div>
 
         <div class="detail-field price-group">
-          <label>Precio Unitario</label>
-          <div class="price-input-wrapper">
-            <InputNumber
-              v-model="prodPrice"
-              mode="currency"
-              currency="PEN"
-              locale="es-PE"
-              placeholder="Monto"
-              class="compact-price"
-              inputClass="price-field-inner"
-              @keyup.enter="agregarAlCarrito"
-            />
-          </div>
+          <label>Precio unitario</label>
+          <InputNumber
+            v-model="prodPrice"
+            mode="currency"
+            currency="PEN"
+            locale="es-PE"
+            placeholder="Monto"
+            class="compact-price"
+            inputClass="price-field-inner"
+            @keyup.enter="agregarAlCarrito"
+          />
         </div>
 
         <Button
-          icon="pi pi-plus"
+          icon="pi pi-cart-plus"
           @click="agregarAlCarrito"
           :disabled="!puedeAgregar"
           class="btn-add-line"
@@ -51,14 +49,14 @@
       </div>
     </header>
 
-    <main class="pos-cart-area custom-scrollbar">
+    <main class="pos-cart-area">
       <div v-if="cart.length === 0" class="cart-empty-state">
         <div class="empty-info">
           <i class="pi pi-shopping-cart"></i>
-          <p>Carrito disponible</p>
+          <p>Carrito vacío</p>
         </div>
         <div class="quick-access">
-          <span class="quick-label">Venta Manual</span>
+          <span class="quick-label">Venta manual</span>
           <div class="quick-row">
             <InputNumber
               v-model="quickAmount"
@@ -66,9 +64,7 @@
               currency="PEN"
               locale="es-PE"
               placeholder="Monto"
-              class="flex-1"
               :min-fraction-digits="2"
-              @input="(e) => (quickAmount = e.value)"
             />
             <Button
               v-if="quickAmount"
@@ -80,68 +76,68 @@
         </div>
       </div>
 
-      <div v-else class="cart-table-wrapper">
-        <table class="cart-table">
-          <thead>
-            <tr>
-              <th class="th-qty">#</th>
-              <th class="th-desc">Producto</th>
-              <th class="th-total">Subtotal</th>
-              <th class="th-action"></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(item, index) in cart" :key="index" class="cart-item-row">
-              <td class="td-qty">{{ item.qty }}</td>
-              <td class="td-desc">
-                <span class="item-name">{{ item.name }}</span>
-                <span class="item-unit">S/ {{ (item.price ?? 0).toFixed(2) }} u.</span>
-              </td>
-              <td class="td-total">S/ {{ (item.subtotal ?? 0).toFixed(2) }}</td>
-              <td class="td-action">
-                <Button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  text
-                  rounded
-                  class="btn-remove-item"
-                  @click="removerItem(index)"
-                />
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      <table v-else class="cart-table">
+        <thead>
+          <tr>
+            <th class="th-qty">#</th>
+            <th class="th-desc">Producto</th>
+            <th class="th-total">Subtotal</th>
+            <th class="th-action"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(item, index) in cart" :key="index" class="cart-item-row">
+            <td class="td-qty">{{ item.qty }}</td>
+            <td class="td-desc">
+              <span class="item-name">{{ item.name }}</span>
+              <span class="item-unit">S/ {{ (item.price ?? 0).toFixed(2) }} u.</span>
+            </td>
+            <td class="td-total">S/ {{ (item.subtotal ?? 0).toFixed(2) }}</td>
+            <td class="td-action">
+              <Button
+                icon="pi pi-trash"
+                severity="danger"
+                text
+                rounded
+                class="btn-remove-item"
+                @click="removerItem(index)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </main>
 
     <footer class="pos-footer-area">
       <div class="summary-line">
-        <span class="summary-lbl">TOTAL A COBRAR</span>
-        <span class="summary-val">S/ {{ totalGeneral.toFixed(2) }}</span>
+        <span class="summary-lbl">Total a cobrar</span>
+        <span class="summary-val">
+          <span class="summary-currency">S/</span>
+          {{ totalGeneral.toFixed(2) }}
+        </span>
       </div>
 
       <div class="payment-grid">
         <button
-          class="pay-btn-custom cash-bg"
+          class="pay-btn-custom cash-btn"
           @click="procesarPago('CASH', null)"
           :disabled="!puedeProcederAlPago || matcherState.isLocked"
         >
           <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
-          <span>{{ loading ? 'PROCESANDO...' : 'EFECTIVO' }}</span>
+          <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
         </button>
         <button
-          class="pay-btn-custom yape-bg"
+          class="pay-btn-custom yape-btn"
           @click="iniciarFlujo"
           :disabled="!puedeProcederAlPago || loading"
         >
-          <i
-            :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"
-          ></i>
-          <span>{{ loading ? 'REGISTRANDO...' : 'YAPE / PLIN' }}</span>
+          <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
+          <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
           <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
         </button>
       </div>
     </footer>
+
   </div>
 </template>
 

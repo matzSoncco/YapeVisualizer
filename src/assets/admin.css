@@ -1,51 +1,55 @@
+/* ═══════════════════════════════════════════════
+   ADMIN LAYOUT — AdminView.vue
+   ═══════════════════════════════════════════════ */
+
 .admin-layout {
   display: flex;
+  height: 100dvh;
   height: 100vh;
-  background-color: #f1f5f9; /* Slate 100 */
+  background: var(--bg-surface-alt);
   overflow: hidden;
 }
 
-/* SIDEBAR: Estilo futurista y delgado */
+/* ── Sidebar ── */
 .admin-sidebar {
   width: 240px;
   position: relative;
-  background: #0f172a;
+  background: var(--color-primary);
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   z-index: 50;
+  flex-shrink: 0;
 }
 
 .sidebar-collapsed .admin-sidebar {
-  width: 80px; /* Ancho colapsado */
+  width: 72px; /* Ligeramente más estrecho que 80px para más contraste visual */
 }
 
-/* Oculta el texto de navegación si el sidebar está colapsado */
 .sidebar-collapsed .nav-item span {
   display: none;
 }
 
-/* Centra los iconos cuando está colapsado */
 .sidebar-collapsed .nav-item {
   justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0.75rem; /* Reseteamos padding para que el ícono quede centrado */
 }
 
-/* Opcional: Centrar también el logo/marca cuando está cerrado */
 .sidebar-collapsed .sidebar-brand {
   justify-content: center;
   padding-left: 0;
 }
 
-/* BOTÓN DE FLECHA (TOGGLE) */
+/* ── Toggle (botón de flecha) ── */
+
 .sidebar-toggle {
   position: absolute;
   right: -12px;
   top: 35px;
   width: 24px;
   height: 24px;
-  background: var(--color-accent); /* Amarillo */
+  background: var(--color-accent);
+  color: var(--color-primary);
   border: none;
   border-radius: 50%;
   display: flex;
@@ -53,105 +57,129 @@
   justify-content: center;
   cursor: pointer;
   z-index: 100;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  color: #0f172a;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-/* BRANDING */
+.sidebar-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-interactive);
+}
+
+/* ── Branding ── */
+
 .sidebar-brand {
   height: 70px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center; /* Centrado siempre; separamos el logo del texto con gap */
   gap: 0.75rem;
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--color-accent);
-  overflow: hidden; /* Importante para cuando colapsa */
+  overflow: hidden;
+  letter-spacing: 0.08em; /* Detalle tipográfico: ADMIN respira mejor */
+  flex-shrink: 0;
 }
+
+/* ── Navegación ── */
 
 .sidebar-nav {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  width: 100%;
+  gap: 0.25rem; /* Reducido de 0.5rem: ítem más compactos = más nav cabe */
   padding: 1rem 0.75rem;
   overflow-x: hidden;
+  overflow-y: auto; /* Por si hay muchos tabs */
 }
 
-/* ITEMS DE NAVEGACIÓN */
 .nav-item {
   background: transparent;
   border: none;
-  color: #94a3b8; /* Slate 400 */
+  color: #94a3b8; /* Slate 400 — intencional sobre fondo oscuro, sin variable equivalente */
   padding: 0.75rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 1rem;
-  transition: all 0.2s;
-  white-space: nowrap; /* Evita que el texto salte */
+  transition: background 0.2s, color 0.2s; /* Específico, no "all" */
+  white-space: nowrap;
+  width: 100%;
+  text-align: left;
 }
 
-.nav-item i { 
-  font-size: 1.25rem; 
-  min-width: 24px; 
+.nav-item i {
+  font-size: 1.1rem;    /* Ligeramente reducido para más elegancia */
+  min-width: 20px;
   text-align: center;
+  flex-shrink: 0;
 }
 
-.nav-item span { 
-  font-weight: 600; 
-  font-size: 0.9rem;
+.nav-item span {
+  font-weight: 600;
+  font-size: 0.875rem;
 }
 
 .nav-item:hover {
   color: white;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.07);
 }
 
 .nav-item.active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: white;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* FOOTER DEL SIDEBAR Y MENÚ */
+/* Detalle: acento amarillo en el ítem activo */
+.nav-item.active i {
+  color: var(--color-accent);
+}
+
+/* ── Footer del sidebar ──
+   position: relative es NECESARIO aquí: el .custom-user-menu
+   usa position: absolute con bottom relativo a este contenedor. */
+
 .sidebar-footer {
-  padding: 1.5rem;
+  padding: 1.25rem;
   display: flex;
   justify-content: center;
-  position: relative; /* CLAVE: Para que el menú se posicione respecto a esto */
+  position: relative;
+  flex-shrink: 0;
 }
 
 .admin-avatar {
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: border-color 0.2s, transform 0.2s;
   border: 2px solid transparent;
-}
-.admin-avatar:hover {
-  border-color: var(--color-accent);
+  border-radius: 50%;
 }
 
-/* NUESTRO MENÚ DE USUARIO CUSTOM */
+.admin-avatar:hover {
+  border-color: var(--color-accent);
+  transform: scale(1.05);
+}
+
+/* ── Menú de usuario flotante ── */
+
 .custom-user-menu {
   position: absolute;
-  bottom: 70px;
-  left: 10px;
+  bottom: calc(100% - 1rem); /* Relativo al sidebar-footer */
+  left: 1rem;
   width: 220px;
-  background: white;
-  border-radius: 12px;
-  padding: 0.5rem;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  background: var(--bg-app);
+  border-radius: var(--radius-lg);
+  padding: 0.375rem;
+  box-shadow: var(--shadow-interactive), 0 0 0 1px var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 2px;
   z-index: 1000;
-  border: 1px solid #e2e8f0;
 }
 
-/* Flechita decorativa abajo del menú (Opcional, detalle pro) */
+/* Flechita decorativa — anclada al fondo del menú */
 .custom-user-menu::after {
   content: '';
   position: absolute;
@@ -160,154 +188,219 @@
   transform: translateX(-50%) rotate(45deg);
   width: 12px;
   height: 12px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  border-right: 1px solid #e2e8f0;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
 }
 
 .custom-user-menu button {
   background: transparent;
   border: none;
-  padding: 0.75rem;
-  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--color-primary-mid);
   cursor: pointer;
   width: 100%;
   text-align: left;
-  transition: background 0.2s;
+  transition: background 0.15s, color 0.15s;
 }
 
-.custom-user-menu button:hover { background: #f1f5f9; color: #0f172a; }
-.custom-user-menu .logout-btn { color: #ef4444; }
-.custom-user-menu .logout-btn:hover { background: #fef2f2; color: #b91c1c; }
+.custom-user-menu button i {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  min-width: 16px;
+}
 
-.menu-sep { height: 1px; background: #e2e8f0; margin: 4px 0; }
+.custom-user-menu button:hover {
+  background: var(--bg-surface-alt);
+  color: var(--color-primary);
+}
 
-/* Animación del Menú */
-.menu-pop-enter-active, .menu-pop-leave-active { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-.menu-pop-enter-from, .menu-pop-leave-to { opacity: 0; transform: translateY(10px) scale(0.95); }
+.custom-user-menu button:hover i {
+  color: var(--color-primary);
+}
 
-/* TOOLBAR Y CONTENIDO */
+.custom-user-menu .logout-btn {
+  color: var(--color-error);
+}
+
+.custom-user-menu .logout-btn i {
+  color: var(--color-error);
+}
+
+.custom-user-menu .logout-btn:hover {
+  background: var(--color-error-soft);
+  color: var(--color-error-dark);
+}
+
+.menu-sep {
+  height: 1px;
+  background: var(--color-border);
+  margin: 4px 0.375rem; /* Respeta el padding del contenedor */
+}
+
+/* Animación del menú */
+.menu-pop-enter-active,
+.menu-pop-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.menu-pop-enter-from,
+.menu-pop-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+}
+
+/* ══════════════════════════════════════════
+   ÁREA PRINCIPAL
+   ══════════════════════════════════════════ */
+
 .admin-main {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  position: relative;
+  min-width: 0; /* Evita overflow del flex item con contenido largo */
 }
 
+/* ── Toolbar superior ── */
+
 .admin-toolbar {
-  height: 70px;
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
+  height: 64px; /* Ligeramente más compacto que 70px */
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 2rem;
+  padding: 0 1.75rem;
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0; /* Permite que h1 truncue si hay poco espacio */
+}
+
+/* Línea de acento vertical antes del título — detalle visual */
+.toolbar-left::before {
+  content: '';
+  width: 3px;
+  height: 18px;
+  background: var(--color-accent);
+  border-radius: 2px;
   flex-shrink: 0;
 }
 
 .admin-toolbar h1 {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-main);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* CONTENEDOR TIPO "PÍLDORA" */
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* ── Filtros en píldora ── */
+
 .toolbar-filters {
   display: flex;
   align-items: center;
-  gap: 0.25rem; /* Espacio pequeñito entre elementos */
-  background: #f8fafc; /* Slate 50 */
-  border: 1px solid #cbd5e1; /* Borde sutil gris */
-  border-radius: 99px; /* Pill shape total */
-  padding: 3px 6px 3px 12px; /* Padding interno */
-  transition: all 0.2s;
+  gap: 0.25rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: 3px 6px 3px 12px;
+  transition: border-color 0.2s, background 0.2s;
 }
 
 .toolbar-filters:hover {
-  border-color: #94a3b8; /* Se oscurece un poco al pasar el mouse */
-  background: #fff;
+  border-color: var(--color-primary-mid);
+  background: var(--bg-app);
 }
 
-/* SEPARADOR (-) */
 .sep {
-  color: #94a3b8;
+  color: var(--color-border);
   font-weight: 700;
   font-size: 0.8rem;
   user-select: none;
+  padding: 0 2px;
 }
 
-/* DATEPICKER COMPACTO (El truco es hacer transparente el input) */
+/* Datepicker compacto — el input de PrimeVue queda transparente dentro de la píldora */
 .compact-date .p-inputtext {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  color: #334155 !important;
-  font-size: 0.85rem !important;
+  color: var(--color-primary-mid) !important;
+  font-size: 0.8rem !important;
   font-weight: 600 !important;
-  padding: 0.5rem 0.25rem !important; /* Reducir padding */
-  width: 75px !important; /* Ancho fijo para que no baile */
+  padding: 0.4rem 0.25rem !important;
+  width: 72px !important;
   text-align: center;
 }
 
 .compact-date .p-inputtext:focus {
-  color: var(--color-accent-dark) !important;
+  color: var(--color-primary) !important;
 }
 
-/* SELECT COMPACTO */
+/* Select compacto — separador visual a la izquierda */
 .compact-select {
   background: transparent !important;
   border: none !important;
-  box-shadow: none !important;
-  align-items: center;
-}
-
-/* Línea divisoria visual antes del Select */
-.compact-select {
-  border-left: 1px solid #cbd5e1 !important;
+  border-left: 1px solid var(--color-border) !important;
   border-radius: 0 !important;
-  margin-left: 0.5rem;
+  box-shadow: none !important;
+  margin-left: 0.25rem;
   padding-left: 0.5rem;
-  height: 24px; /* Altura de la línea divisoria */
+  height: 24px;
   display: flex;
   align-items: center;
 }
 
 .compact-select .p-select-label {
   padding: 0 0.5rem !important;
-  font-size: 0.85rem !important;
+  font-size: 0.8rem !important;
   font-weight: 700 !important;
-  color: #334155 !important;
+  color: var(--color-primary-mid) !important;
   white-space: nowrap;
 }
 
 .compact-select .p-select-dropdown {
   width: 1rem !important;
-  color: #64748b !important;
+  color: var(--color-text-muted) !important;
 }
 
-/* BOTÓN DE REFRESCAR */
+/* Botón de refrescar dentro de la píldora */
 .toolbar-filters .p-button.p-button-icon-only {
-  width: 32px !important;
-  height: 32px !important;
-  color: #64748b !important;
+  width: 30px !important;
+  height: 30px !important;
+  color: var(--color-text-muted) !important;
+  border-radius: var(--radius-xl) !important;
 }
 
 .toolbar-filters .p-button:hover {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
+  background: var(--color-border) !important;
+  color: var(--color-primary) !important;
 }
 
-.sep { color: #cbd5e1; font-weight: bold; }
+/* ── Viewport y contenido ── */
 
-/* VIEWPORT */
 .admin-viewport {
   flex: 1;
   overflow: hidden;
@@ -324,39 +417,50 @@
   min-height: 0;
 }
 
-.view-wrapper > div {
+/* Clase explícita en lugar de ".view-wrapper > div" frágil */
+.view-content {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
-.view-wrapper:has(.admin-datatable) {
+/* Cuando hay una datatable, reducimos padding para que ocupe más espacio */
+.view-wrapper.has-table {
   overflow-y: hidden;
-  padding: 0.5rem; /* Menos padding para que la tabla brille */
+  padding: 0.75rem;
 }
 
-.view-wrapper > .report-table-card {
-  flex: 1;
-}
+/* ── Vista Overview ── */
 
-/* Transición de Vistas */
-.fade-slide-enter-active, .fade-slide-leave-active { transition: all 0.3s ease; }
-.fade-slide-enter-from { opacity: 0; transform: translateX(10px); }
-.fade-slide-leave-to { opacity: 0; transform: translateX(-10px); }
-
-/* SECCIONES INTERNAS */
 .overview-section {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  padding-bottom: 3rem; /* Espacio de cortesía al final */
+  padding-bottom: 2rem;
 }
 
 .charts-preview-container {
-  background: white;
+  background: var(--bg-app);
   padding: 1.5rem;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Transición de vistas ── */
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(8px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-8px);
 }

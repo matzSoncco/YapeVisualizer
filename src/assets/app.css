@@ -1,115 +1,167 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap');
 
+/* ============================================================
+   VARIABLES — Design Tokens
+   ============================================================ */
 :root {
-  /* Fondos y Superficies */
+  /* Fondos */
   --bg-app: #ffffff;
   --bg-surface: #f8fafc;
-  
-  /* Colores de Marca (Agilidad Moderna) */
+
+  /* Marca — Slate + Amarillo acento */
   --color-primary: #0f172a;
-  --color-accent: #facc15;
-  --color-accent-soft: #fefce8;
-  
-  /* Semántica (Líneas y Bordes) */
+  --color-primary-mid: #334155;
+  --color-accent: #facc15;          /* Solo usar sobre --color-primary */
+  --color-accent-soft: #fefce8;     /* Badges y chips sobre blanco */
+
+  /* Pagos — identidad fija de marca */
+  --color-yape: #7c3aed;
+  --color-yape-soft: #f5f3ff;
+  --color-cash: #10b981;
+  --color-cash-soft: #ecfdf5;
+  --color-plin: #25eb9f;
+  --color-plin-soft: #d1fae5;
+
+  /* Semántica */
   --color-border: #e2e8f0;
   --color-text-main: #1e293b;
   --color-text-muted: #64748b;
-  
-  /* Estados */
   --color-success: #10b981;
+  --color-warning: #f59e0b;
   --color-error: #ef4444;
-  
-  /* Sombras y Radios */
+
+  /* Elevación */
   --shadow-flat: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-pro: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  /* Radios */
+  --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 20px;
+
+  /* Superficie secundaria (Slate 100) — hover de nav, fondo de tags */
+  --bg-surface-alt: #f1f5f9;
+
+  /* Error con tonos para componentes UI */
+  --color-error-soft: #fee2e2;
+  --color-error-border: #fecaca;
+  --color-error-dark: #dc2626;   /* Para el btn-exit hover */
+
+  --color-primary-hover: #1e293b;
+  --shadow-interactive: 0 6px 15px rgba(0, 0, 0, 0.08);
+  --bg-input-focus: #ffffff;
 }
 
-/* Reset y Base */
-html, body, #app {
-  font-family: 'Nunito', sans-serif;
-  background-color: var(--bg-app);
-  color: var(--color-text-main);
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-  height: 100vh;
-  width: 100vw;
+
+/* ============================================================
+   RESET Y BASE
+   ============================================================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+  width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* 👈 Bloqueamos el scroll de toda la ventana */
+  overflow: hidden;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-text-main);
+  background-color: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* --- CLEAN TOAST OVERRIDE --- */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 
-/* Ajustamos el ancho y la sombra para que no se vea plano */
+
+/* ============================================================
+   TOAST
+   ============================================================ */
 .p-toast {
-    width: 320px !important;
+  width: 320px;
 }
 
-.p-toast-message {
-    border-radius: 12px !important; /* Bordes redondeados pero no circulares */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important; /* Sombra suave */
-    border: 1px solid var(--color-border) !important;
-    background: #ffffff !important;
-    margin-bottom: 0.75rem;
+.p-toast .p-toast-message {
+  margin-bottom: 0.75rem;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
 }
 
-/* Ajustamos el contenido para que respire */
-.p-toast-message-content {
-    padding: 1rem !important;
-    align-items: center !important;
+.p-toast .p-toast-message-content {
+  padding: 1rem;
+  align-items: center;
 }
 
-.p-toast-message-icon {
-    font-size: 1.2rem !important;
-    margin-right: 0.75rem;
+.p-toast .p-toast-message-icon {
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
 }
 
-/* Tipografía pesada para el resumen (estilo gosu ligero) */
-.p-toast-summary {
-    font-weight: 800 !important;
-    font-size: 0.85rem !important;
-    color: var(--color-text-main) !important;
-    display: block;
-}
-
-.p-toast-detail {
-    font-size: 0.75rem !important;
-    font-weight: 600 !important;
-    color: var(--color-text-muted) !important;
-    margin-top: 2px;
-}
-
-/* Colores de borde lateral sutiles (sin pseudo-elementos raros) */
-.p-toast-message-success { border-left: 5px solid var(--color-success) !important; }
-.p-toast-message-error { border-left: 5px solid var(--color-error) !important; }
-.p-toast-message-warn { border-left: 5px solid var(--color-accent) !important; }
-.p-toast-message-info { border-left: 5px solid var(--color-primary) !important; }
-
-/* Botón de cerrar pequeño */
-.p-toast-icon-close {
-    width: 20px !important;
-    height: 20px !important;
-}
-
-/* --- ESTILOS PARA CONFIRM DIALOG --- */
-/* Estilo para el diálogo de confirmación */
-:deep(.custom-confirm) {
-  border-radius: 20px !important;
-  border: none !important;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2) !important;
-}
-
-:deep(.custom-confirm .p-dialog-header) {
-  background: #f8fafc;
-  padding: 1.5rem;
+.p-toast .p-toast-summary {
+  display: block;
+  font-size: 0.85rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--color-text-main);
 }
 
-:deep(.custom-confirm .p-dialog-content) {
-  padding: 2rem !important;
+.p-toast .p-toast-detail {
+  margin-top: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.p-toast .p-toast-icon-close {
+  width: 20px;
+  height: 20px;
+}
+
+.p-toast .p-toast-message-success { border-left: 4px solid var(--color-success); }
+.p-toast .p-toast-message-error   { border-left: 4px solid var(--color-error); }
+.p-toast .p-toast-message-warn    { border-left: 4px solid var(--color-warning); }
+.p-toast .p-toast-message-info    { border-left: 4px solid var(--color-primary); }
+
+
+/* ============================================================
+   CONFIRM DIALOG
+   ============================================================ */
+.custom-confirm {
+  border-radius: var(--radius-xl);
+  border: none;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.custom-confirm .p-dialog-header {
+  padding: 1.5rem;
+  background: var(--bg-surface);
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.custom-confirm .p-dialog-content {
+  padding: 2rem;
+}
+
+.custom-confirm .p-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem 1.5rem;
 }
 
 .confirm-content {
@@ -120,20 +172,12 @@ html, body, #app {
 
 .confirm-icon {
   font-size: 2.5rem;
-  color: #f59e0b; /* Ambar para advertencia */
+  color: var(--color-warning);
 }
 
 .confirm-text {
   font-size: 0.95rem;
-  color: #475569;
-  line-height: 1.5;
   font-weight: 600;
-}
-
-/* Estilo para los botones del footer del confirm */
-:deep(.custom-confirm .p-dialog-footer) {
-  padding: 1rem 1.5rem 1.5rem 1.5rem !important;
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
+  line-height: 1.5;
+  color: var(--color-text-muted);
 }
