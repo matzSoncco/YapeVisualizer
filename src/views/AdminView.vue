@@ -1,51 +1,50 @@
 <template>
   <div class="admin-view-container">
-    <header class="admin-toolbar">
-      <div class="toolbar-left">
-        <Button
-          v-for="tab in tabs"
-          :key="tab.id"
-          :label="tab.label"
-          :icon="tab.icon"
-          :severity="activeTab === tab.id ? 'primary' : 'secondary'"
-          :outlined="activeTab !== tab.id"
-          @click="activeTab = tab.id"
-          size="small"
-        />
-      </div>
+    <AdminHeader>
+      <template #left>
+        <div class="admin-tabs">
+          <Button
+            v-for="tab in tabs"
+            :key="tab.id"
+            :label="tab.label"
+            :icon="tab.icon"
+            :severity="activeTab === tab.id ? 'primary' : 'secondary'"
+            :outlined="activeTab !== tab.id"
+            @click="activeTab = tab.id"
+            size="small"
+            class="tab-btn"
+          />
+        </div>
+      </template>
 
-      <div class="toolbar-right">
+      <template #filters>
         <DatePicker
-          v-model="filters.startDate"
+          v-model="filters.dateRange"
+          selectionMode="range"
           dateFormat="dd/mm"
-          placeholder="Inicio"
-          class="compact-date"
-        />
-        <span class="date-sep">—</span>
-        <DatePicker
-          v-model="filters.endDate"
-          dateFormat="dd/mm"
-          placeholder="Fin"
-          class="compact-date"
+          panelClass="compact-calendar-panel"
+          :manualInput="false"
         />
         <Select
           v-model="filters.branchId"
           :options="sedeOptions"
           optionLabel="label"
           optionValue="value"
-          placeholder="Sede"
-          class="compact-select"
+          placeholder="Todas las sedes"
+          class="modern-select"
+          panelClass="compact-select-panel"
         />
         <Button
           icon="pi pi-refresh"
           @click="handleSearch"
           :loading="loadingReportes"
           v-tooltip.top="'Actualizar'"
-          text
-          rounded
+          severity="secondary"
+          outlined
+          class="refresh-btn"
         />
-      </div>
-    </header>
+      </template>
+    </AdminHeader>
 
     <section class="admin-viewport">
       <Transition name="fade-slide" mode="out-in">
@@ -58,15 +57,20 @@
           </div>
 
           <div v-else-if="activeTab === 'charts'" class="view-content">
-            <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
+            <div class="charts-card">
+              <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
+            </div>
           </div>
 
           <div v-else-if="activeTab === 'table'" class="view-content">
-            <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
+            <div class="table-card">
+              <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
+            </div>
           </div>
         </div>
       </Transition>
     </section>
+
     <CierreDetailModal v-model:visible="isDetailVisible" :data="selectedCierre" />
   </div>
 </template>
@@ -79,6 +83,7 @@ import { useAdmin } from '@/composables/admin/useAdmin'
 import { useToast } from 'primevue/usetoast'
 import { store } from '@/store'
 
+import AdminHeader from '@/components/admin/AdminHeader.vue'
 import AdminTable from '@/components/admin/AdminTable.vue'
 import AdminStats from '@/components/admin/AdminStats.vue'
 import AdminCharts from '@/components/admin/AdminCharts.vue'
@@ -101,8 +106,7 @@ const tabs = [
 ]
 
 const filters = ref({
-  startDate: new Date(),
-  endDate: new Date(),
+  dateRange: [new Date(), new Date()],
   branchId: '',
 })
 
@@ -111,23 +115,28 @@ const sedeOptions = computed(() => [
   ...sucursales.value.map((s) => ({ label: s.nombre, value: s.id })),
 ])
 
-const handleSearch = () => buscarCuadres(filters.value)
+/**
+ * Función para manejar la búsqueda de cuadres según los filtros seleccionados
+ */
+const handleSearch = () => {
+  const [start, end] = filters.value.dateRange
+
+  buscarCuadres({
+    startDate: start,
+    endDate: end || start,
+    branchId: filters.value.branchId,
+  })
+}
 
 const verDetalle = (data) => {
   selectedCierre.value = data
   isDetailVisible.value = true
 }
 
-/**
- * TODO: Al montar, verificar, comparando con el backend
- * si el admin tiene un PIN por defecto (ej. '1234')
- * y forzar a cambiarlo antes de acceder.
- * Esto es crucial para la seguridad, ya que muchos podrían
- * olvidar cambiar su PIN después de crear su cuenta.
- * - Si el PIN es por defecto, mostrar un toast de advertencia y redirigir al perfil para cambiarlo.
- * - Si el PIN es seguro, cargar los datos normalmente.
- */
-
+// TODO: Esto es solo un recordatorio para implementar
+// una verificación real del PIN en el futuro
+// no es seguro dejarlo así en producción.
+// Mover la logica al backend y forzar a cambiar el PIN si es el default
 onMounted(() => {
   if (store.userProfile?.adminPin === '1234') {
     toast.add({
@@ -136,7 +145,7 @@ onMounted(() => {
       detail: 'Por seguridad, debes cambiar tu PIN antes de administrar.',
       life: 6000,
     })
-    router.push('/admin/profile')
+    router.push('/admin/perfil')
     return
   }
   handleSearch()
@@ -145,115 +154,31 @@ onMounted(() => {
 
 <style scoped>
 .admin-view-container {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  height: 100%;
+  background: var(
+    --bg-ground,
+    #f8fafc
+  );
 }
 
-/* ── Toolbar ── */
-.admin-toolbar {
-  height: 64px;
-  background: var(--bg-app);
-  border-bottom: 1px solid var(--color-border);
+.admin-tabs {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 1.5rem;
-  gap: 1rem;
-  flex-shrink: 0;
+  gap: 0.5rem;
+  background: var(--bg-surface, rgba(0, 0, 0, 0.03));
+  padding: 0.25rem;
+  border-radius: var(--radius-lg, 8px);
 }
 
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-}
-
-/* ── Filtros en píldora ── */
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  padding: 3px 6px 3px 10px;
-  transition:
-    border-color 0.2s,
-    background 0.2s;
-  flex-shrink: 0;
-}
-
-.toolbar-right:hover {
-  border-color: var(--color-primary-mid);
-  background: var(--bg-app);
-}
-
-.date-sep {
-  color: var(--color-border);
-  font-size: 0.75rem;
-  user-select: none;
-  padding: 0 2px;
-}
-
-/* Datepicker compacto */
-.compact-date :deep(.p-inputtext) {
-  background: transparent;
-  border: none;
-  box-shadow: none;
-  color: var(--color-primary-mid);
-  font-size: 0.8rem;
+.tab-btn {
+  border: none !important;
+  box-shadow: none !important;
   font-weight: 600;
-  padding: 0.4rem 0.25rem;
-  width: 68px;
-  text-align: center;
 }
 
-.compact-date :deep(.p-inputtext:focus) {
-  color: var(--color-primary);
-}
-
-/* Select compacto */
-.compact-select :deep(.p-select) {
-  background: transparent;
-  border: none;
-  border-left: 1px solid var(--color-border);
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.compact-select :deep(.p-select-label) {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--color-primary-mid);
-  padding: 0.25rem 0.5rem;
-}
-
-.compact-select :deep(.p-select-dropdown) {
-  width: 1.5rem;
-  color: var(--color-text-muted);
-}
-
-/* Botón refresh */
-.toolbar-right :deep(.p-button.p-button-icon-only) {
-  width: 30px;
-  height: 30px;
-  color: var(--color-text-muted);
-  border-radius: var(--radius-xl);
-}
-
-.toolbar-right :deep(.p-button:hover) {
-  background: var(--color-border);
-  color: var(--color-primary);
-}
-
-/* ── Viewport ── */
 .admin-viewport {
   flex: 1;
-  min-height: 0;
   overflow-y: auto;
   padding: 1.5rem;
 }
@@ -266,30 +191,93 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-/* Card contenedor para los charts en overview */
-.charts-card {
-  background: var(--bg-app);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
+/* ── Tarjetas para Gráficos y Tablas ── */
+.charts-card,
+.table-card {
+  background: var(--bg-app, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-xl, 12px);
   padding: 1.5rem;
-  box-shadow: var(--shadow-card);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.025);
 }
 
-/* Transición entre tabs */
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── Transición ── */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
   transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 .fade-slide-enter-from {
   opacity: 0;
-  transform: translateY(6px);
+  transform: translateY(10px);
 }
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(-6px);
+  transform: translateY(-10px);
+}
+</style>
+
+<style>
+/* ── DatePicker Compacto (Calendario) ── */
+.compact-calendar-panel {
+  min-width: 280px !important;
+  font-size: 0.85rem !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border, #e2e8f0) !important;
+}
+
+/* Achicar el header del calendario (Mes y Año) */
+.compact-calendar-panel .p-datepicker-header {
+  padding: 0.5rem !important;
+}
+
+.compact-calendar-panel .p-datepicker-title {
+  gap: 0.5rem !important;
+}
+
+/* Achicar las celdas de los días */
+.compact-calendar-panel table {
+  margin: 0.25rem 0 !important;
+}
+
+.compact-calendar-panel table th {
+  padding: 0.25rem !important;
+  font-size: 0.75rem !important;
+}
+
+.compact-calendar-panel table td {
+  padding: 0.1rem !important;
+}
+
+/* Achicar el botón redondo de cada número */
+.compact-calendar-panel table td span {
+  width: 2rem !important;
+  height: 2rem !important;
+}
+
+/* ── Select Compacto (Dropdown de Sedes) ── */
+.compact-select-panel {
+  font-size: 0.85rem !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.compact-select-panel .p-select-item {
+  padding: 0.5rem 0.75rem !important;
 }
 </style>
