@@ -184,7 +184,7 @@ onMounted(() => {
 }
 
 .view-wrapper {
-  height: 100%;
+  min-height: 100%;
 }
 
 .view-content {
