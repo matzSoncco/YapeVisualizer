@@ -4,10 +4,12 @@
     <ArqueoModal />
     <ShiftSummaryModal />
     <ExpenseModal />
-    <PaymentMatchModal @confirmar-vinculo="confirmarVinculo" @descartar-pago="cancelarVinculo" />
-    <div v-if="!sucursalActual">
-      <SucursalSelector />
-    </div>
+    <PaymentMatchModal
+      @confirmar-vinculo="confirmarVinculo"
+      @descartar-pago="cancelarVinculo"
+    />
+
+    <SucursalSelector v-if="!sucursalActual" />
 
     <div v-else class="pos-layout-wrapper">
       <ShiftOpen v-if="!isShiftOpen" />
@@ -27,7 +29,10 @@
 
         <main class="pos-main-stage">
           <div class="stage-left">
-            <POSPanel ref="posPanelRef" @transaction-completed="handleTransaccionCompletada" />
+            <POSPanel
+              ref="posPanelRef"
+              @transaction-completed="handleTransaccionCompletada"
+            />
           </div>
           <div class="stage-right">
             <SalesHistory :ventas="movimientosTurno" />

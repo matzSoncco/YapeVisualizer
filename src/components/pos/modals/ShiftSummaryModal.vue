@@ -22,7 +22,7 @@
 
         <div class="fund-row">
           <span class="fund-text"
-            >Efectivo Inicial: S/ {{ formatMonto(arqueoState.summaryData.fund) }}</span
+            >Efectivo Inicial: S/ {{ formatMonto(arqueoState.summaryData.stats?.fund) }}</span
           >
           <div :class="['variation-badge', differenceBoxClass]">
             <i :class="diffIconClass"></i>
@@ -35,26 +35,26 @@
         <div class="metric-card highlight-card">
           <span class="metric-label">Ventas del Día</span>
           <span class="metric-value text-primary"
-            >S/ {{ formatMonto(arqueoState.summaryData.totalIngresosDia) }}</span
+            >S/ {{ formatMonto(arqueoState.summaryData.stats?.totalDigitalSales + arqueoState.summaryData.stats?.totalCashSales) }}</span
           >
           <span class="metric-subtext">{{ arqueoState.summaryData?.stats?.totalTransactions }} ventas en total</span>
         </div>
 
         <div class="metric-card">
           <span class="metric-label">Yape / Plin</span>
-          <span class="metric-value">S/ {{ formatMonto(arqueoState.summaryData.totalDigital) }}</span>
+          <span class="metric-value">S/ {{ formatMonto(arqueoState.summaryData.stats?.totalDigitalSales) }}</span>
         </div>
 
         <div class="metric-card">
           <span class="metric-label">Efectivo en Caja</span>
           <span class="metric-value"
-            >S/ {{ formatMonto(arqueoState.summaryData.totalEfectivoFinal) }}</span
+            >S/ {{ formatMonto(arqueoState.summaryData.stats?.totalCashSales) }}</span
           >
         </div>
 
         <div class="metric-card">
           <span class="metric-label">Gastos</span>
-          <span class="metric-value color-error">S/ {{ formatMonto(arqueoState.summaryData.totalGastos) }}</span>
+          <span class="metric-value color-error">S/ {{ formatMonto(arqueoState.summaryData.stats?.totalExpenses) }}</span>
         </div>
       </div>
 
@@ -128,10 +128,12 @@ const cerrarTodo = () => {
 </script>
 
 <style scoped>
+/* Reset de Diálogo de PrimeVue */
 :deep(.compact-report-dialog .p-dialog-content) {
-  padding: 1.5rem !important;
-  overflow-y: hidden !important;
+  padding: 1.5rem;
+  overflow-y: hidden;
   border-radius: var(--radius-lg);
+  background: var(--bg-app);
 }
 
 .report-wrapper {
@@ -153,11 +155,12 @@ const cerrarTodo = () => {
   color: var(--color-text-muted);
   background: var(--bg-surface);
   padding: 0.35rem 0.85rem;
-  border-radius: 999px;
+  border-radius: var(--radius-xl);
   display: flex;
   align-items: center;
   gap: 0.4rem;
   letter-spacing: 0.02em;
+  border: 1px solid var(--color-border);
 }
 
 /* 2. CABECERA VISUAL */
@@ -181,25 +184,18 @@ const cerrarTodo = () => {
 }
 
 /* COLORES SEMÁNTICOS */
-.icon-success,
-.text-success {
-  color: var(--color-success);
-}
-.icon-error,
-.text-error {
-  color: var(--color-error);
-}
-.icon-info,
-.text-info {
-  color: #0284c7;
-}
+.icon-success, .text-success { color: var(--color-success); }
+.icon-error, .text-error { color: var(--color-error); }
+.icon-info, .text-info { color: var(--color-primary-mid); }
+
 .badge-info {
-  background-color: #e0f2fe;
-  color: #0369a1;
-  border-color: #bae6fd;
+  background-color: var(--bg-surface-alt);
+  color: var(--color-primary-mid);
+  border: 1px solid var(--color-border);
 }
-.text-primary {
-  color: var(--color-primary) !important;
+
+:deep(.text-primary) {
+  color: var(--color-primary);
 }
 
 /* BASE Y VARIACIÓN */
@@ -210,7 +206,7 @@ const cerrarTodo = () => {
   gap: 0.5rem;
   background: var(--bg-surface);
   padding: 0.5rem 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   width: 100%;
 }
@@ -226,22 +222,24 @@ const cerrarTodo = () => {
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font-size: 0.75rem;
   font-weight: 900;
 }
 
 .badge-success {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--color-cash-soft);
+  color: var(--color-cash);
 }
+
 .badge-error {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--color-error-soft);
+  color: var(--color-error-dark);
 }
+
 .badge-warning {
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--color-accent-soft);
+  color: var(--color-primary-mid);
 }
 
 /* GRILLAS CON METRICAS */
@@ -254,7 +252,7 @@ const cerrarTodo = () => {
 .metric-card {
   background-color: var(--bg-app);
   border: 1px solid var(--color-border);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 0.85rem;
   display: flex;
   flex-direction: column;
@@ -266,7 +264,7 @@ const cerrarTodo = () => {
 
 .highlight-card {
   background-color: var(--bg-surface);
-  border-color: var(--color-text-muted);
+  border-color: var(--color-primary-mid);
 }
 
 .metric-label {
@@ -281,38 +279,37 @@ const cerrarTodo = () => {
   font-size: 1.25rem;
   font-weight: 900;
   color: var(--color-text-main);
-  font-family: 'Nunito', sans-serif;
   letter-spacing: -0.02em;
 }
 
 .metric-subtext {
   font-size: 0.65rem;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   font-weight: 700;
   margin-top: 0.2rem;
 }
 
 .color-error {
-  color: var(--color-error);
+  color: var(--color-error-dark);
 }
 
 /* 4. BOTÓN */
-.btn-exit-report {
+:deep(.btn-exit-report.p-button) {
   width: 100%;
   height: 44px;
   font-weight: 800;
   font-size: 0.95rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background-color: var(--color-primary);
+  color: var(--color-accent);
   border: none;
-  color: white;
-  cursor: pointer;
   margin-top: 0.25rem;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
-.btn-exit-report:hover {
-  background-color: #1e293b;
+:deep(.btn-exit-report.p-button:hover) {
+  background-color: var(--color-primary-mid);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-interactive);
 }
 </style>

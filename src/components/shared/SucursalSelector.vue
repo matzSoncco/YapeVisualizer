@@ -2,39 +2,35 @@
   <div class="selector-container">
     <div class="selector-content">
       <header class="selector-header">
-        <div class="selector-icon">
-          <i class="pi pi-map-marker"></i>
-        </div>
         <h1 class="selector-title">¿Dónde estás trabajando hoy?</h1>
-        <p class="selector-subtitle">Selecciona tu ubicación para filtrar las ventas</p>
+        <p class="selector-subtitle">Selecciona tu sucursal para continuar</p>
       </header>
 
       <div v-if="loading" class="loading-state">
         <i class="pi pi-spin pi-spinner"></i>
-        <p>Cargando tiendas...</p>
+        <p>Cargando sucursales...</p>
       </div>
 
-      <div v-else class="branches-wrapper">
-        <div class="branches-grid">
-          <div
-            v-for="tienda in sucursales"
-            :key="tienda.id"
-            class="branch-card"
-            @click="handleSelect(tienda.nombre)"
-          >
-            <span class="branch-emoji">{{ tienda.icono }}</span>
-            <span class="branch-name">{{ tienda.nombre }}</span>
-            <i class="pi pi-chevron-right arrow-icon"></i>
-          </div>
+      <div v-else class="branches-grid">
+        <div
+          v-for="tienda in sucursales"
+          :key="tienda.id"
+          class="branch-card"
+          @click="handleSelect(tienda.nombre)"
+        >
+          <span class="branch-emoji">{{ tienda.icono }}</span>
+          <span class="branch-name">{{ tienda.nombre }}</span>
+          <i class="pi pi-chevron-right arrow-icon"></i>
+        </div>
 
-          <div class="branch-card admin-variant" @click="handleSelect('ADMIN')">
-            <span class="branch-name">PANEL ADMINISTRADOR</span>
-            <i class="pi pi-shield arrow-icon"></i>
-          </div>
+        <div class="branch-card admin-card" @click="handleSelect('ADMIN')">
+          <i class="pi pi-shield branch-emoji" style="font-size: 1.25rem"></i>
+          <span class="branch-name">Panel administrador</span>
+          <i class="pi pi-chevron-right arrow-icon"></i>
         </div>
 
         <p v-if="sucursales.length === 0" class="empty-message">
-          No hay tiendas registradas. Ingresa como ADMIN para crear una.
+          No hay sucursales registradas. Ingresa como administrador para crear una.
         </p>
       </div>
     </div>
@@ -42,13 +38,13 @@
     <Dialog
       v-model:visible="showPinModal"
       modal
-      header="Validación de Seguridad"
+      header="Validación de seguridad"
       class="custom-pin-dialog"
       :style="{ width: '400px' }"
       :draggable="false"
     >
       <div class="pin-modal-content">
-        <p class="pin-instructions">Ingresa tu PIN de acceso</p>
+        <p class="pin-instructions">Ingresa tu PIN de administrador</p>
         <div class="pin-input-wrapper">
           <InputOtp v-model="pin" integerOnly :length="4" mask />
         </div>
@@ -56,9 +52,9 @@
           <Button label="Cancelar" severity="secondary" text @click="showPinModal = false" />
           <Button
             label="Acceder"
-            @click="verificarPin"
             :loading="loadingPin"
             :disabled="pin.length < 4"
+            @click="verificarPin"
           />
         </div>
       </div>
@@ -81,10 +77,6 @@ const showPinModal = ref(false)
 const pin = ref('')
 const loadingPin = ref(false)
 
-/**
- * Maneja la selección de una sucursal
- * @param {String} valorSeleccionado - uid o 'ADMIN' seleccionado
- */
 const handleSelect = (valorSeleccionado) => {
   if (valorSeleccionado === 'ADMIN') {
     pin.value = ''
@@ -92,41 +84,37 @@ const handleSelect = (valorSeleccionado) => {
     return
   }
 
-  const existe = sucursales.value.find((s) => s.nombre === valorSeleccionado)
-  if (existe) {
-    seleccionar(existe.id)
-  }
+  const tienda = sucursales.value.find((s) => s.nombre === valorSeleccionado)
+  if (tienda) seleccionar(tienda.id)
 }
 
 const verificarPin = async () => {
   if (pin.value.length < 4) return
+
   loadingPin.value = true
-  await new Promise((r) => setTimeout(r, 600))
 
-  const pinCorrecto = store.userProfile.adminPin
-
-  if (pin.value === String(pinCorrecto)) {
+  if (pin.value === String(store.userProfile.adminPin)) {
     setAdminAuth(true)
     seleccionar('ADMIN')
     showPinModal.value = false
-    toast.add({ severity: 'success', summary: 'Acceso Concedido', life: 2000 })
+    toast.add({ severity: 'success', summary: 'Acceso concedido', life: 2000 })
     router.push({ name: 'admin' })
   } else {
     toast.add({
       severity: 'error',
-      summary: 'Acceso Denegado',
-      detail: 'PIN Incorrecto',
+      summary: 'PIN incorrecto',
+      detail: 'Verifica e intenta de nuevo',
       life: 3000,
     })
     pin.value = ''
   }
+
   loadingPin.value = false
 }
 </script>
 
 <style scoped>
-/* SELECTOR DE SUCURSAL - ADN MINIMALISTA & LÍNEAS */
-
+/* ── Contenedor ───────────────────────────────────────────── */
 .selector-container {
   min-height: 100vh;
   display: flex;
@@ -141,15 +129,10 @@ const verificarPin = async () => {
   max-width: 500px;
 }
 
+/* ── Header ───────────────────────────────────────────────── */
 .selector-header {
   text-align: center;
   margin-bottom: 2.5rem;
-}
-
-.selector-icon {
-  color: var(--color-accent);
-  font-size: 2rem;
-  margin-bottom: 1rem;
 }
 
 .selector-title {
@@ -157,35 +140,34 @@ const verificarPin = async () => {
   font-weight: 800;
   color: var(--color-primary);
   letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
 }
 
 .selector-subtitle {
-  color: var(--color-text-muted);
+  margin: 0;
   font-size: 0.9rem;
-  margin-top: 0.5rem;
+  color: var(--color-text-muted);
 }
 
-/* GRID DE SUCURSALES (Priorizando líneas finas) */
+/* ── Grid de sucursales ───────────────────────────────────── */
 .branches-grid {
   display: grid;
-  /* Esto es magia: crea columnas de mínimo 220px y máximo lo que sobre.
-     Si no caben dos, se pone una sola automáticamente. */
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 1rem;
-  max-height: 60vh; /* Si hay demasiadas, el contenedor scrollea, no toda la página */
+  max-height: 60vh;
   overflow-y: auto;
-  padding: 0.5rem; /* Espacio para que la sombra no se corte */
+  padding: 0.25rem;
 }
 
-/* Estilizamos el scrollbar para que sea minimalista */
 .branches-grid::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 .branches-grid::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
+/* ── Cards ────────────────────────────────────────────────── */
 .branch-card {
   background: var(--bg-app);
   border: 1px solid var(--color-border);
@@ -193,27 +175,27 @@ const verificarPin = async () => {
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
 }
 
 .branch-card:hover {
   border-color: var(--color-primary);
   transform: translateX(4px);
-  box-shadow: var(--shadow-flat);
 }
 
 .branch-emoji {
   font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
 .branch-name {
+  flex: 1;
   font-weight: 700;
   color: var(--color-text-main);
-  flex-grow: 1;
-  letter-spacing: 0.01em;
 }
 
 .arrow-icon {
@@ -226,108 +208,41 @@ const verificarPin = async () => {
   color: var(--color-primary);
 }
 
-/* Variante Admin */
-.admin-variant {
-  margin-top: 1rem;
-  background-color: var(--color-primary) !important;
+/* ── Variante admin ───────────────────────────────────────── */
+.admin-card {
+  background: var(--color-primary);
   border-color: var(--color-primary);
+  margin-top: 0.5rem;
 }
 
-.admin-variant .branch-name {
+.admin-card .branch-name,
+.admin-card .branch-emoji {
   color: var(--color-accent);
 }
 
-.admin-variant .arrow-icon {
-  color: var(--color-accent) !important;
+.admin-card .arrow-icon {
+  color: var(--color-accent);
+  opacity: 0.6;
+}
+
+.admin-card:hover {
+  border-color: var(--color-accent);
+  transform: translateX(4px);
+}
+
+.admin-card:hover .arrow-icon {
+  color: var(--color-accent);
   opacity: 1;
 }
 
-.admin-variant:hover {
-  border-color: var(--color-accent);
-  /* Un brillo sutil amarillo al pasar el mouse sobre la de Admin */
-  box-shadow: 0 0 15px rgba(250, 204, 21, 0.2);
-}
-
-/* MODAL DE SEGURIDAD (PIN) */
-:deep(.custom-pin-dialog) {
-  border-radius: 16px !important;
-  border: none !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-}
-
-:deep(.custom-pin-dialog .p-dialog-header) {
-  background: var(--bg-surface);
-  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
-  color: var(--color-primary);
-  font-weight: 800;
-  font-size: 1rem;
-}
-
-.pin-modal-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  padding: 1rem 0;
-}
-
-.pin-instructions {
+/* ── Estado vacío y carga ─────────────────────────────────── */
+.empty-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 1rem;
   font-size: 0.85rem;
   color: var(--color-text-muted);
-  font-weight: 600;
-  margin: 0;
-}
-
-/* Estilo para el InputOtp de PrimeVue */
-.pin-input-wrapper {
-  padding: 0.5rem;
-}
-
-:deep(.p-inputotp) {
-  gap: 0.75rem;
-}
-
-:deep(.p-inputotp-input) {
-  width: 3.5rem !important;
-  height: 4.5rem !important;
-  font-size: 2rem !important;
-  font-weight: 900 !important;
-  border: 2px solid var(--color-border) !important;
-  border-radius: 12px !important;
-  background: var(--bg-surface) !important;
-  color: var(--color-primary) !important;
-  transition: all 0.2s ease;
-}
-
-:deep(.p-inputotp-input:focus) {
-  border-color: var(--color-accent) !important; /* El toque amarillo de seguridad */
-  box-shadow: 0 0 0 4px var(--color-accent-soft) !important;
-  transform: translateY(-2px);
-}
-
-.pin-actions {
-  display: flex;
-  gap: 1rem;
-  width: 100%;
-  margin-top: 1rem;
-}
-
-.pin-actions .p-button {
-  flex: 1;
-  font-weight: 800 !important;
-  height: 48px;
-  border-radius: 10px;
-}
-
-/* Botón principal con el color de la app */
-.pin-actions .p-button:not(.p-button-secondary) {
-  background: var(--color-primary) !important;
-  color: var(--color-accent) !important;
-  border: none !important;
-}
-
-.pin-actions .p-button-secondary {
-  color: var(--color-text-muted) !important;
+  text-align: center;
 }
 
 .loading-state {
@@ -337,9 +252,86 @@ const verificarPin = async () => {
 }
 
 .loading-state i {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
   display: block;
+  font-size: 2rem;
+  margin-bottom: 1rem;
   color: var(--color-accent);
+}
+
+/* ── Modal PIN ────────────────────────────────────────────── */
+:deep(.custom-pin-dialog) {
+  border-radius: var(--radius-lg);
+  border: none;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+:deep(.custom-pin-dialog .p-dialog-header) {
+  background: var(--bg-surface);
+  padding: 1.5rem 1.5rem 0.5rem;
+  color: var(--color-primary);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.pin-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.75rem;
+  padding: 0.5rem 0 0.5rem;
+}
+
+.pin-instructions {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+:deep(.p-inputotp) {
+  gap: 0.75rem;
+}
+
+:deep(.p-inputotp-input) {
+  width: 3.5rem;
+  height: 4.5rem;
+  font-size: 2rem;
+  font-weight: 900;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--color-primary);
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+:deep(.p-inputotp-input:focus) {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-soft);
+  transform: translateY(-2px);
+}
+
+.pin-actions {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.pin-actions .p-button {
+  flex: 1;
+  height: 48px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+}
+
+:deep(.pin-actions .p-button:not(.p-button-secondary)) {
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border: none;
+}
+
+:deep(.pin-actions .p-button-secondary) {
+  color: var(--color-text-muted);
 }
 </style>

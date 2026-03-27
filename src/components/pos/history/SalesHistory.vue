@@ -13,7 +13,7 @@
 
     <div v-if="ventas.length === 0" class="empty-history">
       <div class="empty-visual">
-        <i class="pi pi-database"></i>
+        <i class="pi pi-objects-column"></i>
         <p>Aún no hay movimientos registrados</p>
       </div>
     </div>
@@ -23,7 +23,7 @@
         :value="ventas"
         scrollable
         scrollHeight="flex"
-        class="p-datatable-sm custom-table"
+        class="custom-table"
         dataKey="id"
       >
         <Column field="timestamp" header="Hora" class="col-time">
@@ -38,9 +38,9 @@
             </div>
             <div v-else class="client-info">
               <span class="client-name">{{ slotProps.data.clientName || 'Cliente Eventual' }}</span>
-              <span v-if="slotProps.data.ticketNumber" class="ticket-ref">{{
-                slotProps.data.ticketNumber
-              }}</span>
+              <span v-if="slotProps.data.ticketNumber" class="ticket-ref">
+                {{ slotProps.data.ticketNumber }}
+              </span>
             </div>
           </template>
         </Column>
@@ -179,26 +179,23 @@ const imprimirTicket = (data) => {
 </script>
 
 <style scoped>
+/* Layout y Contenedor Principal */
 .history-container {
   flex: 1;
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: white;
+  background-color: var(--bg-app);
 }
 
 .history-header {
   padding: 1rem 1.5rem;
-  background: white;
+  background: var(--bg-app);
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-}
-
-:deep(.p-datatable-tbody > tr:has(.is-expense)) {
-  background-color: #fffafb !important;
 }
 
 .header-info {
@@ -208,15 +205,10 @@ const imprimirTicket = (data) => {
   color: var(--color-primary);
 }
 
-.header-info i {
-  font-size: 1.2rem;
-}
-
 .header-info h3 {
   font-size: 1rem;
   font-weight: 800;
   margin: 0;
-  letter-spacing: -0.01em;
 }
 
 .summary-badge {
@@ -238,41 +230,54 @@ const imprimirTicket = (data) => {
   color: var(--color-primary);
 }
 
-/* TABLA: Personalización profunda de PrimeVue */
+/* Tabla: Personalización mediante especificidad de clases */
 .table-wrapper {
   flex: 1;
   min-height: 0;
   width: 100%;
-  position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
-:deep(.custom-table .p-datatable-thead > tr > th) {
-  background: var(--bg-app) !important;
-  color: var(--color-text-muted) !important;
-  font-size: 0.7rem !important;
-  font-weight: 800 !important;
-  text-transform: uppercase !important;
-  padding: 0.75rem 1rem !important;
-  border: none !important;
+:deep(.p-datatable.custom-table) {
+  /* Cabecera de tabla */
+  .p-datatable-thead > tr > th {
+    background: var(--bg-surface);
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 0.75rem 1rem;
+    border: none;
+  }
+
+  /* Filas y Celdas */
+  .p-datatable-tbody > tr {
+    background: transparent;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: var(--bg-surface);
+    }
+
+    /* Fila de Gasto: Usamos la clase para teñir el fondo */
+    &:has(.is-expense) {
+      background-color: var(--color-error-soft);
+    }
+
+    > td {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+  }
+
+  /* Etiquetas (Tags) dentro de la tabla */
+  .p-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.2rem 0.6rem;
+  }
 }
 
-:deep(.custom-table .p-datatable-tbody > tr) {
-  background: transparent !important;
-  transition: background 0.2s;
-}
-
-:deep(.custom-table .p-datatable-tbody > tr:hover) {
-  background: var(--bg-app) !important;
-}
-
-:deep(.custom-table .p-datatable-tbody > tr > td) {
-  padding: 0.85rem 1rem !important;
-  border-bottom: 1px solid var(--bg-surface) !important;
-}
-
-/* CELDAS ESPECÍFICAS */
+/* Tipografía y Estados de Celda */
 .time-text {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
@@ -281,22 +286,19 @@ const imprimirTicket = (data) => {
 
 .client-name {
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-text-main);
   font-size: 0.9rem;
 }
 
 .ticket-ref {
   display: block;
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   font-family: monospace;
 }
 
 .expense-row-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #ef4444;
+  color: var(--color-error-dark);
   font-weight: 800;
   font-size: 0.75rem;
 }
@@ -305,86 +307,60 @@ const imprimirTicket = (data) => {
   font-weight: 800;
   font-size: 0.95rem;
   color: var(--color-primary);
+
+  &.is-expense {
+    color: var(--color-error-dark);
+  }
 }
 
-.amount-text.is-expense {
-  color: #ef4444;
-}
+/* Control de Anchos de Columna */
+.col-time { width: 90px; }
+.col-amount { text-align: right; width: 110px; }
+.col-actions { width: 90px; }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
-
-.col-time {
-  width: 90px;
-}
-.col-amount {
-  text-align: right;
-  width: 110px;
-}
-.col-actions {
-  width: 90px;
-}
-
-:deep(.p-tag) {
-  font-size: 0.6rem !important;
-  padding: 0.15rem 0.5rem !important;
-}
-
+/* Botones de Acción Refactorizados con :deep */
 .actions-group {
   display: flex;
   gap: 0.25rem;
   justify-content: center;
 }
 
-.btn-action-info {
-  color: #64748b !important;
+:deep(.p-button.btn-action-info) {
+  color: var(--color-text-muted);
 }
 
-.btn-action-print {
-  color: #22c55e !important;
+:deep(.p-button.btn-action-print) {
+  color: var(--color-success);
 }
 
-.btn-action-info:hover {
-  background: #f1f5f9 !important;
-}
-.btn-action-print:hover {
-  background: #f0fdf4 !important;
+:deep(.p-button.btn-action-info:hover) {
+  background: var(--bg-surface-alt);
 }
 
-/* BADGES PERSONALIZADOS */
-:deep(.p-tag) {
-  font-size: 0.65rem !important;
-  font-weight: 800 !important;
-  padding: 0.2rem 0.6rem !important;
+:deep(.p-button.btn-action-print:hover) {
+  background: var(--color-cash-soft);
 }
 
-.tag-yape {
-  background: #f5f3ff !important;
-  color: #7c3aed !important;
-  border: 1px solid #ddd6fe !important;
+/* Badges de Métodos (Clases Dinámicas) */
+:deep(.p-tag.tag-yape) {
+  background: var(--color-yape-soft);
+  color: var(--color-yape);
+  border: 1px solid var(--color-border);
 }
 
-.tag-plin {
-  background: #ecfeff !important;
-  color: #0891b2 !important;
-  border: 1px solid #cffafe !important;
+:deep(.p-tag.tag-plin) {
+  background: var(--color-plin-soft);
+  color: var(--color-plin);
+  border: 1px solid var(--color-border);
 }
 
-.tag-cash {
-  background: #f0fdf4 !important;
-  color: #15803d !important;
-  border: 1px solid #bbf7d0 !important;
+:deep(.p-tag.tag-cash) {
+  background: var(--color-cash-soft);
+  color: var(--color-cash);
+  border: 1px solid var(--color-border);
 }
 
-/* ESTADO VACÍO */
+/* Estado Vacío */
 .empty-history {
   flex: 1;
   display: flex;
@@ -394,21 +370,16 @@ const imprimirTicket = (data) => {
 
 .empty-visual {
   text-align: center;
-  opacity: 0.3;
   color: var(--color-text-muted);
-}
+  opacity: 0.6;
 
-.empty-visual i {
-  font-size: 3.5rem;
-  margin-bottom: 1rem;
-}
-
-.empty-visual p {
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.col-amount {
-  text-align: right;
+  i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  p {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
 }
 </style>

@@ -1,6 +1,5 @@
 <template>
   <div class="feed-strip">
-    
     <div class="feed-label">
       <div class="pulse-dot"></div>
       <span>EN VIVO</span>
@@ -18,7 +17,7 @@
         class="feed-chip"
         @click="$emit('pescar', pagoDigital)"
       >
-        <div class="chip-icon">
+        <div class="chip-icon" :style="{ color: getWalletColor(pagoDigital.wallet) }">
           <i class="pi pi-qrcode"></i>
         </div>
         <div class="chip-info">
@@ -28,12 +27,8 @@
         <div class="chip-amount">
           S/ {{ Number(pagoDigital.amount).toFixed(2) }}
         </div>
-        <div class="chip-action">
-           <i class="pi pi-plus"></i>
-        </div>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -48,6 +43,22 @@ defineProps({
 });
 
 /**
+ * Retorna la variable CSS correspondiente al color de la billetera.
+ * @param {string} wallet - El nombre de la billetera (YAPE, PLIN, etc.)
+ */
+const getWalletColor = (wallet) => {
+  if (!wallet) return 'var(--color-text-muted)';
+  
+  const walletMap = {
+    'YAPE': 'var(--color-yape)',
+    'PLIN': 'var(--color-plin)',
+    // Puedes seguir agregando aquí: 'TUNKI': 'var(--color-tunki)'
+  };
+
+  return walletMap[wallet.toUpperCase()] || 'var(--color-text-muted)';
+};
+
+/**
  * Eventos personalizados emitidos por el componente
  * @event pescar - Evento emitido al reclamar una transaccion
  * @property {Object} pagoDigital - Objeto de la transacción digital reclamada
@@ -56,14 +67,16 @@ defineEmits(['pescar']);
 </script>
 
 <style scoped>
+/* Contenedor principal alineado al flujo del layout */
 .feed-strip {
   height: 100%;
   display: flex;
   align-items: center;
-  /* Quitamos padding horizontal del contenedor principal */
-  padding: 0 0 0 1rem; 
+  padding: 0 0 0 1rem;
+  background: var(--bg-app);
 }
 
+/* Indicador de estado con separador visual */
 .feed-label {
   display: flex;
   align-items: center;
@@ -74,12 +87,14 @@ defineEmits(['pescar']);
   border-right: 1px solid var(--color-border);
   padding-right: 1rem;
   height: 60%;
+  user-select: none;
 }
 
+/* Animación de pulso utilizando la variable de éxito */
 .pulse-dot {
   width: 6px;
   height: 6px;
-  background-color: var(--color-success); /* Verde = Sistema OK */
+  background-color: var(--color-success);
   border-radius: 50%;
   box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
   animation: pulse 2s infinite;
@@ -91,50 +106,47 @@ defineEmits(['pescar']);
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
+/* Estado vacío - Coherencia con color muted */
 .feed-empty {
   color: var(--color-text-muted);
   font-size: 0.85rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding-left: 1rem;
   opacity: 0.7;
 }
 
-/* WRAPPER HORIZONTAL */
+/* Área de scroll horizontal */
 .feed-items-wrapper {
   display: flex;
   gap: 0.75rem;
-  overflow-x: auto; /* Scroll horizontal nativo */
-  overflow-y: visible; /* IMPORTANTE: Permite que el hover y shadow se salgan */
-  
-  /* Padding generoso para que el hover no se corte */
-  padding: 10px 1rem 10px 0.5rem; 
-  
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 8px 1rem 8px 0.75rem; 
   flex: 1;
-  /* Scroll suave */
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Estilo del Scrollbar (Fino y discreto) */
-.feed-items-wrapper::-webkit-scrollbar { height: 6px; }
+/* Scrollbar minimalista */
+.feed-items-wrapper::-webkit-scrollbar { height: 4px; }
 .feed-items-wrapper::-webkit-scrollbar-track { background: transparent; }
 .feed-items-wrapper::-webkit-scrollbar-thumb { 
-    background: rgba(0,0,0,0.1); 
-    border-radius: 10px; 
+    background: var(--color-border); 
+    border-radius: var(--radius-md); 
 }
-.feed-items-wrapper::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
 
-/* TARJETA TIPO CHIP */
+/* Elemento de pago (Chip) */
 .feed-chip {
-  flex-shrink: 0; /* Evita que se aplasten */
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  background: #ffffff;
+  background: var(--bg-app);
   border: 1px solid var(--color-border);
   padding: 0.4rem 0.5rem 0.4rem 0.75rem;
-  border-radius: 100px; /* Forma de píldora completa */
+  border-radius: 100px;
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: max-content;
@@ -142,50 +154,42 @@ defineEmits(['pescar']);
 }
 
 .feed-chip:hover {
-  border-color: var(--color-primary);
+  border-color: var(--color-primary-mid);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-pro);
+  box-shadow: var(--shadow-card);
 }
 
+/* Icono con identidad visual Yape */
 .chip-icon {
-  color: #7c3aed; /* Morado Yape sutil */
+  display: flex;
+  align-items: center;
+  transition: color 0.3s ease;
 }
 
 .chip-info {
   display: flex;
   flex-direction: column;
-  line-height: 1;
+  line-height: 1.1;
 }
 
-.chip-sender { font-weight: 700; font-size: 0.8rem; color: var(--color-primary); }
-.chip-time { font-size: 0.65rem; color: var(--color-text-muted); }
+.chip-sender { 
+  font-weight: 700; 
+  font-size: 0.8rem; 
+  color: var(--color-text-main); 
+}
 
+.chip-time { 
+  font-size: 0.65rem; 
+  color: var(--color-text-muted); 
+}
+
+/* Resalte de monto con superficie secundaria */
 .chip-amount {
   font-weight: 800;
   font-size: 0.9rem;
   color: var(--color-primary);
-  background: var(--bg-surface);
+  background: var(--bg-surface-alt);
   padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.chip-action {
-  width: 24px;
-  height: 24px;
-  background: var(--color-primary);
-  color: var(--color-accent);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.6rem;
-  opacity: 0; /* Oculto por defecto */
-  transform: scale(0.8);
-  transition: all 0.2s;
-}
-
-.feed-chip:hover .chip-action {
-  opacity: 1;
-  transform: scale(1);
+  border-radius: var(--radius-md);
 }
 </style>
