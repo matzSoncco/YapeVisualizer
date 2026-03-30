@@ -1,78 +1,132 @@
 <template>
-  <div class="stats-grid">
+  <div class="bento-grid">
     
-    <Card class="stat-card sales">
-      <template #content>
-        <div class="stat-inner">
-          <div class="stat-data">
-            <span class="stat-label">Ventas Totales</span>
-            <div class="stat-value">S/ {{ formatMoney(kpis.totalVentas) }}</div>
-            <div class="stat-footer">En el periodo seleccionado</div>
-          </div>
-          <div class="stat-icon-box">
-            <i class="pi pi-dollar"></i>
-          </div>
+    <div class="bento-card bento-main">
+      <div class="card-header">
+        <span class="bento-label">Ingresos Netos</span>
+        <div class="icon-wrapper icon-wallet">
+          <i class="pi pi-wallet"></i>
         </div>
-      </template>
-    </Card>
+      </div>
+      <div class="bento-body">
+        <h2 class="bento-value color-dark">S/ {{ formatMoney(kpis.totalVentas) }}</h2>
+        <div class="bento-footer">
+          <span class="color-danger fw-600">- S/ {{ formatMoney(kpis.totalGastos || 0) }}</span>
+          <span class="color-muted spacing-left">en gastos</span>
+        </div>
+      </div>
+    </div>
 
-    <Card class="stat-card digital">
-      <template #content>
-        <div class="stat-inner">
-          <div class="stat-data">
-            <span class="stat-label">Digitalización</span>
-            <div class="stat-value">{{ kpis.porcentajeDigital.toFixed(1) }}%</div>
-            <div class="stat-footer">
-              <span class="highlight">S/ {{ formatMoney(kpis.totalDigital) }}</span> por Yape
+    <div class="bento-card bento-composition">
+      <div class="card-header">
+        <span class="bento-label">Composición de Ingresos</span>
+      </div>
+      <div class="bento-body">
+        <div class="composition-bar-wrapper">
+          <div class="composition-bar">
+            <div class="bar-segment cash" :style="{ width: `${pctEfectivo}%` }" title="Efectivo"></div>
+            <div class="bar-segment digital" :style="{ width: `${pctDigital}%` }" title="Digital (Yape/Tarjetas)"></div>
+          </div>
+          <div class="composition-legend">
+            <div class="legend-item">
+              <span class="dot cash-dot"></span>
+              <div class="legend-text">
+                <strong class="color-dark">{{ pctEfectivo }}% Efectivo</strong>
+                <span class="color-muted fw-600">S/ {{ formatMoney(efectivoEstimado) }}</span>
+              </div>
+            </div>
+            <div class="legend-item align-right">
+              <div class="legend-text text-right">
+                <strong class="color-dark">{{ pctDigital }}% Digital</strong>
+                <span class="color-muted fw-600">S/ {{ formatMoney(kpis.totalDigital) }}</span>
+              </div>
+              <span class="dot digital-dot"></span>
             </div>
           </div>
-          <div class="stat-icon-box">
-            <i class="pi pi-mobile"></i>
-          </div>
         </div>
-      </template>
-    </Card>
+      </div>
+    </div>
 
-    <Card class="stat-card ticket">
-      <template #content>
-        <div class="stat-inner">
-          <div class="stat-data">
-            <span class="stat-label">Ticket Promedio</span>
-            <div class="stat-value">S/ {{ formatMoney(kpis.ticketPromedio) }}</div>
-            <div class="stat-footer">Promedio por cierre de caja</div>
-          </div>
-          <div class="stat-icon-box">
-            <i class="pi pi-shopping-cart"></i>
-          </div>
+    <div class="bento-card" :class="kpis.diferenciaNeta < 0 ? 'health-warn' : 'health-ok'">
+      <div class="card-header">
+        <span class="bento-label">Salud de Caja</span>
+        <div class="icon-wrapper">
+          <i :class="kpis.diferenciaNeta < 0 ? 'pi pi-exclamation-triangle' : 'pi pi-check-circle'"></i>
         </div>
-      </template>
-    </Card>
+      </div>
+      <div class="bento-body">
+        <h2 class="bento-value" :class="kpis.diferenciaNeta < 0 ? 'color-danger' : 'color-success'">
+          {{ kpis.diferenciaNeta > 0 ? '+' : '' }}S/ {{ formatMoney(kpis.diferenciaNeta) }}
+        </h2>
+        <div class="bento-footer">
+          <span class="color-muted">Descuadre acumulado</span>
+        </div>
+      </div>
+    </div>
 
-    <Card 
-      class="stat-card audit" 
-      :class="kpis.diferenciaNeta < 0 ? 'is-negative' : 'is-positive'"
-    >
-      <template #content>
-        <div class="stat-inner">
-          <div class="stat-data">
-            <span class="stat-label">Balance de Auditoría</span>
-            <div class="stat-value">
-              {{ kpis.diferenciaNeta > 0 ? '+' : '' }}S/ {{ formatMoney(kpis.diferenciaNeta) }}
-            </div>
-            <div class="stat-footer">Acumulado de descuadres</div>
-          </div>
-          <div class="stat-icon-box">
-            <i :class="['pi', kpis.diferenciaNeta < 0 ? 'pi-exclamation-triangle' : 'pi-check-circle']"></i>
-          </div>
+    <div class="bento-card">
+      <div class="card-header">
+        <span class="bento-label">Flujo de Clientes</span>
+        <div class="icon-wrapper icon-users">
+          <i class="pi pi-users"></i>
         </div>
-      </template>
-    </Card>
+      </div>
+      <div class="bento-body">
+        <h2 class="bento-value color-dark">{{ kpis.totalTransactions }}</h2>
+        <div class="bento-footer">
+          <span class="color-muted">Ventas realizadas</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bento-card">
+      <div class="card-header">
+        <span class="bento-label">Ticket Promedio</span>
+        <div class="icon-wrapper icon-receipt">
+          <i class="pi pi-receipt"></i>
+        </div>
+      </div>
+      <div class="bento-body">
+        <h2 class="bento-value color-dark">S/ {{ formatMoney(kpis.ticketPromedio) }}</h2>
+        <div class="bento-footer">
+          <span class="color-muted">Gasto medio por cliente</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bento-card bento-products">
+      <div class="card-header">
+        <span class="bento-label">Top Productos (Mayor Rotación)</span>
+        <div class="status-badge">Próximamente</div>
+      </div>
+      <div class="bento-body empty-state-body">
+        <i class="pi pi-box empty-icon"></i>
+        <p class="empty-text">El módulo de inventario está en desarrollo.<br>Pronto verás aquí qué productos se venden más.</p>
+      </div>
+    </div>
+
+    <div class="bento-card bento-branches">
+      <div class="card-header">
+        <span class="bento-label">Rendimiento por Sede</span>
+      </div>
+      <div class="bento-body wrapper-branches">
+        <div class="branch-skeleton">
+          <div class="bento-body empty-state-body">
+            <i class="pi pi-box empty-icon"></i>
+            <p class="empty-text">El módulo de rendimiento por sede está en desarrollo.<br>Pronto verás aquí el desempeño de cada sede.</p>
+          </div>
+          <div class="skel-line w-100"></div>
+          <div class="skel-line w-80"></div>
+          <div class="skel-line w-60"></div>
+        </div>
+      </div>
+    </div>
 
   </div>
 </template>
 
 <script setup>
-import Card from 'primevue/card';
+import { computed } from 'vue';
 
 const props = defineProps({
   kpis: {
@@ -80,10 +134,11 @@ const props = defineProps({
     required: true,
     default: () => ({
       totalVentas: 0,
-      porcentajeDigital: 0,
       totalDigital: 0,
-      ticketPromedio: 0,
-      diferenciaNeta: 0
+      totalGastos: 0, 
+      totalTransactions: 0,
+      diferenciaNeta: 0,
+      ticketPromedio: 0
     })
   }
 });
@@ -91,98 +146,244 @@ const props = defineProps({
 const formatMoney = (value) => {
   return Number(value || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
+
+// Cálculos para la barra de composición
+const efectivoEstimado = computed(() => Math.max(0, props.kpis.totalVentas - props.kpis.totalDigital));
+
+const pctEfectivo = computed(() => {
+  if (props.kpis.totalVentas === 0) return 0;
+  return Math.round((efectivoEstimado.value / props.kpis.totalVentas) * 100);
+});
+
+const pctDigital = computed(() => {
+  if (props.kpis.totalVentas === 0) return 0;
+  return 100 - pctEfectivo.value;
+});
 </script>
 
 <style scoped>
-/* GRID DE ESTADÍSTICAS */
-.stats-grid {
+/* ── CLASES UTILITARIAS PURAS ── */
+.color-dark { color: #0f172a; }
+.color-muted { color: #94a3b8; }
+.color-danger { color: #ef4444; }
+.color-success { color: #10b981; }
+.fw-600 { font-weight: 600; }
+.spacing-left { margin-left: 0.35rem; }
+.text-right { text-align: right; }
+.align-right { align-items: flex-end !important; }
+
+.w-100 { width: 100%; }
+.w-80 { width: 80%; }
+.w-60 { width: 60%; }
+
+/* ── GRÁFICA TIPO BENTO BOX ── */
+.bento-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(12, 1fr);
   gap: 1.25rem;
 }
 
-.stat-card {
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 16px !important;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+.bento-card {
+  background: #ffffff;
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 1.25rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  grid-column: span 4;
 }
 
-.stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+.bento-card:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
 }
 
-.stat-inner {
+/* Modificadores de ancho y alto para que se vean bien */
+.bento-main { grid-column: span 4; }
+.bento-composition { grid-column: span 8; }
+.bento-products { grid-column: span 8; min-height: 220px; }
+.bento-branches { grid-column: span 4; min-height: 220px; }
+
+/* ── ELEMENTOS INTERNOS ── */
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 1.25rem;
 }
 
-.stat-data {
+/* El body debe estirarse para llenar el resto de la tarjeta */
+.bento-body {
   display: flex;
   flex-direction: column;
+  justify-content: flex-end;
+  flex: 1; 
 }
 
-.stat-label {
+.bento-label {
   font-size: 0.75rem;
   font-weight: 800;
-  color: #64748b; /* Slate 500 */
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  color: #64748b;
 }
 
-.stat-value {
-  font-size: 1.5rem;
-  font-weight: 900;
-  color: #0f172a; /* Slate 900 */
-  margin: 0.4rem 0;
-}
-
-.stat-footer {
-  font-size: 0.7rem;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-.stat-icon-box {
-  width: 42px;
-  height: 42px;
+/* Colores personalizados de iconos */
+.icon-wrapper {
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
+}
+.icon-wallet { background: #f1f5f9; color: #64748b; }
+.icon-users { background: #eff6ff; color: #3b82f6; }
+.icon-receipt { background: #faf5ff; color: #a855f7; }
+
+.bento-value {
+  font-size: 2rem;
+  font-weight: 900;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-/* COLORES POR CATEGORÍA */
-.stat-card.sales .stat-icon-box { background: #f0fdf4; color: #22c55e; }
-.stat-card.digital .stat-icon-box { background: #f5f3ff; color: #7c3aed; }
-.stat-card.digital .highlight { color: #7c3aed; font-weight: 800; }
-.stat-card.ticket .stat-icon-box { background: #eff6ff; color: #3b82f6; }
+.bento-footer {
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
 
-/* VARIACIONES DE AUDITORÍA */
-.stat-card.audit.is-positive .stat-icon-box { background: #ecfdf5; color: #10b981; }
-.stat-card.audit.is-positive .stat-value { color: #10b981; }
+/* ── BARRA DE COMPOSICIÓN ── */
+.composition-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: auto;
+}
 
-.stat-card.audit.is-negative .stat-icon-box { background: #fef2f2; color: #ef4444; }
-.stat-card.audit.is-negative .stat-value { color: #ef4444; }
-
-/* Eliminamos bordes izquierdos gruesos por algo más fino */
-.stat-card {
-  position: relative;
+.composition-bar {
+  width: 100%;
+  height: 24px;
+  background: #f1f5f9;
+  border-radius: 999px;
+  display: flex;
   overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
 }
-.stat-card::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
+
+.bar-segment {
+  height: 100%;
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.sales::after { background: #22c55e; }
-.digital::after { background: #7c3aed; }
-.ticket::after { background: #3b82f6; }
-.is-positive::after { background: #10b981; }
-.is-negative::after { background: #ef4444; }
+
+.bar-segment.cash { background: #10b981; border-right: 2px solid #fff; }
+.bar-segment.digital { background: #6366f1; }
+
+.composition-legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.legend-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.legend-text strong { font-size: 0.95rem; }
+.legend-text span { font-size: 0.75rem; }
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-top: 4px;
+}
+.cash-dot { background: #10b981; }
+.digital-dot { background: #6366f1; }
+
+/* ── VARIACIONES DE SALUD ── */
+.health-ok .icon-wrapper { background: #ecfdf5; color: #10b981; }
+.health-warn { border-color: #fca5a5; background: #fef2f2; }
+.health-warn .icon-wrapper { background: #fee2e2; color: #ef4444; }
+
+/* Badge para próximos features (Reemplaza a Tag de PrimeVue para más control) */
+.status-badge {
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── EMPTY STATES ── */
+.empty-state-body {
+  align-items: center;
+  justify-content: center !important;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  padding: 1.5rem;
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  color: #cbd5e1;
+  margin-bottom: 0.75rem;
+}
+
+.empty-text {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.wrapper-branches {
+  justify-content: flex-end;
+}
+
+.branch-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.skel-line {
+  height: 32px;
+  background: #f1f5f9;
+  border-radius: 8px;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1200px) {
+  .bento-products { grid-column: span 12; }
+  .bento-branches { grid-column: span 12; }
+}
+
+@media (max-width: 1024px) {
+  .bento-main { grid-column: span 6; }
+  .bento-composition { grid-column: span 12; order: -1; }
+  .bento-card { grid-column: span 6; }
+}
+
+@media (max-width: 768px) {
+  .bento-card { grid-column: span 12 !important; }
+}
 </style>

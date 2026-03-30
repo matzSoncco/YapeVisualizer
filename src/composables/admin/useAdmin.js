@@ -60,6 +60,10 @@ export function useAdmin() {
           montoEfectivo: Number(data.stats?.totalCashSales || 0),
           totalIngresosDia: Number((data.stats?.totalCashSales || 0) + (data.stats?.totalDigitalSales || 0)),
           totalGastos: Number(data.stats?.totalExpenses || 0),
+          totalTransactions: Number(data.stats?.totalTransactions || 0),
+          ticketPromedio: Number(data.stats?.totalTransactions) > 0
+            ? ((data.stats?.totalCashSales || 0) + (data.stats?.totalDigitalSales || 0)) / Number(data.stats?.totalTransactions)
+            : 0,
 
           montoApertura: Number(data.stats?.fund || 0),
           diferencia: Number(data.stats?.difference || 0),
@@ -83,23 +87,56 @@ export function useAdmin() {
   }
 
   /**
-   * KPI Cards: Cálculos agregados
+   * Función computada para calcular KPIs globales a partir de los reportes obtenidos
    */
   const kpis = computed(() => {
-    const totalVentas = reportes.value.reduce(
-      (acc, r) => acc + (Number(r.totalIngresosDia) || 0),
-      0,
-    )
-    const totalDigital = reportes.value.reduce((acc, r) => acc + (Number(r.montoDigital) || 0), 0)
-    const totalDiferencia = reportes.value.reduce((acc, r) => acc + (Number(r.diferencia) || 0), 0)
-    const count = reportes.value.length || 1
+    if (!reportes.value || reportes.value.length === 0) {
+      return {
+        totalVentas: 0,
+        totalDigital: 0,
+        porcentajeDigital: 0,
+        diferenciaNeta: 0,
+        totalTransactions: 0,
+        declaredCash: 0,
+        ticketPromedio: 0
+      }
+    }
+
+    const totales = reportes.value.reduce((acc, r) => {
+      acc.ventas += Number(r.totalIngresosDia) || 0
+      acc.digital += Number(r.montoDigital) || 0
+      acc.diferencia += Number(r.diferencia) || 0
+      
+      acc.transacciones += Number(r.totalTransactions || 0)
+      
+      acc.efectivoDeclarado += Number(r.declaredCash || 0)
+      
+      return acc
+    }, {
+      ventas: 0,
+      digital: 0,
+      diferencia: 0,
+      transacciones: 0,
+      efectivoDeclarado: 0,
+    })
+
+    const efectivoEsperado = totales.ventas - totales.digital
+    const declaredCash = totales.efectivoDeclarado > 0 
+      ? totales.efectivoDeclarado 
+      : (efectivoEsperado + totales.diferencia)
+
+    const ticketPromedioGlobal = totales.transacciones > 0 
+      ? (totales.ventas / totales.transacciones) 
+      : 0
 
     return {
-      totalVentas,
-      totalDigital,
-      porcentajeDigital: totalVentas > 0 ? (totalDigital / totalVentas) * 100 : 0,
-      diferenciaNeta: totalDiferencia,
-      ticketPromedio: totalVentas / count,
+      totalVentas: totales.ventas,
+      totalDigital: totales.digital,
+      porcentajeDigital: totales.ventas > 0 ? (totales.digital / totales.ventas) * 100 : 0,
+      diferenciaNeta: totales.diferencia,
+      totalTransactions: totales.transacciones,
+      declaredCash: declaredCash,
+      ticketPromedio: ticketPromedioGlobal
     }
   })
 

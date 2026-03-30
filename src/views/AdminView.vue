@@ -51,9 +51,6 @@
         <div :key="activeTab" class="view-wrapper">
           <div v-if="activeTab === 'overview'" class="view-content">
             <AdminStats :kpis="kpis" />
-            <div class="charts-card">
-              <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
-            </div>
           </div>
 
           <div v-else-if="activeTab === 'charts'" class="view-content">
