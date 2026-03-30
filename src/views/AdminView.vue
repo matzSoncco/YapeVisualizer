@@ -98,7 +98,7 @@ const selectedCierre = ref(null)
 
 const tabs = [
   { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
-  { id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' },
+  //{ id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' }, TODO: Implementar gráficos en el futuro
   { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
 ]
 
