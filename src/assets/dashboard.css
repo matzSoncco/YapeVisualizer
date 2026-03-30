@@ -1,92 +1,88 @@
-.loading-overlay-full {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-app);
-    z-index: 9999;
-    gap: 1.5rem;
+/* ── Raíz del dashboard ───────────────────────────────────── */
+.dashboard {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.loading-overlay-full p {
-    color: var(--color-text-muted);
-    font-weight: 700;
-    letter-spacing: 0.05em;
-    animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
+/* ── Wrapper cuando hay sucursal activa ───────────────────── */
 .pos-layout-wrapper {
-    animation: fadeIn 0.3s ease-in-out;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(5px); }
-    to { opacity: 1; transform: translateY(0); }
+/* ── Columna principal (navbar + feed + stage) ────────────── */
+.pos-grid-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.flex-1 { flex: 1; }
-
-/* LA CINTA DE NOTIFICACIONES (YAPE FEED) */
+/* ── Barra de notificaciones digitales ───────────────────── */
 .top-feed-bar {
-    height: 70px; 
-    background: var(--bg-surface);
-    border-bottom: 1px solid var(--color-border);
-    position: relative;
-    z-index: 15;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  height: 70px;
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 15;
 }
 
-/* EL ESCENARIO PRINCIPAL: INVERSIÓN DE PROPORCIONES */
+/* ── Escenario principal ──────────────────────────────────── */
 .pos-main-stage {
-    flex: 1;
-    display: flex; 
-    overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
 }
 
-/* POSPanel: Ahora es el panel que ocupa "lo necesario" */
 .stage-left {
-    width: 420px; /* Ancho suficiente para el formulario y botones sin verse apretado */
-    border-right: 1px solid var(--color-border);
-    overflow: hidden; 
-    background: var(--bg-app);
-    flex-shrink: 0; /* Evita que el historial lo aplaste */
+  width: 420px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-app);
+  border-right: 1px solid var(--color-border);
 }
 
-/* SalesHistory: Ahora es el panel "maestro" que crece */
 .stage-right {
-    flex: 1; /* Ocupa todo el resto del ancho de la pantalla */
-    background: var(--bg-surface);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-surface);
 }
 
-/* REGLA DE ORO PARA EL CONTENIDO INTERNO */
-/* Esto asegura que los componentes que inyectas ocupen el 100% de alto de sus stages */
-.stage-left > *, .stage-right > * {
-    height: 100%;
+.stage-left > *,
+.stage-right > * {
+  height: 100%;
 }
 
-/* Responsive: En tablets, el POS arriba y el Historial abajo */
+/* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 1024px) {
-    .pos-main-stage { 
-        flex-direction: column; 
-    }
-    .stage-left { 
-        width: 100%; 
-        height: auto; /* El POS se adapta a su contenido arriba */
-        border-right: none;
-        border-bottom: 1px solid var(--color-border);
-    }
-    .stage-right { 
-        width: 100%; 
-        flex: 1; /* El historial toma el resto del alto */
-    }
+  .pos-main-stage {
+    flex-direction: column;
+  }
+
+  .stage-left {
+    width: 100%;
+    height: 60vh;
+    min-height: 450px;
+    flex-shrink: 0;
+    border-right: none;
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .stage-right {
+    flex: 1;
+    width: 100%;
+  }
 }

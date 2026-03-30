@@ -2,10 +2,10 @@
   <header class="pos-navbar">
     <div class="navbar-left">
       <div class="brand-badge">
-        <i class="pi pi-wallet"></i>
+        <i class="pi pi-shop"></i>
       </div>
       <div class="brand-info">
-        <span class="brand-title">Monitor</span>
+        
         <div class="location-context">
           <span class="location-name">{{ nombreSucursal }}</span>
           <span class="context-divider">|</span>
@@ -33,7 +33,8 @@
           label="Sede"
           icon="pi pi-sync"
           @click="$emit('cambiar-sucursal')"
-          text class="nav-btn"
+          text
+          class="nav-btn"
         />
         <Button
           label="Gasto"
@@ -77,13 +78,10 @@ const isDev = computed(() => {
 </script>
 
 <style scoped>
-/* NAVBAR SUPERIOR: ESTILO COMMAND CENTER */
 .pos-navbar {
   height: 65px;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--color-border);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -93,7 +91,16 @@ const isDev = computed(() => {
   z-index: 100;
 }
 
-/* LADO IZQUIERDO: LOGO Y SEDE */
+/* Efecto Glassmorphism (Usa variable para el rgba) */
+@supports (backdrop-filter: blur(1px)) {
+  .pos-navbar {
+    background: var(--bg-glass, rgba(255, 255, 255, 0.7));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}
+
+/* Identidad Izquierda */
 .navbar-left {
   display: flex;
   align-items: center;
@@ -103,13 +110,14 @@ const isDev = computed(() => {
 .brand-badge {
   width: 36px;
   height: 36px;
-  background: #0f172a; /* Slate 900 */
-  color: #facc15; /* Tu amarillo */
+  background: var(--color-primary);
+  color: var(--color-accent);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  flex-shrink: 0;
 }
 
 .brand-info {
@@ -117,16 +125,6 @@ const isDev = computed(() => {
   flex-direction: column;
 }
 
-.brand-title {
-  font-size: 0.85rem;
-  font-weight: 800;
-  color: #0f172a;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  line-height: 1;
-}
-
-/* CONTEXTO DE UBICACIÓN Y CAJERO */
 .location-context {
   display: flex;
   align-items: center;
@@ -134,42 +132,35 @@ const isDev = computed(() => {
   margin-top: 2px;
 }
 
-.context-divider {
-  color: #cbd5e1; /* Slate 300 */
+.location-name {
   font-size: 0.75rem;
-  font-weight: 300;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.context-divider {
+  color: var(--color-border);
+  font-size: 0.75rem;
 }
 
 .cashier-tag {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  background: #f1f5f9; /* Slate 100 */
+  background: var(--bg-surface-alt);
   padding: 2px 8px;
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
-}
-
-.cashier-tag i {
-  font-size: 0.65rem;
-  color: #64748b;
+  border: 1px solid var(--color-border);
 }
 
 .cashier-name {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #475569; /* Slate 600 */
+  color: var(--color-primary-mid);
   text-transform: capitalize;
 }
 
-/* Ajuste al nombre de la sede para que resalte un poco más */
-.location-name {
-  font-size: 0.75rem;
-  color: #0f172a; /* Ahora un poco más oscuro */
-  font-weight: 700;
-}
-
-/* LADO DERECHO: ACCIONES */
+/* Lado Derecho y Navegación */
 .navbar-right {
   display: flex;
   align-items: center;
@@ -182,50 +173,49 @@ const isDev = computed(() => {
   gap: 0.5rem;
 }
 
-/* BOTONES GHOST REFINADOS */
-.nav-btn {
-  color: #475569 !important; /* Slate 600 */
-  font-weight: 700 !important;
-  font-size: 0.8rem !important;
-  padding: 0.5rem 0.75rem !important;
-  border-radius: 8px !important;
-  transition: all 0.2s !important;
-}
-
-.nav-btn:hover {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
-}
-
-/* Botón de Gasto con toque de alerta */
-.nav-btn.expense:hover {
-  color: #ef4444 !important;
-  background: #fef2f2 !important;
-}
-
-/* DIVISOR VERTICAL */
 .nav-divider {
   width: 1px;
   height: 24px;
-  background: #e2e8f0;
-  margin: 0 0.25rem;
+  background: var(--color-border);
 }
 
-/* BOTÓN DE CIERRE (El protagonista) */
-.btn-exit {
-  background: #fee2e2 !important; /* Rojo muy suave */
-  border: 1px solid #fecaca !important;
-  color: #dc2626 !important; /* Rojo intenso */
-  font-weight: 800 !important;
-  font-size: 0.8rem !important;
-  padding: 0.5rem 1rem !important;
-  border-radius: 8px !important;
-  transition: all 0.2s !important;
+/* Botones de Navegación con :deep */
+:deep(.nav-btn.p-button) {
+  color: var(--color-primary-mid);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
 }
 
-.btn-exit:hover {
-  background: #dc2626 !important; /* Inversión de colores */
-  color: white !important;
-  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
+:deep(.nav-btn.p-button:hover) {
+  background: var(--bg-surface-alt);
+  color: var(--color-primary);
+}
+
+/* Botón de Gasto con Hover sutil de error */
+:deep(.nav-btn.expense:hover) {
+  color: var(--color-error);
+  background: var(--color-error-soft);
+}
+
+/* Botón Finalizar Turno (Sin !important) */
+:deep(.btn-exit.p-button) {
+  background: var(--color-error-soft);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error-dark);
+  font-weight: 800;
+  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+:deep(.btn-exit.p-button:hover) {
+  background: var(--color-error-dark);
+  color: var(--bg-app); /* Reemplaza white por el fondo de la app */
+  border-color: var(--color-error-dark);
+  box-shadow: var(--shadow-interactive);
 }
 </style>

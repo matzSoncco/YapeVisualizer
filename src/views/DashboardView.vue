@@ -1,44 +1,45 @@
 <template>
   <div class="dashboard">
     <GlobalLoader v-if="globalLoading || store.loading" />
-    <template v-else>
-      <ArqueoModal />
-      <ExpenseModal />
-      <PaymentMatchModal
-        @confirmar-vinculo="confirmarVinculo"
-        @descartar-pago="cancelarVinculo"
-      />
-      <div v-if="!sucursalActual">
-        <SucursalSelector />
+    <ArqueoModal />
+    <ShiftSummaryModal />
+    <ExpenseModal />
+    <PaymentMatchModal
+      @confirmar-vinculo="confirmarVinculo"
+      @descartar-pago="cancelarVinculo"
+    />
+
+    <SucursalSelector v-if="!sucursalActual" />
+
+    <div v-else class="pos-layout-wrapper">
+      <ShiftOpen v-if="!isShiftOpen" />
+
+      <div v-else class="pos-grid-container">
+        <POSNavbar
+          :nombre-sucursal="nombreSucursalActual"
+          :nombre-cajero="nombreCajero"
+          @cambiar-sucursal="cambiarSucursal"
+          @finalizar-turno="handleCierreClick"
+          @abrir-gasto="expenseState.isOpen = true"
+          @simular="handleSimulacion"
+        />
+        <section class="top-feed-bar">
+          <DigitalFeed :pagos-digitales="pendientes" @pescar="handlePesca" />
+        </section>
+
+        <main class="pos-main-stage">
+          <div class="stage-left">
+            <POSPanel
+              ref="posPanelRef"
+              @transaction-completed="handleTransaccionCompletada"
+            />
+          </div>
+          <div class="stage-right">
+            <SalesHistory :ventas="movimientosTurno" />
+          </div>
+        </main>
       </div>
-
-      <div v-else class="pos-layout-wrapper">
-        <ShiftOpen v-if="!isShiftOpen" />
-
-        <div v-else class="pos-grid-container">
-          <POSNavbar
-            :nombre-sucursal="nombreSucursalActual"
-            :nombre-cajero="nombreCajero"
-            @cambiar-sucursal="cambiarSucursal"
-            @finalizar-turno="handleCierreClick"
-            @abrir-gasto="expenseState.isOpen = true"
-            @simular="handleSimulacion"
-          />
-          <section class="top-feed-bar">
-            <DigitalFeed :pagos-digitales="pendientes" @pescar="handlePesca" />
-          </section>
-
-          <main class="pos-main-stage">
-            <div class="stage-left">
-              <POSPanel ref="posPanelRef" @transaction-completed="handleTransaccionCompletada" />
-            </div>
-            <div class="stage-right">
-              <SalesHistory :ventas="movimientosTurno" />
-            </div>
-          </main>
-        </div>
-      </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -47,26 +48,27 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'primevue/usetoast'
 
-import ShiftOpen from '@/components/pos/ShiftOpen.vue'
-import DigitalFeed from '@/components/pos/DigitalFeed.vue'
-import SalesHistory from '@/components/pos/SalesHistory.vue'
+import ShiftOpen from '@/components/pos/layout/ShiftOpen.vue'
+import DigitalFeed from '@/components/pos/history/DigitalFeed.vue'
+import SalesHistory from '@/components/pos/history/SalesHistory.vue'
 import SucursalSelector from '@/components/shared/SucursalSelector.vue'
 import POSPanel from '@/components/pos/POSPanel.vue'
+import ShiftSummaryModal from '@/components/pos/modals/ShiftSummaryModal.vue'
 
-import { useAuth } from '@/composables/useAuth'
-import { useSucursal } from '@/composables/useSucursal'
-import { useShift } from '@/composables/useShift'
-import { useDigitalPayments } from '@/composables/useDigitalPayments'
+import { useAuth } from '@/composables/core/useAuth'
+import { useSucursal } from '@/composables/admin/useSucursal'
+import { useShift } from '@/composables/operations/useShift'
+import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
 import { simularDatos } from '@/utils/devSimulator'
-import { useMovements } from '@/composables/useMovements'
-import { useMatcher } from '@/composables/useMatcher'
+import { useMovements } from '@/composables/operations/useMovements'
+import { useMatcher } from '@/composables/operations/useMatcher'
 
 import '@/assets/dashboard.css'
 import { store } from '@/store'
-import POSNavbar from '@/components/pos/POSNavbar.vue'
-import ArqueoModal from '@/components/pos/ArqueoModal.vue'
-import ExpenseModal from '@/components/pos/ExpenseModal.vue'
-import PaymentMatchModal from '@/components/pos/PaymentMatchModal.vue'
+import POSNavbar from '@/components/pos/layout/POSNavbar.vue'
+import ArqueoModal from '@/components/pos/modals/ArqueoModal.vue'
+import ExpenseModal from '@/components/pos/modals/ExpenseModal.vue'
+import PaymentMatchModal from '@/components/pos/modals/PaymentMatchModal.vue'
 import GlobalLoader from '@/components/shared/GlobalLoader.vue'
 
 const router = useRouter()
@@ -80,12 +82,8 @@ const { verificarTurnoActivo, isShiftOpen, currentShift, abrirArqueo } = useShif
 
 const { escucharPendientes, pendientes, detenerTodo } = useDigitalPayments()
 
-const {
-  escucharMovimientos,
-  movimientosTurno,
-  detenerEscuchaMovimientos,
-  expenseState,
-} = useMovements()
+const { escucharMovimientos, movimientosTurno, detenerEscuchaMovimientos, expenseState } =
+  useMovements()
 
 const { matcherState, vigilarEntrantes, validarSeleccionManual, resetMatcher, cancelarEspera } =
   useMatcher()
@@ -230,7 +228,6 @@ const confirmarVinculo = async () => {
     await posPanelRef.value.finalizarVentaDigitalConfirmada(matcherState.candidate)
 
     resetMatcher()
-    toast.add({ severity: 'success', summary: 'Venta Procesada', life: 2000 })
   } catch (error) {
     console.error('Error al confirmar vínculo:', error)
     toast.add({ severity: 'error', summary: 'Error', detail: error.message, life: 5000 })
@@ -256,6 +253,6 @@ const cancelarVinculo = () => {
  * Utilitario para simular datos de transacciones
  */
 const handleSimulacion = async () => {
-  if (user.value?.uid) simularDatos(user.value.uid);
+  if (user.value?.uid) simularDatos(user.value.uid)
 }
 </script>
