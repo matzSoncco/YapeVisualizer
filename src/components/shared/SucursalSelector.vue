@@ -69,7 +69,6 @@ import { useSucursal } from '@/composables/admin/useSucursal'
 import { useAuth } from '@/composables/core/useAuth'
 import { useToast } from 'primevue/usetoast'
 import { setAdminAuth } from '@/store'
-import { hashPin } from '@/utils/security'
 
 const router = useRouter()
 const toast = useToast()
@@ -92,7 +91,6 @@ const handleSelect = (valorSeleccionado) => {
 }
 
 const verificarPin = async () => {
-  alert("Intentando entrar con PIN: " + pin.value); // <-- Si esto no sale, el botón no llama a la función
   if (pin.value.length < 4) return
 
   loadingPin.value = true
