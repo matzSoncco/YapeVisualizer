@@ -1,6 +1,6 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
-import { auth, db } from '../../firebaseConfig'
+import { auth, db } from '@/firebaseConfig'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { store, setUserProfile } from '@/store'
 
@@ -137,6 +137,42 @@ export function useAuth() {
   }
 
   /**
+   * Verifica el PIN ingresado contra el almacenado en Firestore para el usuario actual
+   * @param {string} inputPin 
+   * @returns {Promise<boolean>} Promesa que se resuelve con true si el PIN es válido, false en caso contrario
+   */
+  const verifyAdminPin = async (inputPin) => {
+    loading.value = true;
+    try {
+      const userRef = doc(db, 'users', user.value.uid);
+      const userSnap = getDoc(userRef);
+
+      if (!userSnap.exists()) throw new Error('Usuario no encontrado');
+
+      const storedPin = userSnap.data().adminPin;
+      
+      if (storedPin !== inputPin) {
+        throw new Error('PIN incorrecto');
+      }
+
+      return storedPin === String(inputPin);
+    } catch (err) {
+      console.error('Error verificando PIN:', err);
+      return false;
+    } finally {
+      loading.value = true;
+    }
+  }
+
+  /**
+   * Propiedad computada para verificar si el PIN actual es inseguro (1234)
+   * @returns {boolean} true si el PIN es '1234', false en caso contrario
+   */
+  const tienePinInseguro = computed(() => {
+    return store.userProfile?.adminPin === '1234'
+  })
+
+  /**
    * Actualiza el perfil del negocio en Firestore y sincroniza con el estado local
    * @param {*} profileData - Objeto con los datos del perfil del negocio
    */
@@ -168,11 +204,13 @@ export function useAuth() {
 
   return {
     user,
+    error,
+    loading,
     logInWithGoogle,
     logOut,
     updateAdminPin,
     updateBusinessProfile,
-    error,
-    loading,
+    verifyAdminPin,
+    tienePinInseguro,
   }
 }

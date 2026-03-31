@@ -48,10 +48,6 @@
 </template>
 
 <script setup>
-import Tag from 'primevue/tag'
-import Button from 'primevue/button'
-import Card from 'primevue/card'
-
 defineProps({
   isDefault: {
     type: Boolean,
