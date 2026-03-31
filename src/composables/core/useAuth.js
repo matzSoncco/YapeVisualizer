@@ -3,6 +3,7 @@ import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from
 import { auth, db } from '@/firebaseConfig'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { store, setUserProfile } from '@/store'
+import { hashPin } from '@/utils/security'
 
 const user = ref(null)
 
@@ -142,20 +143,21 @@ export function useAuth() {
    * @returns {Promise<boolean>} Promesa que se resuelve con true si el PIN es válido, false en caso contrario
    */
   const verifyAdminPin = async (inputPin) => {
+    if (!user.value) return false
+
     loading.value = true;
     try {
       const userRef = doc(db, 'users', user.value.uid);
-      const userSnap = getDoc(userRef);
+      const userSnap = await getDoc(userRef);
 
-      if (!userSnap.exists()) throw new Error('Usuario no encontrado');
-
-      const storedPin = userSnap.data().adminPin;
-      
-      if (storedPin !== inputPin) {
-        throw new Error('PIN incorrecto');
+      if (userSnap.exists()) {
+        const storedHash = userSnap.data().adminPin;
+        const inputHash = await hashPin(String(inputPin));
+        
+        return storedHash === inputHash;
       }
 
-      return storedPin === String(inputPin);
+      return false;
     } catch (err) {
       console.error('Error verificando PIN:', err);
       return false;
