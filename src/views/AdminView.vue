@@ -1,143 +1,100 @@
 <template>
-  <div class="admin-layout" :class="{ 'sidebar-collapsed': !isSidebarExpanded }">
-    <aside class="admin-sidebar">
-      <button class="sidebar-toggle" @click="toggleSidebar">
-        <i :class="isSidebarExpanded ? 'pi pi-chevron-left' : 'pi pi-chevron-right'"></i>
-      </button>
+  <div class="admin-view-container">
+    <AdminHeader>
+      <template #left>
+        <div class="admin-tabs">
+          <Button
+            v-for="tab in tabs"
+            :key="tab.id"
+            :label="tab.label"
+            :icon="tab.icon"
+            :severity="activeTab === tab.id ? 'primary' : 'secondary'"
+            :outlined="activeTab !== tab.id"
+            @click="activeTab = tab.id"
+            size="small"
+            class="tab-btn"
+          />
+        </div>
+      </template>
 
-      <div class="sidebar-brand">
-        <i class="pi pi-shield"></i>
-        <span v-if="isSidebarExpanded">ADMIN</span>
-      </div>
-
-      <nav class="sidebar-nav">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          :class="['nav-item', { active: activeTab === tab.id }]"
-          @click="activeTab = tab.id"
-          :title="!isSidebarExpanded ? tab.label : ''"
-        >
-          <i :class="tab.icon"></i>
-          <span v-if="isSidebarExpanded">{{ tab.label }}</span>
-        </button>
-      </nav>
-
-      <div class="sidebar-footer">
-        <Transition name="menu-pop">
-          <div v-if="isUserMenuOpen" class="custom-user-menu">
-            <button @click="router.push('/profile')">
-              <i class="pi pi-user"></i> <span>Perfil</span>
-            </button>
-            <button @click="router.push('/dashboard')">
-              <i class="pi pi-arrow-left"></i> <span>Monitor</span>
-            </button>
-            <div class="menu-sep"></div>
-            <button class="logout-btn" @click="handleLogout">
-              <i class="pi pi-sign-out"></i> <span>Salir</span>
-            </button>
-          </div>
-        </Transition>
-
-        <Avatar
-          :label="userInitial"
-          shape="circle"
-          @click="toggleUserMenu"
-          class="admin-avatar bg-slate-700 text-white"
+      <template #filters>
+        <DatePicker
+          v-model="filters.dateRange"
+          selectionMode="range"
+          dateFormat="dd/mm"
+          panelClass="compact-calendar-panel"
+          :manualInput="false"
         />
-      </div>
-    </aside>
+        <Select
+          v-model="filters.branchId"
+          :options="sedeOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todas las sedes"
+          class="modern-select"
+          panelClass="compact-select-panel"
+        />
+        <Button
+          icon="pi pi-refresh"
+          @click="handleSearch"
+          :loading="loadingReportes"
+          v-tooltip.top="'Actualizar'"
+          severity="secondary"
+          outlined
+          class="refresh-btn"
+        />
+      </template>
+    </AdminHeader>
 
-    <main class="admin-main">
-      <header class="admin-toolbar">
-        <div class="toolbar-left">
-          <h1>{{ currentTabLabel }}</h1>
-        </div>
-
-        <div class="toolbar-right">
-          <div class="toolbar-filters">
-            <DatePicker
-              v-model="filters.startDate"
-              dateFormat="dd/mm"
-              placeholder="Ini"
-              class="compact-date"
-            />
-            <span class="sep">-</span>
-            <DatePicker
-              v-model="filters.endDate"
-              dateFormat="dd/mm"
-              placeholder="Fin"
-              class="compact-date"
-            />
-            <Select
-              v-model="filters.branchId"
-              :options="sedeOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Sede"
-              class="compact-select"
-            />
-            <Button
-              icon="pi pi-refresh"
-              @click="handleSearch"
-              :loading="loadingReportes"
-              text
-              rounded
-            />
+    <section class="admin-viewport">
+      <Transition name="fade-slide" mode="out-in">
+        <div :key="activeTab" class="view-wrapper">
+          <div v-if="activeTab === 'overview'" class="view-content">
+            <AdminStats :kpis="kpis" />
           </div>
-        </div>
-      </header>
 
-      <section class="admin-viewport">
-        <Transition name="fade-slide" mode="out-in">
-          <div :key="activeTab" :class="['view-wrapper', { 'has-table': activeTab === 'table' }]">
-            <div v-if="activeTab === 'overview'" class="view-content overview-section">
-              <AdminStats :kpis="kpis" />
-              <div class="charts-preview-container">
-                <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
-              </div>
-            </div>
-
-            <div v-else-if="activeTab === 'charts'" class="view-content">
+          <div v-else-if="activeTab === 'charts'" class="view-content">
+            <div class="charts-card">
               <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
             </div>
+          </div>
 
-            <div v-else-if="activeTab === 'table'" class="view-content">
+          <div v-else-if="activeTab === 'table'" class="view-content">
+            <div class="table-card">
               <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
-              <CierreDetailModal 
-                v-model:visible="isDetailVisible" 
-                :data="selectedCierre" 
-              />
             </div>
           </div>
-        </Transition>
-      </section>
-    </main>
+        </div>
+      </Transition>
+    </section>
+
+    <CierreDetailModal v-model:visible="isDetailVisible" :data="selectedCierre" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuth } from '@/composables/core/useAuth'
 import { useSucursal } from '@/composables/admin/useSucursal'
 import { useAdmin } from '@/composables/admin/useAdmin'
 import { useToast } from 'primevue/usetoast'
 import { store } from '@/store'
 
+import AdminHeader from '@/components/admin/AdminHeader.vue'
 import AdminTable from '@/components/admin/AdminTable.vue'
 import AdminStats from '@/components/admin/AdminStats.vue'
 import AdminCharts from '@/components/admin/AdminCharts.vue'
-import CierreDetailModal from '@/components/admin/modals/CierreDetailModal.vue';
+import CierreDetailModal from '@/components/admin/modals/CierreDetailModal.vue'
 
-const isDetailVisible = ref(false);
-const selectedCierre = ref(null);
-
-import '@/assets/admin.css'
+const router = useRouter()
+const toast = useToast()
+const { sucursales } = useSucursal()
+const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } =
+  useAdmin()
 
 const activeTab = ref('overview')
-const isSidebarExpanded = ref(false)
-const isUserMenuOpen = ref(false)
+const isDetailVisible = ref(false)
+const selectedCierre = ref(null)
 
 const tabs = [
   { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
@@ -145,60 +102,38 @@ const tabs = [
   { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
 ]
 
-const router = useRouter()
-const toast = useToast()
-const { user, logOut } = useAuth()
-const { sucursales, limpiarSucursal } = useSucursal()
-const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } =
-  useAdmin()
-
 const filters = ref({
-  startDate: new Date(),
-  endDate: new Date(),
+  dateRange: [new Date(), new Date()],
   branchId: '',
 })
-
-const currentTabLabel = computed(() => tabs.find((t) => t.id === activeTab.value)?.label)
-
-const userName = computed(() => user.value?.displayName || 'Admin')
-const userInitial = computed(() => (userName.value || 'A').charAt(0).toUpperCase())
 
 const sedeOptions = computed(() => [
   { label: 'Todas las sedes', value: '' },
   ...sucursales.value.map((s) => ({ label: s.nombre, value: s.id })),
 ])
 
-const toggleSidebar = () => {
-  isSidebarExpanded.value = !isSidebarExpanded.value
-}
-
-const toggleUserMenu = () => {
-  isUserMenuOpen.value = !isUserMenuOpen.value
-}
-
 /**
- * Función para cerrar sesión, limpiar datos relacionados con la sucursal y redirigir al login
+ * Función para manejar la búsqueda de cuadres según los filtros seleccionados
  */
-const handleLogout = async () => {
-  await logOut()
-  limpiarSucursal()
-  router.push('/')
-}
-
 const handleSearch = () => {
-  buscarCuadres(filters.value)
+  const [start, end] = filters.value.dateRange
+
+  buscarCuadres({
+    startDate: start,
+    endDate: end || start,
+    branchId: filters.value.branchId,
+  })
 }
 
-/**
- * Función para mostrar el detalle de cierre
- * TODO: Implementar la vista de detalle con información completa del cierre seleccionado
- */
 const verDetalle = (data) => {
-  selectedCierre.value = data;
-  isDetailVisible.value = true;
+  selectedCierre.value = data
+  isDetailVisible.value = true
 }
 
-// Carga inicial
+// TODO: Esto es solo un recordatorio para implementar
+// una verificación real del PIN en el futuro
+// no es seguro dejarlo así en producción.
+// Mover la logica al backend y forzar a cambiar el PIN si es el default
 onMounted(() => {
   if (store.userProfile?.adminPin === '1234') {
     toast.add({
@@ -207,10 +142,139 @@ onMounted(() => {
       detail: 'Por seguridad, debes cambiar tu PIN antes de administrar.',
       life: 6000,
     })
-
-    router.push('/profile')
+    router.push('/admin/perfil')
     return
   }
   handleSearch()
 })
 </script>
+
+<style scoped>
+.admin-view-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(
+    --bg-ground,
+    #f8fafc
+  );
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: var(--bg-surface, rgba(0, 0, 0, 0.03));
+  padding: 0.25rem;
+  border-radius: var(--radius-lg, 8px);
+}
+
+.tab-btn {
+  border: none !important;
+  box-shadow: none !important;
+  font-weight: 600;
+}
+
+.admin-viewport {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+}
+
+.view-wrapper {
+  min-height: 100%;
+}
+
+.view-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ── Tarjetas para Gráficos y Tablas ── */
+.charts-card,
+.table-card {
+  background: var(--bg-app, #ffffff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: var(--radius-xl, 12px);
+  padding: 1.5rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -2px rgba(0, 0, 0, 0.025);
+}
+
+.table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── Transición ── */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>
+
+<style>
+/* ── DatePicker Compacto (Calendario) ── */
+.compact-calendar-panel {
+  min-width: 280px !important;
+  font-size: 0.85rem !important;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--color-border, #e2e8f0) !important;
+}
+
+/* Achicar el header del calendario (Mes y Año) */
+.compact-calendar-panel .p-datepicker-header {
+  padding: 0.5rem !important;
+}
+
+.compact-calendar-panel .p-datepicker-title {
+  gap: 0.5rem !important;
+}
+
+/* Achicar las celdas de los días */
+.compact-calendar-panel table {
+  margin: 0.25rem 0 !important;
+}
+
+.compact-calendar-panel table th {
+  padding: 0.25rem !important;
+  font-size: 0.75rem !important;
+}
+
+.compact-calendar-panel table td {
+  padding: 0.1rem !important;
+}
+
+/* Achicar el botón redondo de cada número */
+.compact-calendar-panel table td span {
+  width: 2rem !important;
+  height: 2rem !important;
+}
+
+/* ── Select Compacto (Dropdown de Sedes) ── */
+.compact-select-panel {
+  font-size: 0.85rem !important;
+  border-radius: 8px !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.compact-select-panel .p-select-item {
+  padding: 0.5rem 0.75rem !important;
+}
+</style>

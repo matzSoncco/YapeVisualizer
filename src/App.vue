@@ -103,6 +103,8 @@ watch(
             role: data.role,
             subscription: subData,
             adminPin: data.adminPin,
+            deviceOnline: data.deviceOnline || false,
+            lastHeartbeat: data.lastHeartbeat ? data.lastHeartbeat.toDate() : null,
           })
         }
       },
