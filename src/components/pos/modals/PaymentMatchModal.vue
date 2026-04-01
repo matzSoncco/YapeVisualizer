@@ -17,12 +17,7 @@
         <div class="match-title-group">
           <h3>¡Pago Detectado!</h3>
           <span class="match-tag" :class="matcherState.candidate?.wallet?.toLowerCase()">
-            <i
-              :class="
-                matcherState.candidate?.wallet === 'PLIN' ? 'pi pi-star-fill' : 'pi pi-wallet'
-              "
-            ></i>
-            {{ matcherState.candidate?.wallet || 'Digital' }}
+            <i class="pi pi-qrcode"></i>
           </span>
         </div>
       </header>
@@ -39,9 +34,9 @@
 
         <div class="data-item">
           <span class="data-label">MONTO RECIBIDO</span>
-          <span class="data-value amount"
-            >S/ {{ Number(matcherState.candidate?.amount).toFixed(2) }}</span
-          >
+          <span class="data-value amount">
+            S/ {{ Number(matcherState.candidate?.amount).toFixed(2) }}
+          </span>
         </div>
       </div>
 
@@ -55,7 +50,6 @@
         />
         <Button
           label="CONFIRMAR VENTA"
-          icon="pi pi-bolt"
           @click="$emit('confirmar-vinculo')"
           :loading="matcherState.loading"
           class="btn-confirm-match"
@@ -68,7 +62,7 @@
 <script setup>
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
-import { useMatcher } from '@/composables/useMatcher'
+import { useMatcher } from '@/composables/operations/useMatcher'
 
 const { matcherState } = useMatcher()
 
@@ -79,24 +73,25 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
 </script>
 
 <style scoped>
-/* Reset de PrimeVue */
+/* Reset profundo de PrimeVue Dialog */
 :deep(.p-dialog-content) {
-  padding: 0 !important;
-  border-radius: 32px !important;
+  padding: 0;
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  border: none !important;
+  border: none;
+  background: var(--bg-app);
 }
 
 .match-container {
-  padding: 1.5rem 0.5rem 0.5rem 0.5rem;
-  background: #ffffff;
+  padding: 1.5rem 1rem 1rem 1rem;
+  background: var(--bg-app);
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: center;
 }
 
-/* Animación de Pulso */
+/* Encabezado y Animación de Éxito */
 .match-header {
   text-align: center;
   display: flex;
@@ -109,9 +104,9 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
   position: relative;
   width: 70px;
   height: 70px;
-  background: #22c55e;
-  color: white;
-  border-radius: 100%;
+  background: var(--color-success);
+  color: var(--bg-app);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,8 +118,8 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
   position: absolute;
   width: 100%;
   height: 100%;
-  border-radius: 100%;
-  background: #22c55e;
+  border-radius: 50%;
+  background: var(--color-success);
   animation: pulse-ring-geo 2s infinite;
   z-index: 1;
 }
@@ -136,13 +131,13 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
 
 .match-title-group h3 {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
   font-weight: 900;
-  color: #0f172a;
+  color: var(--color-primary);
   letter-spacing: -0.03em;
 }
 
-/* Tags de Billeteras */
+/* Tags de Billeteras dinámicos */
 .match-tag {
   display: inline-flex;
   align-items: center;
@@ -153,23 +148,30 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
   font-weight: 800;
   text-transform: uppercase;
   margin-top: 0.5rem;
-  background: #f1f5f9;
-  color: #64748b;
+  background: var(--bg-surface-alt);
+  color: var(--color-text-muted);
 }
 
-.match-tag.yape { background: #7b2e9120; color: #7b2e91; }
-.match-tag.plin { background: #00d1ce20; color: #00b5b2; }
+.match-tag.yape {
+  background: var(--color-yape-soft);
+  color: var(--color-yape);
+}
 
-/* Card de Datos */
+.match-tag.plin {
+  background: var(--color-plin-soft);
+  color: var(--color-plin);
+}
+
+/* Card de Información del Pago */
 .match-data-card {
   width: 100%;
-  background: #f8fafc;
-  border-radius: 24px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--color-border);
 }
 
 .data-item {
@@ -182,58 +184,66 @@ defineEmits(['confirmar-vinculo', 'descartar-pago'])
 .data-label {
   font-size: 0.65rem;
   font-weight: 800;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   letter-spacing: 0.1em;
 }
 
 .data-value.name {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  color: #1e293b;
+  color: var(--color-text-main);
   text-transform: capitalize;
 }
 
 .data-value.amount {
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
-  font-size: 2.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2.2rem;
   font-weight: 900;
-  color: #10b981;
+  color: var(--color-success);
 }
 
 .data-divider {
   height: 1px;
-  background: #e2e8f0;
-  width: 60%;
+  background: var(--color-border);
+  width: 40%;
   margin: 0 auto;
 }
 
-/* Botones */
+/* Acciones */
 .match-actions {
   display: flex;
   width: 100%;
-  gap: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
 
-.btn-discard {
+:deep(.btn-discard.p-button) {
   flex: 1;
-  color: #94a3b8 !important;
-  font-weight: 700 !important;
-  font-size: 0.85rem !important;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
-.btn-confirm-match {
+:deep(.btn-confirm-match.p-button) {
   flex: 2;
-  background: #0f172a !important;
-  border: none !important;
-  height: 56px !important;
-  border-radius: 18px !important;
-  font-weight: 800 !important;
-  font-size: 1rem !important;
-  box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.3) !important;
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border: none;
+  height: 54px;
+  border-radius: var(--radius-md);
+  font-weight: 800;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
 }
 
-:deep(*:focus) {
-  outline: none !important;
-  box-shadow: none !important;
+:deep(.btn-confirm-match.p-button:hover) {
+  background: var(--color-primary-mid);
+  box-shadow: var(--shadow-interactive);
+}
+
+/* Reset de focus global para el modal */
+:deep(.p-button:focus) {
+  box-shadow: none;
+  outline: none;
 }
 </style>

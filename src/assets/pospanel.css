@@ -1,109 +1,42 @@
+/* ============================================================
+   LAYOUT — Grid de 3 filas
+   ============================================================ */
 .pos-main-container {
+  display: grid;
+  grid-template-rows: max-content 1fr max-content;
   height: 100%;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
   background-color: var(--bg-app);
+  overflow: hidden;
 }
 
-/* HEADER: LAYOUT COMPACTO */
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 .pos-input-area {
-  padding: 1rem;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  padding: 1rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .input-level.main-search {
   display: flex;
   gap: 0.5rem;
-  width: 100%;
 }
 
-/* CORRECCIÓN 1: Quitamos :deep y apuntamos directo a la clase */
 .full-width-search {
   flex: 1;
-  width: auto !important;
 }
 
 .full-width-search .p-autocomplete-input {
-  width: 100% !important;
-  height: 40px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-}
-
-/* ESTADO VACÍO: LAYOUT DIVIDIDO */
-.cart-empty-state {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.5rem;
-  gap: 2rem;
-  background-color: var(--bg-app);
-}
-
-.empty-info {
-  flex: 0 0 auto;
-  text-align: center;
-  color: var(--color-text-muted);
-  opacity: 0.3;
-}
-
-.empty-info i {
-  font-size: 3rem;
-  margin-bottom: 0.5rem;
-  display: block;
-}
-
-.empty-info p {
-  font-weight: 800;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0;
-}
-
-.quick-access {
-  flex: 1;
-  max-width: 220px;
-  padding: 1.25rem;
-  background: var(--bg-surface);
-  border-left: 2px solid var(--color-accent);
-  border-radius: 4px 12px 12px 4px;
-}
-
-.quick-label {
-  display: block;
-  font-size: 0.65rem;
-  font-weight: 800;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  margin-bottom: 0.75rem;
-}
-
-.quick-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-/* CORRECCIÓN 2: Inputs dentro de quick-row */
-.quick-row .p-inputnumber,
-.quick-row .p-inputnumber-input {
-  width: 100% !important;
-  height: 38px !important;
-  font-weight: 800 !important;
-  font-size: 1rem !important;
-  border-radius: 6px !important;
-}
-
-.quick-row .p-button {
-  width: 100% !important;
-  height: 38px !important;
-  border-radius: 6px !important;
+  width: 100%;
+  height: 40px;
+  border-radius: 8px;
+  font-weight: 600;
 }
 
 .details-row {
@@ -113,174 +46,258 @@
 }
 
 .detail-field label {
+  display: block;
+  margin-bottom: 0.25rem;
   font-size: 0.65rem;
   font-weight: 800;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  margin-bottom: 0.25rem;
-  display: block;
 }
 
-.detail-field.price-group .currency {
-    color: #64748b; /* Slate 500 o el color que prefieras para el POS */
-    font-size: 1rem;
-}
-
-.qty-group { flex: 0 0 100px; }
+.qty-group  { flex: 0 0 90px; }
 .price-group { flex: 1; }
 
-/* CORRECCIÓN 3: Inputs de cantidad */
-.compact-qty, 
-.compact-qty .p-inputnumber-input {
-  height: 36px !important;
-  width: 100% !important;
-  text-align: center !important;
-}
-
-.price-input-wrapper {
-  display: flex;
-  align-items: center;
-  background: white;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 0 0.5rem;
+.pos-input-area .compact-qty,
+.pos-input-area .compact-qty .p-inputnumber-input {
   height: 36px;
-  width: 100%; /* Asegura que llene el contenedor */
+  width: 100%;
+  text-align: center;
 }
 
-/* CORRECCIÓN 4: Input de precio dentro del wrapper */
-.compact-price,
-.compact-price .p-inputnumber-input {
-    width: 100% !important;
-    border: none !important;
-    box-shadow: none !important;
-    padding: 0 !important;
-    font-weight: 800 !important;
-}
-
-.currency { font-weight: 700; color: var(--color-text-muted); font-size: 0.8rem; margin-right: 4px; }
-
-/* Eliminar borde interno del input de precio */
-.price-field-inner {
-  border: none !important;
-  font-weight: 800 !important;
-  width: 100% !important;
-  padding: 0 !important;
-  box-shadow: none !important;
+.pos-input-area .compact-price .p-inputnumber-input {
+  height: 36px;
+  width: 100%;
+  font-weight: 800;
 }
 
 .btn-add-line {
-  height: 36px !important;
-  background: var(--color-primary) !important;
-  border: none !important;
-  font-weight: 800 !important;
-  padding: 0 1rem !important;
-  min-width: 80px; /* Asegura que no se aplaste */
+  height: 36px;
+  min-width: 44px;
+  padding: 0 1rem;
+  background: var(--color-primary);
+  border: none;
+  color: var(--color-accent);
+  font-weight: 800;
 }
 
-/* CARRITO */
+
+/* ============================================================
+   CARRITO — Estado vacío
+   ============================================================ */
 .pos-cart-area {
-  flex: 1;
   overflow-y: auto;
-  background: white;
+  overflow-x: hidden;
+  background: var(--bg-app);
 }
 
+.cart-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  height: 100%;
+  padding: 1.5rem;
+}
+
+.empty-info {
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  opacity: 0.3;
+}
+
+.empty-info i {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty-info p {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.quick-access {
+  flex: 1;
+  max-width: 220px;
+  padding: 1.25rem;
+  background: var(--bg-surface);
+  border-left: 2px solid var(--color-primary);
+  border-radius: 0 12px 12px 0;
+}
+
+.quick-label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.quick-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.quick-row .p-inputnumber,
+.quick-row .p-inputnumber-input,
+.quick-row .p-button {
+  width: 100%;
+  height: 38px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+
+/* ============================================================
+   CARRITO — Tabla
+   FIX: table-layout fixed con anchos explícitos en cada columna
+   evita que números largos rompan el layout vertical
+   ============================================================ */
 .cart-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .cart-table thead th {
-  text-align: left;
-  padding: 0.75rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 0.6rem 0.75rem;
   background: var(--bg-surface);
+  border-bottom: 1px solid var(--color-border);
   color: var(--color-text-muted);
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 800;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
 }
+
+/* Anchos fijos — la suma debe ser 100%
+   El truco: qty y action son los más pequeños,
+   price y total tienen ancho suficiente para "S/ 9,999.99"
+   desc toma el resto con overflow ellipsis            */
+.th-qty    { width: 10%; text-align: center; }
+.th-desc   { width: 55%; }
+.th-total  { width: 25%; text-align: right; }
+.th-action { width: 10%; text-align: center; }
 
 .cart-item-row {
   border-bottom: 1px solid var(--bg-surface);
-  transition: all 0.2s;
+  transition: background 0.2s;
 }
 
 .cart-item-row:hover {
   background: var(--bg-surface);
 }
 
+/* FIX principal: overflow hidden + white-space nowrap en TODAS
+   las celdas numéricas, no solo en el nombre del producto     */
 .td-qty {
-  padding: 1rem;
+  padding: 0.6rem 0.5rem;
   font-weight: 800;
   color: var(--color-primary);
   text-align: center;
-  width: 50px;
+  white-space: nowrap;
 }
 
 .td-desc {
-  padding: 0.5rem 0;
-  display: flex;
-  flex-direction: column;
+  padding: 0.6rem 0.5rem 0.6rem 0;
+  overflow: hidden;
 }
 
 .item-name {
+  display: block;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--color-primary);
-  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .item-unit {
+  display: block;
   font-size: 0.7rem;
   color: var(--color-text-muted);
+  white-space: nowrap;
 }
 
 .td-total {
-  padding: 1rem;
-  font-weight: 800;
+  padding: 0.6rem 0.5rem;
   text-align: right;
-  width: 100px;
+  font-weight: 800;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.td-price {
+  padding: 0.75rem;
+  text-align: right;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .td-action {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem;
   text-align: center;
-  width: 60px;
 }
 
-/* CORRECCIÓN 5: Botón de eliminar */
 .btn-remove-item {
-  width: 32px !important;
-  height: 32px !important;
+  width: 28px;
+  height: 28px;
 }
 
-/* FOOTER */
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
 .pos-footer-area {
   padding: 1rem 1.25rem;
-  background: white;
-  border-top: 1px solid var(--color-border);
-  flex-shrink: 0;
+  background: var(--color-primary);
+  border-top: 2px solid var(--color-border);
 }
 
 .summary-line {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 0.6rem;
 }
 
 .summary-lbl {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 800;
-  color: var(--color-text-muted);
-  letter-spacing: 0.05em;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .summary-val {
-  font-size: 1.75rem;
+  font-size: 1.4rem;
   font-weight: 900;
-  color: var(--color-primary);
+  color: var(--color-accent);
   letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.summary-currency {
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.7;
+  margin-right: 0.15rem;
 }
 
 .payment-grid {
@@ -290,46 +307,46 @@
 }
 
 .pay-btn-custom {
-  border: 1px solid var(--color-border);
-  height: 44px;
-  border-radius: 8px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  height: 36px;          /* era 44px */
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.75rem;
   font-weight: 700;
-  font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  background: white;
-  color: var(--color-primary);
-  position: relative;
+  transition: background 0.2s, border-color 0.2s;
+  font-family: 'Nunito', sans-serif;
 }
 
-.cash-bg { border-color: #22c55e; color: #15803d; }
-.cash-bg:hover:not(:disabled) { background: #f0fdf4; }
-
-.yape-bg { border-color: #7c3aed; color: #6d28d9; }
-.yape-bg:hover:not(:disabled) { background: #f5f3ff; }
-
-.yape-bg i.pi-spin { color: #7c3aed; }
+.pay-btn-custom i {
+  font-size: 1rem;
+}
 
 .pay-btn-custom:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
-  border-color: var(--color-border);
-  color: var(--color-text-muted);
 }
 
-.pay-btn-custom i { font-size: 1rem; }
+.cash-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--color-cash);
+  color: white;
+}
+
+.yape-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--color-yape);
+  color: white;
+}
 
 .lock-badge {
   position: absolute;
   top: -8px;
   right: -8px;
-}
-
-.unlock-footer {
-  text-align: center;
-  margin-top: 0.75rem;
 }

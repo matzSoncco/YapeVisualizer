@@ -5,13 +5,19 @@
 
     <header class="profile-header">
       <div class="header-left">
-        <Button icon="pi pi-arrow-left" @click="router.push('/admin')" text rounded aria-label="Volver" v-tooltip.bottom="'Volver al Admin'" />
+        <Button
+          icon="pi pi-arrow-left"
+          @click="router.push('/admin')"
+          text
+          rounded
+          aria-label="Volver"
+          v-tooltip.bottom="'Volver al Admin'"
+        />
         <h1>Mi Perfil y Configuración</h1>
       </div>
     </header>
 
     <div class="profile-layout">
-      
       <aside class="profile-sidebar">
         <Card class="profile-card user-info-card">
           <template #content>
@@ -30,16 +36,26 @@
           <template #header>
             <div class="card-header">
               <h3><i class="pi pi-sparkles"></i> Tu Plan</h3>
-              <Tag :value="subscriptionStatus.isActive ? 'ACTIVO' : 'INACTIVO'" :severity="subscriptionStatus.isActive ? 'success' : 'danger'" rounded />
+              <Tag
+                :value="subscriptionStatus.isActive ? 'ACTIVO' : 'INACTIVO'"
+                :severity="subscriptionStatus.isActive ? 'success' : 'danger'"
+                rounded
+              />
             </div>
           </template>
           <template #content>
             <p class="text-sm mt-2">Nivel: {{ subscriptionStatus.planName }}</p>
-            <p class="text-sm">Sedes: {{ sucursales.length }} / {{ subscriptionStatus.limitSucursales }}</p>
+            <p class="text-sm">
+              Sedes: {{ sucursales.length }} / {{ subscriptionStatus.limitSucursales }}
+            </p>
           </template>
         </Card>
 
-        <Card class="profile-card security-card" :class="{ 'highlight-focus': isDefaultPin }" ref="securityCardRef">
+        <Card
+          class="profile-card security-card"
+          :class="{ 'highlight-focus': isDefaultPin }"
+          ref="securityCardRef"
+        >
           <template #header>
             <div class="card-header">
               <h3><i class="pi pi-shield"></i> Seguridad</h3>
@@ -48,20 +64,26 @@
           <template #content>
             <div class="security-content">
               <p class="text-sm text-gray-500 mb-3">Control de acceso administrativo</p>
-              
+
               <div v-if="isDefaultPin" class="pin-warning-box">
                 <i class="pi pi-exclamation-triangle"></i>
                 <span>Tu PIN es inseguro (Default).</span>
               </div>
 
-              <Button label="Cambiar PIN" icon="pi pi-key" severity="secondary" outlined class="w-full" @click="pinModalRef.open()" />
+              <Button
+                label="Cambiar PIN"
+                icon="pi pi-key"
+                severity="secondary"
+                outlined
+                class="w-full"
+                @click="pinModalRef.open()"
+              />
             </div>
           </template>
         </Card>
       </aside>
 
       <main class="profile-main">
-
         <Card class="profile-card negocio-card">
           <template #header>
             <div class="card-header">
@@ -72,7 +94,12 @@
             <div class="negocio-form">
               <div class="logo-section">
                 <div class="logo-preview">
-                  <img v-if="store.negocio.logoUrl" :src="store.negocio.logoUrl" alt="Logo" class="logo-img" />
+                  <img
+                    v-if="store.negocio.logoUrl"
+                    :src="store.negocio.logoUrl"
+                    alt="Logo"
+                    class="logo-img"
+                  />
                   <div v-else class="logo-placeholder">
                     <i class="pi pi-image"></i>
                   </div>
@@ -137,7 +164,6 @@
                   @click="handleGuardarNegocio"
                 />
               </div>
-
             </div>
           </template>
         </Card>
@@ -149,7 +175,16 @@
                 <i class="pi pi-building"></i>
                 <h3>Mis Sucursales</h3>
               </div>
-              <Button label="Nueva Sede" icon="pi pi-plus" @click="handleOpenCreation" :disabled="subscriptionStatus.isHardBlocked || sucursales.length >= subscriptionStatus.limitSucursales" size="small" />
+              <Button
+                label="Nueva Sede"
+                icon="pi pi-plus"
+                @click="handleOpenCreation"
+                :disabled="
+                  subscriptionStatus.isHardBlocked ||
+                  sucursales.length >= subscriptionStatus.limitSucursales
+                "
+                size="small"
+              />
             </div>
           </template>
 
@@ -162,14 +197,31 @@
 
             <div v-else class="branches-grid">
               <div v-for="sucursal in sucursales" :key="sucursal.id" class="branch-item-card">
-                <div class="branch-icon"><span>{{ sucursal.icono || '🏪' }}</span></div>
+                <div class="branch-icon">
+                  <span>{{ sucursal.icono || '🏪' }}</span>
+                </div>
                 <div class="branch-info">
                   <h4>{{ sucursal.nombre }}</h4>
                   <span class="text-xs text-gray-500">Serie: {{ sucursal.serie || 'NV001' }}</span>
                 </div>
                 <div class="branch-actions">
-                  <Button v-if="!subscriptionStatus.isHardBlocked" icon="pi pi-pencil" text rounded @click="sucursalModalRef.open(sucursal)" v-tooltip.top="'Editar'" />
-                  <Button v-if="!subscriptionStatus.isHardBlocked" icon="pi pi-trash" text rounded severity="danger" @click="deleteSucursalModal(sucursal.id)" v-tooltip.top="'Eliminar'" />
+                  <Button
+                    v-if="!subscriptionStatus.isHardBlocked"
+                    icon="pi pi-pencil"
+                    text
+                    rounded
+                    @click="sucursalModalRef.open(sucursal)"
+                    v-tooltip.top="'Editar'"
+                  />
+                  <Button
+                    v-if="!subscriptionStatus.isHardBlocked"
+                    icon="pi pi-trash"
+                    text
+                    rounded
+                    severity="danger"
+                    @click="deleteSucursalModal(sucursal.id)"
+                    v-tooltip.top="'Eliminar'"
+                  />
                 </div>
               </div>
             </div>
@@ -184,103 +236,113 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, nextTick, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuth } from '../composables/useAuth';
-import { useSucursal } from '../composables/useSucursal';
-import { useToast } from 'primevue/usetoast';
-import { useConfirm } from 'primevue/useconfirm';
-import { useSubscription } from '@/composables/useSubscription';
-import { useNegocio } from '@/composables/useNegocio';
-import { store } from '@/store';
+import { computed, ref, onMounted, nextTick, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuth } from '../composables/core/useAuth'
+import { useSucursal } from '../composables/admin/useSucursal'
+import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
+import { useSubscription } from '@/composables/core/useSubscription'
+import { useNegocio } from '@/composables/core/useNegocio'
+import { store } from '@/store'
 
-import ChangePinModal from '@/components/profile/ChangePinModal.vue';
-import SucursalModal from '@/components/profile/SucursalModal.vue';
+import ChangePinModal from '@/components/profile/ChangePinModal.vue'
+import SucursalModal from '@/components/profile/SucursalModal.vue'
 
-import '@/assets/profile.css';
+import '@/assets/profile.css'
 
-const router = useRouter();
-const toast = useToast();
-const confirm = useConfirm();
-const { user } = useAuth();
-const { sucursales, deleteSucursal } = useSucursal();
-const { subscriptionStatus } = useSubscription();
-const negocioComposable = useNegocio();
+const router = useRouter()
+const toast = useToast()
+const confirm = useConfirm()
+const { user } = useAuth()
+const { sucursales, deleteSucursal } = useSucursal()
+const { subscriptionStatus } = useSubscription()
+const negocioComposable = useNegocio()
 
-const securityCardRef = ref(null);
+const securityCardRef = ref(null)
 
 // Referencias vitales para que los modales funcionen
-const pinModalRef = ref(null);
-const sucursalModalRef = ref(null);
+const pinModalRef = ref(null)
+const sucursalModalRef = ref(null)
 
 const negocioForm = reactive({
   ruc: store.negocio.ruc || '',
-  nombre: store.negocio.nombre || ''
-});
+  nombre: store.negocio.nombre || '',
+})
 
 const handleBuscarRuc = async () => {
-  const nombre = await negocioComposable.buscarRuc(negocioForm.ruc);
+  const nombre = await negocioComposable.buscarRuc(negocioForm.ruc)
   if (nombre) {
-    negocioForm.nombre = nombre;
-    toast.add({ severity: 'success', summary: 'RUC encontrado', detail: nombre, life: 3000 });
+    negocioForm.nombre = nombre
+    toast.add({ severity: 'success', summary: 'RUC encontrado', detail: nombre, life: 3000 })
   }
-};
+}
 
 const handleGuardarNegocio = async () => {
   try {
     await negocioComposable.guardarNegocio({
       nombre: negocioForm.nombre.trim(),
       ruc: negocioForm.ruc.trim(),
-      logoUrl: store.negocio.logoUrl || ''
-    });
-    toast.add({ severity: 'success', summary: 'Guardado', detail: 'Datos del negocio actualizados.', life: 3000 });
+      logoUrl: store.negocio.logoUrl || '',
+    })
+    toast.add({
+      severity: 'success',
+      summary: 'Guardado',
+      detail: 'Datos del negocio actualizados.',
+      life: 3000,
+    })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 });
+    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 })
   }
-};
+}
 
 const handleLogoUpload = async (event) => {
-  const file = event.target.files?.[0];
-  if (!file) return;
+  const file = event.target.files?.[0]
+  if (!file) return
   if (file.size > 2 * 1024 * 1024) {
-    toast.add({ severity: 'warn', summary: 'Archivo muy grande', detail: 'El logo debe pesar menos de 2MB.', life: 3000 });
-    return;
+    toast.add({
+      severity: 'warn',
+      summary: 'Archivo muy grande',
+      detail: 'El logo debe pesar menos de 2MB.',
+      life: 3000,
+    })
+    return
   }
   try {
-    await negocioComposable.subirLogo(file);
-    toast.add({ severity: 'success', summary: 'Logo actualizado', life: 2000 });
+    await negocioComposable.subirLogo(file)
+    toast.add({ severity: 'success', summary: 'Logo actualizado', life: 2000 })
   } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error al subir logo', detail: e.message, life: 4000 });
+    toast.add({ severity: 'error', summary: 'Error al subir logo', detail: e.message, life: 4000 })
   }
-};
+}
 
-const isDefaultPin = computed(() => store.userProfile?.adminPin === '1234');
-const userName = computed(() => user.value?.displayName || 'Usuario');
-const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase());
+const isDefaultPin = computed(() => store.userProfile?.adminPin === '1234')
+const userName = computed(() => user.value?.displayName || 'Usuario')
+const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase())
 
 onMounted(async () => {
   if (store.userProfile?.adminPin === '1234') {
-    await nextTick();
-    securityCardRef.value?.$el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    await nextTick()
+    securityCardRef.value?.$el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
-});
+})
 
 const handleOpenCreation = () => {
-  const limite = subscriptionStatus.value.limitSucursales;
-  const actual = sucursales.value.length;
+  const limite = subscriptionStatus.value.limitSucursales
+  const actual = sucursales.value.length
 
   if (actual >= limite) {
     toast.add({
       severity: 'warn',
       summary: 'Límite alcanzado',
       detail: `Has alcanzado el límite de sedes (${actual}/${limite}). Actualiza tu plan.`,
-      life: 4000
-    });
-    return;
+      life: 4000,
+    })
+    return
   }
-  
-  sucursalModalRef.value.open();
-};
+
+  sucursalModalRef.value.open()
+}
 
 const deleteSucursalModal = (id) => {
   confirm.require({
@@ -291,12 +353,17 @@ const deleteSucursalModal = (id) => {
     acceptProps: { label: 'Eliminar', severity: 'danger' },
     accept: async () => {
       try {
-        await deleteSucursal(id);
-        toast.add({ severity: 'success', summary: 'Eliminado', detail: 'Sucursal eliminada correctamente', life: 3000 });
+        await deleteSucursal(id)
+        toast.add({
+          severity: 'success',
+          summary: 'Eliminado',
+          detail: 'Sucursal eliminada correctamente',
+          life: 3000,
+        })
       } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 });
+        toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 })
       }
-    }
-  });
-};
+    },
+  })
+}
 </script>
