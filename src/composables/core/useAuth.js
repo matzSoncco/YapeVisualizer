@@ -1,8 +1,9 @@
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
-import { auth, db } from '../../firebaseConfig'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { auth, db } from '@/firebaseConfig'
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
 import { store, setUserProfile } from '@/store'
+import { hashPin } from '@/utils/security'
 
 const user = ref(null)
 
@@ -108,12 +109,6 @@ export function useAuth() {
   const updateAdminPin = async (currentPin, newPin) => {
     if (!user.value) throw new Error('Sesión no válida')
 
-    const storedPin = store.userProfile?.adminPin
-
-    if (storedPin && storedPin !== currentPin) {
-      throw new Error('El PIN actual ingresado es incorrecto.')
-    }
-
     if (!/^\d{4}$/.test(newPin)) {
       throw new Error('El PIN debe contener exactamente 4 dígitos numéricos.')
     }
@@ -125,9 +120,24 @@ export function useAuth() {
     loading.value = true
     try {
       const userRef = doc(db, 'users', user.value.uid)
-      await setDoc(userRef, { adminPin: newPin }, { merge: true })
+      const storedData = String(store.userProfile?.adminPin || '1234')
+      
+      const currentHash = await hashPin(String(currentPin))
+      const newHash = await hashPin(String(newPin))
 
-      setUserProfile({ ...store.userProfile, adminPin: newPin })
+      const isPinCorrect = storedData.length > 10 
+        ? storedData === currentHash
+        : storedData === String(currentPin)
+
+      if (!isPinCorrect) {
+        throw new Error('El PIN actual ingresado es incorrecto.')
+      }
+
+      await setDoc(userRef, { adminPin: newHash }, { merge: true })
+
+      setUserProfile({ ...store.userProfile, adminPin: newHash })
+
+      return true
     } catch (err) {
       console.error('Error actualizando PIN:', err)
       throw err
@@ -135,6 +145,56 @@ export function useAuth() {
       loading.value = false
     }
   }
+
+  /**
+   * Verifica el PIN ingresado contra el almacenado en Firestore para el usuario actual
+   * @param {string} inputPin 
+   * @returns {Promise<boolean>} Promesa que se resuelve con true si el PIN es válido, false en caso contrario
+   */
+  const verifyAdminPin = async (inputPin) => {
+    if (!user.value) return false
+
+    loading.value = true;
+    try {
+      const userRef = doc(db, 'users', user.value.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) return false;
+
+      const storedData = String(userSnap.data().adminPin);
+      const inputHash = await hashPin(String(inputPin));
+
+      if (storedData.length > 10) {
+        return storedData === inputHash;
+      }
+
+      if (storedData === String(inputPin)) {
+        // Aprovechamos el éxito para actualizar a Hash en Firebase de una vez
+        await updateDoc(userRef, { adminPin: inputHash });
+        
+        // Opcional: Actualizar el store local para que no pida cambio de PIN
+        store.userProfile.adminPin = inputHash; 
+        
+        console.log("✅ Usuario migrado a Hash con éxito");
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('Error verificando PIN:', err);
+      return false;
+    } finally {
+      loading.value = true;
+    }
+  }
+
+  /**
+   * Propiedad computada para verificar si el PIN actual es inseguro (1234)
+   * @returns {boolean} true si el PIN es '1234', false en caso contrario
+   */
+  const tienePinInseguro = computed(() => {
+    return store.userProfile?.adminPin === '1234'
+  })
 
   /**
    * Actualiza el perfil del negocio en Firestore y sincroniza con el estado local
@@ -168,11 +228,13 @@ export function useAuth() {
 
   return {
     user,
+    error,
+    loading,
     logInWithGoogle,
     logOut,
     updateAdminPin,
     updateBusinessProfile,
-    error,
-    loading,
+    verifyAdminPin,
+    tienePinInseguro,
   }
 }

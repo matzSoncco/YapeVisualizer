@@ -1,369 +1,211 @@
 <template>
-  <div class="profile-container">
-    <Toast />
-    <ConfirmDialog />
+  <div class="settings-root">
+    <AdminHeader title="Configuración" />
 
-    <header class="profile-header">
-      <div class="header-left">
-        <Button
-          icon="pi pi-arrow-left"
-          @click="router.push('/admin')"
-          text
-          rounded
-          aria-label="Volver"
-          v-tooltip.bottom="'Volver al Admin'"
-        />
-        <h1>Mi Perfil y Configuración</h1>
-      </div>
-    </header>
-
-    <div class="profile-layout">
-      <aside class="profile-sidebar">
-        <Card class="profile-card user-info-card">
-          <template #content>
-            <div class="user-avatar-wrapper">
-              <Avatar :label="userInitial" size="xlarge" shape="circle" class="user-avatar-lg" />
-            </div>
-            <div class="user-details">
-              <h2 class="user-name">{{ userName }}</h2>
-              <p class="user-email">{{ user?.email }}</p>
-              <Tag value="Administrador" class="role-tag" rounded />
-            </div>
-          </template>
-        </Card>
-
-        <Card class="profile-card subscription-card">
-          <template #header>
-            <div class="card-header">
-              <h3><i class="pi pi-sparkles"></i> Tu Plan</h3>
-              <Tag
-                :value="subscriptionStatus.isActive ? 'ACTIVO' : 'INACTIVO'"
-                :severity="subscriptionStatus.isActive ? 'success' : 'danger'"
-                rounded
-              />
-            </div>
-          </template>
-          <template #content>
-            <p class="text-sm mt-2">Nivel: {{ subscriptionStatus.planName }}</p>
-            <p class="text-sm">
-              Sedes: {{ sucursales.length }} / {{ subscriptionStatus.limitSucursales }}
-            </p>
-          </template>
-        </Card>
-
-        <Card
-          class="profile-card security-card"
-          :class="{ 'highlight-focus': isDefaultPin }"
-          ref="securityCardRef"
-        >
-          <template #header>
-            <div class="card-header">
-              <h3><i class="pi pi-shield"></i> Seguridad</h3>
-            </div>
-          </template>
-          <template #content>
-            <div class="security-content">
-              <p class="text-sm text-gray-500 mb-3">Control de acceso administrativo</p>
-
-              <div v-if="isDefaultPin" class="pin-warning-box">
-                <i class="pi pi-exclamation-triangle"></i>
-                <span>Tu PIN es inseguro (Default).</span>
-              </div>
-
-              <Button
-                label="Cambiar PIN"
-                icon="pi pi-key"
-                severity="secondary"
-                outlined
-                class="w-full"
-                @click="pinModalRef.open()"
-              />
-            </div>
-          </template>
-        </Card>
+    <div class="settings-container">
+      <aside class="settings-nav">
+        <nav class="nav-menu">
+          <button 
+            v-for="tab in tabs" 
+            :key="tab.id"
+            :class="['nav-item', { active: activeTab === tab.id }]"
+            @click="activeTab = tab.id"
+          >
+            <i :class="tab.icon"></i>
+            <span>{{ tab.label }}</span>
+          </button>
+        </nav>
       </aside>
 
-      <main class="profile-main">
-        <Card class="profile-card negocio-card">
-          <template #header>
-            <div class="card-header">
-              <h3><i class="pi pi-shop"></i> Datos del Negocio</h3>
+      <main class="settings-content">
+        <Transition name="fade-slide" mode="out-in">
+          
+          <div v-if="activeTab === 'account'" class="tab-pane">
+            <h2 class="pane-title">Mi Cuenta y Seguridad</h2>
+            <p class="pane-desc">Administra tu identidad y el acceso administrativo al sistema.</p>
+            
+            <div class="pane-cards">
+              <ProfileInfoCard :user="user" />
+              <SecurityCard :isDefault="isDefaultPin" @change-pin="pinModalRef.open()" />
             </div>
-          </template>
-          <template #content>
-            <div class="negocio-form">
-              <div class="logo-section">
-                <div class="logo-preview">
-                  <img
-                    v-if="store.negocio.logoUrl"
-                    :src="store.negocio.logoUrl"
-                    alt="Logo"
-                    class="logo-img"
-                  />
-                  <div v-else class="logo-placeholder">
-                    <i class="pi pi-image"></i>
-                  </div>
-                </div>
-                <div class="logo-actions">
-                  <label for="logo-upload" class="btn-upload-logo">
-                    <i class="pi pi-upload"></i>
-                    {{ store.negocio.logoUrl ? 'Cambiar logo' : 'Subir logo' }}
-                  </label>
-                  <input
-                    id="logo-upload"
-                    type="file"
-                    accept="image/*"
-                    class="logo-input-hidden"
-                    @change="handleLogoUpload"
-                  />
-                  <span class="logo-hint">PNG o JPG, máx. 2MB</span>
-                </div>
-              </div>
+          </div>
 
-              <hr class="negocio-divider" />
-
-              <div v-if="negocioComposable.sunatDisponible" class="form-field">
-                <label>RUC</label>
-                <div class="ruc-row">
-                  <InputText
-                    v-model="negocioForm.ruc"
-                    placeholder="11 dígitos"
-                    maxlength="11"
-                    class="input-ruc"
-                    @input="negocioComposable.errorRuc.value = ''"
-                  />
-                  <Button
-                    label="Buscar"
-                    icon="pi pi-search"
-                    :loading="negocioComposable.loadingRuc.value"
-                    :disabled="negocioForm.ruc.length !== 11"
-                    @click="handleBuscarRuc"
-                    size="small"
-                  />
-                </div>
-                <small v-if="negocioComposable.errorRuc.value" class="ruc-error">
-                  {{ negocioComposable.errorRuc.value }}
-                </small>
-              </div>
-
-              <div class="form-field">
-                <label>Nombre del Negocio</label>
-                <InputText
-                  v-model="negocioForm.nombre"
-                  placeholder="Ej. Negocios e Inversiones Vilef S.A.C."
-                  class="input-full"
-                />
-              </div>
-
-              <div class="negocio-save-row">
-                <Button
-                  label="Guardar datos"
-                  icon="pi pi-check"
-                  :loading="negocioComposable.loading.value"
-                  :disabled="!negocioForm.nombre.trim()"
-                  @click="handleGuardarNegocio"
-                />
-              </div>
+          <div v-else-if="activeTab === 'business'" class="tab-pane">
+            <h2 class="pane-title">Datos del Negocio</h2>
+            <p class="pane-desc">Información legal y visual que aparecerá en tus tickets y reportes.</p>
+            
+            <div class="pane-cards">
+              <BusinessForm /> 
             </div>
-          </template>
-        </Card>
+          </div>
 
-        <Card class="profile-card branches-card">
-          <template #header>
-            <div class="card-header">
-              <div class="header-title">
-                <i class="pi pi-building"></i>
-                <h3>Mis Sucursales</h3>
-              </div>
-              <Button
-                label="Nueva Sede"
-                icon="pi pi-plus"
-                @click="handleOpenCreation"
-                :disabled="
-                  subscriptionStatus.isHardBlocked ||
-                  sucursales.length >= subscriptionStatus.limitSucursales
-                "
-                size="small"
-              />
+          <div v-else-if="activeTab === 'billing'" class="tab-pane">
+            <h2 class="pane-title">Suscripción y Límites</h2>
+            <p class="pane-desc">Revisa el estado de tu plan actual.</p>
+            
+            <div class="pane-cards">
+              <SubscriptionCard :status="subscriptionStatus" :count="sucursales.length" />
             </div>
-          </template>
+          </div>
 
-          <template #content>
-            <div v-if="sucursales.length === 0" class="empty-state-branches">
-              <div class="empty-icon"><i class="pi pi-shop"></i></div>
-              <h4>No tienes sucursales aún</h4>
-              <Button label="Crear Sede" icon="pi pi-plus" text @click="handleOpenCreation" />
-            </div>
-
-            <div v-else class="branches-grid">
-              <div v-for="sucursal in sucursales" :key="sucursal.id" class="branch-item-card">
-                <div class="branch-icon">
-                  <span>{{ sucursal.icono || '🏪' }}</span>
-                </div>
-                <div class="branch-info">
-                  <h4>{{ sucursal.nombre }}</h4>
-                  <span class="text-xs text-gray-500">Serie: {{ sucursal.serie || 'NV001' }}</span>
-                </div>
-                <div class="branch-actions">
-                  <Button
-                    v-if="!subscriptionStatus.isHardBlocked"
-                    icon="pi pi-pencil"
-                    text
-                    rounded
-                    @click="sucursalModalRef.open(sucursal)"
-                    v-tooltip.top="'Editar'"
-                  />
-                  <Button
-                    v-if="!subscriptionStatus.isHardBlocked"
-                    icon="pi pi-trash"
-                    text
-                    rounded
-                    severity="danger"
-                    @click="deleteSucursalModal(sucursal.id)"
-                    v-tooltip.top="'Eliminar'"
-                  />
-                </div>
-              </div>
-            </div>
-          </template>
-        </Card>
+        </Transition>
       </main>
     </div>
 
     <ChangePinModal ref="pinModalRef" />
-    <SucursalModal ref="sucursalModalRef" />
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, nextTick, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '../composables/core/useAuth'
-import { useSucursal } from '../composables/admin/useSucursal'
-import { useToast } from 'primevue/usetoast'
-import { useConfirm } from 'primevue/useconfirm'
+import { ref, computed } from 'vue'
+import { useAuth } from '@/composables/core/useAuth'
+import { useSucursal } from '@/composables/admin/useSucursal'
 import { useSubscription } from '@/composables/core/useSubscription'
-import { useNegocio } from '@/composables/core/useNegocio'
 import { store } from '@/store'
 
+import AdminHeader from '@/components/admin/AdminHeader.vue'
+import ProfileInfoCard from '@/components/profile/ProfileInfoCard.vue'
+import SubscriptionCard from '@/components/profile/SubscriptionCard.vue'
+import SecurityCard from '@/components/profile/SecurityCard.vue'
+import BusinessForm from '@/components/profile/BusinessForm.vue'
 import ChangePinModal from '@/components/profile/ChangePinModal.vue'
-import SucursalModal from '@/components/profile/SucursalModal.vue'
 
-import '@/assets/profile.css'
-
-const router = useRouter()
-const toast = useToast()
-const confirm = useConfirm()
 const { user } = useAuth()
-const { sucursales, deleteSucursal } = useSucursal()
+const { sucursales } = useSucursal()
 const { subscriptionStatus } = useSubscription()
-const negocioComposable = useNegocio()
-
-const securityCardRef = ref(null)
-
-// Referencias vitales para que los modales funcionen
 const pinModalRef = ref(null)
-const sucursalModalRef = ref(null)
 
-const negocioForm = reactive({
-  ruc: store.negocio.ruc || '',
-  nombre: store.negocio.nombre || '',
-})
+const activeTab = ref('account')
 
-const handleBuscarRuc = async () => {
-  const nombre = await negocioComposable.buscarRuc(negocioForm.ruc)
-  if (nombre) {
-    negocioForm.nombre = nombre
-    toast.add({ severity: 'success', summary: 'RUC encontrado', detail: nombre, life: 3000 })
-  }
-}
-
-const handleGuardarNegocio = async () => {
-  try {
-    await negocioComposable.guardarNegocio({
-      nombre: negocioForm.nombre.trim(),
-      ruc: negocioForm.ruc.trim(),
-      logoUrl: store.negocio.logoUrl || '',
-    })
-    toast.add({
-      severity: 'success',
-      summary: 'Guardado',
-      detail: 'Datos del negocio actualizados.',
-      life: 3000,
-    })
-  } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 4000 })
-  }
-}
-
-const handleLogoUpload = async (event) => {
-  const file = event.target.files?.[0]
-  if (!file) return
-  if (file.size > 2 * 1024 * 1024) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Archivo muy grande',
-      detail: 'El logo debe pesar menos de 2MB.',
-      life: 3000,
-    })
-    return
-  }
-  try {
-    await negocioComposable.subirLogo(file)
-    toast.add({ severity: 'success', summary: 'Logo actualizado', life: 2000 })
-  } catch (e) {
-    toast.add({ severity: 'error', summary: 'Error al subir logo', detail: e.message, life: 4000 })
-  }
-}
+const tabs = [
+  { id: 'account', label: 'Cuenta y Seguridad', icon: 'pi pi-user' },
+  { id: 'business', label: 'Datos del Negocio', icon: 'pi pi-shop' },
+  { id: 'billing', label: 'Suscripción', icon: 'pi pi-sparkles' },
+]
 
 const isDefaultPin = computed(() => store.userProfile?.adminPin === '1234')
-const userName = computed(() => user.value?.displayName || 'Usuario')
-const userInitial = computed(() => (user.value?.email || 'U').charAt(0).toUpperCase())
-
-onMounted(async () => {
-  if (store.userProfile?.adminPin === '1234') {
-    await nextTick()
-    securityCardRef.value?.$el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-  }
-})
-
-const handleOpenCreation = () => {
-  const limite = subscriptionStatus.value.limitSucursales
-  const actual = sucursales.value.length
-
-  if (actual >= limite) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Límite alcanzado',
-      detail: `Has alcanzado el límite de sedes (${actual}/${limite}). Actualiza tu plan.`,
-      life: 4000,
-    })
-    return
-  }
-
-  sucursalModalRef.value.open()
-}
-
-const deleteSucursalModal = (id) => {
-  confirm.require({
-    message: '¿Estás seguro de eliminar esta sucursal? Se perderá el acceso a sus ventas.',
-    header: 'Confirmar eliminación',
-    icon: 'pi pi-exclamation-triangle',
-    rejectProps: { label: 'Cancelar', severity: 'secondary', outlined: true },
-    acceptProps: { label: 'Eliminar', severity: 'danger' },
-    accept: async () => {
-      try {
-        await deleteSucursal(id)
-        toast.add({
-          severity: 'success',
-          summary: 'Eliminado',
-          detail: 'Sucursal eliminada correctamente',
-          life: 3000,
-        })
-      } catch (e) {
-        toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 })
-      }
-    },
-  })
-}
 </script>
+
+<style scoped>
+.settings-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface-alt);
+  min-height: 0;
+}
+
+.settings-container {
+  flex: 1;
+  display: flex;
+  gap: 3rem;
+  padding: 2rem 3rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-y: auto;
+}
+
+/* --- NAVEGACIÓN IZQUIERDA --- */
+.settings-nav {
+  width: 240px;
+  flex-shrink: 0;
+}
+
+.nav-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: sticky;
+  top: 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--color-primary);
+}
+
+.nav-item.active {
+  background: var(--bg-app);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-flat);
+  font-weight: 700;
+}
+
+.nav-item i {
+  font-size: 1rem;
+}
+
+/* --- CONTENIDO DERECHO --- */
+.settings-content {
+  flex: 1;
+  min-width: 0; /* EL SALVAVIDAS ANTI-DESBORDE */
+}
+
+.pane-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.pane-desc {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin: 0 0 2rem 0;
+}
+
+.pane-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 600px; /* Mantiene los formularios con un ancho legible */
+}
+
+/* Transición */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.fade-slide-enter-from { opacity: 0; transform: translateY(10px); }
+.fade-slide-leave-to { opacity: 0; transform: translateY(-10px); }
+
+/* Responsive */
+@media (max-width: 850px) {
+  .settings-container {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  .settings-nav {
+    width: 100%;
+  }
+  .nav-menu {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  .nav-item {
+    white-space: nowrap;
+  }
+  .pane-cards {
+    max-width: 100%;
+  }
+}
+</style>

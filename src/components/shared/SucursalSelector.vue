@@ -65,13 +65,15 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useSucursal } from '../../composables/admin/useSucursal'
+import { useSucursal } from '@/composables/admin/useSucursal'
+import { useAuth } from '@/composables/core/useAuth'
 import { useToast } from 'primevue/usetoast'
-import { setAdminAuth, store } from '@/store'
+import { setAdminAuth } from '@/store'
 
 const router = useRouter()
 const toast = useToast()
 const { sucursales, seleccionar, loading } = useSucursal()
+const { verifyAdminPin } = useAuth()
 
 const showPinModal = ref(false)
 const pin = ref('')
@@ -93,23 +95,35 @@ const verificarPin = async () => {
 
   loadingPin.value = true
 
-  if (pin.value === String(store.userProfile.adminPin)) {
-    setAdminAuth(true)
-    seleccionar('ADMIN')
-    showPinModal.value = false
-    toast.add({ severity: 'success', summary: 'Acceso concedido', life: 2000 })
-    router.push({ name: 'admin' })
-  } else {
-    toast.add({
-      severity: 'error',
-      summary: 'PIN incorrecto',
-      detail: 'Verifica e intenta de nuevo',
-      life: 3000,
-    })
-    pin.value = ''
-  }
+  try {
+    const esValido = await verifyAdminPin(pin.value)
 
+    if (esValido) {
+      setAdminAuth(true)
+      seleccionar('ADMIN')
+      showPinModal.value = false
+      
+      toast.add({ 
+        severity: 'success', 
+        summary: 'Acceso concedido', 
+        detail: 'Bienvenido al panel de control',
+        life: 2000 
+      })
+
+      router.push('/admin')
+    } else {
+      throw new Error('PIN incorrecto')
+    }
+  } catch (err) {
+    toast.add({ 
+      severity: 'error', 
+      summary: 'Acceso denegado', 
+      detail: 'El PIN ingresado es incorrecto',
+      life: 3000 
+    })
+  } finally {
   loadingPin.value = false
+  }
 }
 </script>
 
