@@ -82,9 +82,9 @@
         />
         <Button
           label="Guardar"
-          icon="pi pi-check"
+          :icon="saving ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
           @click="handleSave"
-          :disabled="!form.nombre"
+          :disabled="!form.nombre || saving"
           class="btn-save"
         />
       </div>
@@ -108,6 +108,7 @@ const toast = useToast()
 
 const visible = ref(false)
 const isEditing = ref(false)
+const saving = ref(false)
 
 const form = reactive({
   id: null,
@@ -130,6 +131,9 @@ const handleSave = async () => {
     return
   }
 
+  if (saving.value) return
+  saving.value = true
+
   try {
     if (isEditing.value) {
       await updateSucursal(form.id, form)
@@ -151,6 +155,8 @@ const handleSave = async () => {
     visible.value = false
   } catch (e) {
     toast.add({ severity: 'error', summary: 'Error', detail: e.message, life: 5000 })
+  } finally {
+    saving.value = false
   }
 }
 
