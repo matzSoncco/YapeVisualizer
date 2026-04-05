@@ -169,8 +169,9 @@ export const getTicketHTML = (sale, options = {}) => {
     th { border-bottom: 1.5pt solid #000; padding-bottom: 4px; text-align: left; }
     td { padding: 6px 0; vertical-align: top; }
     
-    .qty { width: 15%; text-align: left; }
-    .desc { width: 55%; font-weight: 500; }
+    /* Ampliado el ancho para que entre la unidad (ej. "12 UNI") */
+    .qty { width: 22%; text-align: left; }
+    .desc { width: 48%; font-weight: 500; }
     .total-col { width: 30%; text-align: right; font-weight: 600; }
 
     .total-container { margin-top: 10px; }
@@ -233,7 +234,7 @@ export const getTicketHTML = (sale, options = {}) => {
           .map(
             (item) => `
         <tr>
-          <td class="qty">${item.qty}</td>
+          <td class="qty">${item.qty} ${item.unidad || 'UNI'}</td>
           <td class="desc">${(item.name || '').toUpperCase()}</td>
           <td class="total-col">S/ ${(item.price * item.qty).toFixed(2)}</td>
         </tr>`,

@@ -49,6 +49,7 @@
     <section class="admin-viewport">
       <Transition name="fade-slide" mode="out-in">
         <div :key="activeTab" class="view-wrapper">
+          
           <div v-if="activeTab === 'overview'" class="view-content">
             <AdminStats :kpis="kpis" />
           </div>
@@ -57,9 +58,6 @@
             <div class="charts-card">
               <AdminCharts :salesData="salesChartData" :branchData="branchChartData" />
             </div>
-          <div v-else-if="activeTab === 'inventory'" class="view-content">
-            <AdminInventory />
-          </div>
           </div>
 
           <div v-else-if="activeTab === 'table'" class="view-content">
@@ -67,6 +65,7 @@
               <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
             </div>
           </div>
+
         </div>
       </Transition>
     </section>
@@ -89,8 +88,6 @@ import AdminStats from '@/components/admin/AdminStats.vue'
 import AdminCharts from '@/components/admin/AdminCharts.vue'
 import CierreDetailModal from '@/components/admin/modals/CierreDetailModal.vue'
 
-import AdminInventory from '@/components/admin/AdminInventory.vue'
-
 const router = useRouter()
 const toast = useToast()
 const { sucursales } = useSucursal()
@@ -105,7 +102,6 @@ const tabs = [
   { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
   { id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' },
   { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
-  { id: 'inventory', label: 'Inventario', icon: 'pi pi-box' },
 ]
 
 const filters = ref({

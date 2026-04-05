@@ -33,7 +33,7 @@
           <div class="items-list custom-scrollbar">
             <div v-for="(item, i) in sale.items" :key="i" class="product-item">
               <span class="p-main">
-                <span class="p-qty">{{ item.qty }}x</span>
+                <span class="p-qty">{{ item.qty }} {{ item.unidad || 'UNI' }} x</span>
                 <span class="p-name">{{ item.name }}</span>
               </span>
               <span class="p-total">S/ {{ (item.price * item.qty).toFixed(2) }}</span>
