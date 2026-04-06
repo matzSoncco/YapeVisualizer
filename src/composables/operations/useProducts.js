@@ -22,23 +22,33 @@ export function useProducts() {
    * Búsqueda en el Catálogo Maestro (Nivel Usuario, no Sucursal)
    * Optimizado para reducir lecturas (Limit 5)
    */
-  const buscarProductos = async (text) => {
+const buscarProductos = async (text) => {
     if (!user.value?.uid || !text || text.length < 2) {
       suggestions.value = []
       return
     }
 
     const searchTerm = text.toUpperCase()
+    const productsRef = collection(db, 'users', user.value.uid, 'products')
 
     try {
-      const productsRef = collection(db, 'users', user.value.uid, 'products')
-
-      const q = query(
-        productsRef,
-        where('name', '>=', searchTerm),
-        where('name', '<=', searchTerm + '\uf8ff'),
-        limit(5),
-      )
+      let q;
+      // Si el texto es numérico y largo, priorizamos búsqueda por código EAN
+      if (/^\d{4,}$/.test(text)) {
+        q = query(
+          productsRef,
+          where('codEAN', '==', text),
+          limit(5)
+        )
+      } else {
+        // Búsqueda normal por nombre
+        q = query(
+          productsRef,
+          where('name', '>=', searchTerm),
+          where('name', '<=', searchTerm + '\uf8ff'),
+          limit(5),
+        )
+      }
 
       const snapshot = await getDocs(q)
       suggestions.value = snapshot.docs.map((d) => ({

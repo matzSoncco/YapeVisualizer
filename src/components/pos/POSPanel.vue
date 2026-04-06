@@ -139,65 +139,133 @@
       </div>
     </footer>
 
-    <Dialog v-model:visible="showUnknownBarcodeWizard" :modal="true" :style="{width: '450px'}" header="Código Detectado" class="p-fluid">
-      
-      <div v-if="wizardMode === 'CHOOSE'" class="text-center py-4">
-        <i class="pi pi-question-circle text-5xl text-orange-500 mb-4 block"></i>
-        <p class="mb-5 text-lg">El código <strong>{{ scannedUnknownBarcode }}</strong> no está en tu inventario. ¿Qué deseas hacer?</p>
-        <div class="flex flex-col gap-3">
-          <Button label="Enlazar a producto existente" icon="pi pi-link" outlined @click="wizardMode = 'LINK'" />
-          <Button label="Crear producto nuevo" icon="pi pi-plus" severity="success" @click="wizardMode = 'CREATE'" />
-        </div>
-      </div>
-
-      <div v-else-if="wizardMode === 'LINK'">
-        <p class="mb-4 text-sm text-slate-600">Busca el producto de tu inventario al cual le guardaremos el código permanente <strong>{{ scannedUnknownBarcode }}</strong>.</p>
-        <div class="field mb-5">
-          <label class="font-bold block mb-2">Buscar Producto Físico</label>
-          <AutoComplete 
-            v-model="linkTarget" 
-            :suggestions="suggestions" 
-            @complete="search" 
-            optionLabel="name" 
-            placeholder="Escribe su nombre..." 
-            class="w-full"
-            autofocus
-          />
-        </div>
-        <div class="flex justify-between gap-2 mt-4">
-          <Button label="Atrás" icon="pi pi-arrow-left" text severity="secondary" @click="wizardMode = 'CHOOSE'" />
-          <Button label="Vincular y Cobrar" icon="pi pi-check" :disabled="!linkTarget || !linkTarget.id" @click="confirmarVinculacion" />
-        </div>
-      </div>
-
-      <div v-else-if="wizardMode === 'CREATE'">
-        <p class="mb-4 text-sm text-slate-600">Este producto quedará guardado para siempre en tu inventario y saltará directamente al carrito.</p>
+<Dialog 
+      v-model:visible="showUnknownBarcodeWizard" 
+      :modal="true" 
+      :style="{width: '480px'}" 
+      header="Código no registrado" 
+      class="custom-inventory-dialog"
+      :draggable="false"
+    >
+      <div class="modal-form-content">
         
-        <div class="field mb-3">
-          <label class="font-bold block mb-1">Nombre</label>
-          <InputText v-model="newProdName" autofocus placeholder="Ej. Galletas Soda" class="w-full" />
-        </div>
-        
-        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; width: 100%;">
-          <div style="flex: 1;">
-            <label class="font-bold block mb-1">Precio Unitario</label>
-            <InputNumber v-model="newProdPrice" mode="currency" currency="PEN" locale="es-PE" placeholder="0.00" style="width: 100%;" />
+        <div v-if="wizardMode === 'CHOOSE'" class="choose-container">
+          <div class="barcode-header">
+            <div class="barcode-icon">
+              <i class="pi pi-barcode"></i>
+            </div>
+            <div class="barcode-info">
+              <span class="barcode-label">Código escaneado</span>
+              <strong class="barcode-value">{{ scannedUnknownBarcode }}</strong>
+            </div>
           </div>
-          <div style="flex: 1;">
-            <label class="font-bold block mb-1">Medida</label>
-            <Select 
-              v-model="newProdUnidad" 
-              :options="PRODUCT_UNITS" 
-              optionLabel="label" 
-              optionValue="value" 
-              style="width: 100%;" 
+
+          <div class="divider"></div>
+
+          <p class="info-text">Este código no existe en tu inventario. ¿Qué deseas hacer?</p>
+          
+          <div class="action-buttons">
+            <button class="action-link" @click="wizardMode = 'LINK'">
+              <i class="pi pi-link"></i>
+              <span>Enlazar a producto existente</span>
+            </button>
+            <button class="action-create" @click="wizardMode = 'CREATE'">
+              <i class="pi pi-plus-circle"></i>
+              <span>Crear producto nuevo</span>
+            </button>
+          </div>
+        </div>
+
+        <div v-else-if="wizardMode === 'LINK'" class="link-container">
+          <div class="barcode-chip">
+            <i class="pi pi-barcode"></i>
+            <span>{{ scannedUnknownBarcode }}</span>
+          </div>
+
+          <div class="form-field">
+            <label>Buscar producto</label>
+            <AutoComplete 
+              v-model="linkTarget" 
+              :suggestions="suggestions" 
+              @complete="searchForLink" 
+              optionLabel="name" 
+              placeholder="Escribe el nombre..." 
+              class="w-full"
+              inputClass="form-input-control"
+              autofocus
+            />
+            <small class="field-hint">Solo muestra productos sin código de barras</small>
+          </div>
+
+          <div class="modal-footer-actions">
+            <button class="btn-back" @click="wizardMode = 'CHOOSE'">
+              <i class="pi pi-arrow-left"></i>
+              Atrás
+            </button>
+            <button 
+              class="btn-confirm" 
+              :disabled="!linkTarget || !linkTarget.id" 
+              @click="confirmarVinculacion"
+            >
+              <i class="pi pi-check"></i>
+              Vincular código
+            </button>
+          </div>
+        </div>
+
+        <div v-else-if="wizardMode === 'CREATE'" class="create-container">
+          <div class="barcode-chip">
+            <i class="pi pi-barcode"></i>
+            <span>{{ scannedUnknownBarcode }}</span>
+          </div>
+
+          <div class="form-field">
+            <label>Nombre del producto *</label>
+            <InputText 
+              v-model="newProdName" 
+              autofocus 
+              placeholder="Ej. Galletas Soda" 
+              class="uppercase-input form-input-control"
             />
           </div>
-        </div>
+          
+          <div class="form-row-2cols">
+            <div class="form-field">
+              <label>Precio *</label>
+              <InputNumber 
+                v-model="newProdPrice" 
+                mode="currency" 
+                currency="PEN" 
+                locale="es-PE"
+                inputClass="form-input-control"
+              />
+            </div>
+            <div class="form-field">
+              <label>Unidad de medida</label>
+              <Select 
+                v-model="newProdUnidad" 
+                :options="PRODUCT_UNITS" 
+                optionLabel="label" 
+                optionValue="value"
+                class="form-select-control"
+              />
+            </div>
+          </div>
 
-        <div class="flex justify-between gap-2 mt-4">
-          <Button label="Atrás" icon="pi pi-arrow-left" text severity="secondary" @click="wizardMode = 'CHOOSE'" />
-          <Button label="Guardar y Cobrar" icon="pi pi-check" severity="success" :disabled="!newProdName || newProdPrice === null" @click="confirmarCreacion" />
+          <div class="modal-footer-actions">
+            <button class="btn-back" @click="wizardMode = 'CHOOSE'">
+              <i class="pi pi-arrow-left"></i>
+              Atrás
+            </button>
+            <button 
+              class="btn-confirm" 
+              :disabled="!newProdName || newProdPrice === null" 
+              @click="confirmarCreacion"
+            >
+              <i class="pi pi-save"></i>
+              Guardar producto
+            </button>
+          </div>
         </div>
       </div>
     </Dialog>
@@ -213,6 +281,12 @@ import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
 import { useMatcher } from '@/composables/operations/useMatcher'
 import { cartStorageKey } from '@/store'
 import Select from 'primevue/select'
+import AutoComplete from 'primevue/autocomplete'
+import InputText from 'primevue/inputtext'
+import InputNumber from 'primevue/inputnumber'
+import Button from 'primevue/button'
+import Dialog from 'primevue/dialog'
+import Badge from 'primevue/badge'
 import { PRODUCT_UNITS } from '@/utils/constants'
 import '@/assets/pospanel.css'
 
@@ -283,22 +357,20 @@ const puedeAgregar = computed(() => {
   return val && val.length > 0 && prodPrice.value !== null && prodPrice.value >= 0
 })
 
-const puedeProcederAlPago = computed(() => {
-  const tieneItems = cart.value.length > 0
-  const tieneMontoManual = quickAmount.value !== null && quickAmount.value > 0
-
-  return tieneItems || tieneMontoManual
-})
-
-// VARIABLE CALCULADA PARA MOSTRAR LA UNIDAD DINÁMICAMENTE
 const unidadActual = computed(() => {
   if (typeof prodName.value === 'object' && prodName.value.unidad) {
     return prodName.value.unidad;
   }
-  return 'UNI'; // Valor por defecto
+  return 'UNI'; 
 });
 
-const search = (e) => buscarProductos(e.query)
+const search = async (e) => await buscarProductos(e.query)
+
+const searchForLink = async (e) => {
+  await buscarProductos(e.query);
+  suggestions.value = suggestions.value.filter(p => !p.codEAN || p.codEAN.trim() === '');
+}
+
 const onProductSelect = (e) => {
   prodPrice.value = e.value.lastPrice
 }
@@ -525,3 +597,299 @@ defineExpose({
   totalGeneral,
 })
 </script>
+
+<style scoped>
+.custom-inventory-dialog :deep(.p-dialog-header) {
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--color-text-main);
+}
+
+.custom-inventory-dialog :deep(.p-dialog-content) {
+  padding: 1.5rem;
+}
+
+.modal-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ========== CHOOSE MODE ========== */
+.choose-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.barcode-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-surface-alt);
+  padding: 1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.barcode-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--color-primary-soft);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.barcode-icon i {
+  font-size: 1.5rem;
+  color: var(--color-primary);
+}
+
+.barcode-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.barcode-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  letter-spacing: 0.5px;
+}
+
+.barcode-value {
+  font-size: 1rem;
+  font-family: monospace;
+  color: var(--color-text-main);
+  word-break: break-all;
+}
+
+.divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 0.25rem 0;
+}
+
+.info-text {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+  padding: 0 0.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.action-link,
+.action-create {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--bg-app);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  width: 100%;
+}
+
+.action-link i,
+.action-create i {
+  font-size: 1.1rem;
+}
+
+.action-link {
+  color: var(--color-text-main);
+}
+
+.action-link:hover {
+  border-color: var(--color-primary);
+  background: var(--bg-surface-alt);
+}
+
+.action-create {
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border-color: var(--color-primary);
+}
+
+.action-create:hover {
+  background: var(--color-primary-hover);
+}
+
+/* ========== LINK & CREATE MODES ========== */
+.link-container,
+.create-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.barcode-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  width: fit-content;
+}
+
+.barcode-chip i {
+  font-size: 0.9rem;
+  color: var(--color-primary);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-field label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-field small.field-hint {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.form-row-2cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.uppercase-input {
+  text-transform: uppercase;
+}
+
+/* INPUTS CONSISTENTES - Esto arregla el tamaño desigual */
+:deep(.form-input-control),
+:deep(.form-select-control) {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--bg-surface-alt);
+  transition: all 0.2s ease;
+  height: 42px; /* Forzamos la misma altura para ambos */
+  box-shadow: none;
+}
+
+:deep(.form-input-control) {
+  padding: 0.6rem 0.75rem;
+}
+
+:deep(.form-select-control .p-select-label) {
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+:deep(.form-input-control:focus),
+:deep(.form-select-control.p-focus) {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+/* ========== FOOTER ACTIONS - TUS BOTONES ORIGINALES ========== */
+.modal-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.btn-back {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 40px;
+}
+
+.btn-back:hover {
+  background: var(--color-error-soft);
+  border-color: var(--color-error);
+  color: var(--color-error-dark);
+}
+
+.btn-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  height: 40px;
+}
+
+.btn-confirm:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+  .form-row-2cols {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .modal-footer-actions {
+    flex-direction: column-reverse;
+  }
+  
+  .btn-back,
+  .btn-confirm {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>
