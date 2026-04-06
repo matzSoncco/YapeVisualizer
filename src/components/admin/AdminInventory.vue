@@ -230,6 +230,7 @@
             :suggestions="suggestions"
             @complete="searchForAjuste"
             @item-select="agregarAListaAjuste"
+            @keyup.enter="onAjusteSearchEnter"
             optionLabel="name"
             placeholder="Buscar o escanear..."
             class="w-full"
@@ -365,6 +366,30 @@ const agregarAListaAjuste = (e) => {
         });
     }
     selectedForAjuste.value = null; // Limpia el buscador para el siguiente
+};
+
+const onAjusteSearchEnter = (e) => {
+    // Si se seleccionó desde la sugerencia (es un objeto), el evento item-select ya se encarga
+    if (typeof selectedForAjuste.value === 'object' && selectedForAjuste.value !== null) {
+        return;
+    }
+    
+    // Si es texto ingresado o leído por el escáner
+    const query = (e.target.value || '').trim();
+    if (!query) return;
+
+    // Busca coincidencia exacta por código de barras o nombre del producto
+    const exactMatch = productos.value.find(p => 
+        p.codEAN === query || 
+        p.name.toUpperCase() === query.toUpperCase()
+    );
+
+    if (exactMatch) {
+        agregarAListaAjuste({ value: exactMatch });
+        if (e.target) e.target.value = ''; // Limpia el input físicamente para el siguiente escaneo
+    } else {
+        toast.add({ severity: 'warn', summary: 'No encontrado', detail: 'No se encontró un producto con ese código', life: 3000 });
+    }
 };
 
 const procesarAbastecimiento = async () => {
