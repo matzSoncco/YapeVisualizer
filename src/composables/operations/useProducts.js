@@ -185,6 +185,29 @@ const buscarProductos = async (text) => {
     }
   }
 
+  /**
+   * Ingreso Masivo de Stock
+   */
+  const abastecerStockMasivo = async (listaAjuste) => {
+    if (!user.value?.uid || listaAjuste.length === 0) return false;
+    
+    try {
+      await runTransaction(db, async (transaction) => {
+        for (const item of listaAjuste) {
+          const productRef = doc(db, 'users', user.value.uid, 'products', item.id);
+          transaction.update(productRef, {
+            stock: increment(item.cantidadNueva),
+            updatedAt: serverTimestamp()
+          });
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error("Error en carga masiva:", error);
+      return false;
+    }
+  };
+
   return {
     suggestions,
     buscarProductos,
@@ -192,6 +215,7 @@ const buscarProductos = async (text) => {
     actualizarProducto,
     crearProducto,
     buscarPorCodigoBarras,
-    obtenerTodosLosProductos
+    obtenerTodosLosProductos,
+    abastecerStockMasivo
   }
 }

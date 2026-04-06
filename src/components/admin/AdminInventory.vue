@@ -7,9 +7,14 @@
             <i class="pi pi-box" />
             <h2>Catálogo de Productos</h2>
           </div>
-          <button class="btn-new" @click="openNew">
-            <i class="pi pi-plus" /> Nuevo producto
-          </button>
+          <div class="header-buttons">
+            <button class="btn-new" @click="showAjusteModal = true">
+              <i class="pi pi-box" /> Ingreso de Stock
+            </button>
+            <button class="btn-new" @click="openNew">
+              <i class="pi pi-plus" /> Nuevo producto
+            </button>
+          </div>
         </div>
 
         <div class="card-body">
@@ -208,6 +213,94 @@
         </div>
       </template>
     </Dialog>
+
+    <Dialog 
+      v-model:visible="showAjusteModal" 
+      :style="{width: '560px'}" 
+      header="Ingreso de Stock" 
+      :modal="true" 
+      class="custom-inventory-dialog"
+      :draggable="false"
+      @hide="listaAjuste = []"
+    >
+      <div class="modal-form-content">
+        <div class="form-group">
+          <AutoComplete
+            v-model="selectedForAjuste"
+            :suggestions="suggestions"
+            @complete="searchForAjuste"
+            @item-select="agregarAListaAjuste"
+            optionLabel="name"
+            placeholder="Buscar o escanear..."
+            class="w-full"
+            inputClass="form-input-control"
+            autofocus
+          />
+        </div>
+
+        <div v-if="listaAjuste.length > 0" class="adjustment-table-container">
+          <table class="adjustment-table">
+            <thead>
+              <tr>
+                <th class="col-product">Producto</th>
+                <th class="col-qty">Cantidad a sumar</th>
+                <th class="col-action"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in listaAjuste" :key="item.id">
+                <td class="col-product">
+                  <span class="product-name">{{ item.name }}</span>
+                  <span class="product-stock">Stock actual: {{ item.stock || 0 }} {{ item.unidad }}</span>
+                </td>
+                <td class="col-qty">
+                  <InputNumber 
+                    v-model="item.cantidadNueva" 
+                    :min="1" 
+                    showButtons
+                    buttonLayout="horizontal"
+                    incrementButtonIcon="pi pi-plus"
+                    decrementButtonIcon="pi pi-minus"
+                    class="qty-input-adjust"
+                  />
+                </td>
+                <td class="col-action">
+                  <button class="btn-remove-row" @click="listaAjuste.splice(index, 1)" title="Quitar">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div v-else class="empty-ajuste-state">
+          <div class="empty-icon-circle">
+            <i class="pi pi-inbox"></i>
+          </div>
+          <p>Busca o escanea productos y añádelos a la lista para sumar stock.</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="modal-actions">
+          <Button 
+            label="Cancelar" 
+            icon="pi pi-times" 
+            text 
+            @click="showAjusteModal = false" 
+            class="btn-cancel" 
+          />
+          <Button 
+            label="Confirmar Ingreso" 
+            icon="pi pi-check" 
+            @click="procesarAbastecimiento" 
+            :disabled="listaAjuste.length === 0 || loadingAjuste" 
+            class="btn-save"
+          />
+        </div>
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -227,7 +320,7 @@ import Select from 'primevue/select';
 import Button from 'primevue/button';
 import { PRODUCT_UNITS } from '@/utils/constants';
 
-const { obtenerTodosLosProductos, actualizarProducto, crearProducto } = useProducts();
+const { obtenerTodosLosProductos, actualizarProducto, crearProducto, buscarProductos, suggestions, abastecerStockMasivo } = useProducts();
 const toast = useToast();
 
 const PREDEFINED_LOGOS = [
@@ -250,6 +343,46 @@ const productDialog = ref(false);
 const product = ref({});
 const originalProduct = ref({});
 const submitted = ref(false);
+const showAjusteModal = ref(false);
+const selectedForAjuste = ref(null);
+const listaAjuste = ref([]);
+const loadingAjuste = ref(false);
+
+const searchForAjuste = async (e) => {
+    await buscarProductos(e.query);
+};
+
+const agregarAListaAjuste = (e) => {
+    const producto = e.value;
+    // Evita duplicados en la lista temporal, si ya existe solo le suma 1 a la cantidad a ingresar
+    const existe = listaAjuste.value.find(p => p.id === producto.id);
+    if (existe) {
+        existe.cantidadNueva += 1;
+    } else {
+        listaAjuste.value.unshift({
+            ...producto,
+            cantidadNueva: 1
+        });
+    }
+    selectedForAjuste.value = null; // Limpia el buscador para el siguiente
+};
+
+const procesarAbastecimiento = async () => {
+    if (listaAjuste.value.length === 0) return;
+    loadingAjuste.value = true;
+
+    const exito = await abastecerStockMasivo(listaAjuste.value);
+
+    if (exito) {
+        toast.add({ severity: 'success', summary: 'Ingreso Completado', detail: 'El stock fue sumado correctamente', life: 3000 });
+        showAjusteModal.value = false;
+        listaAjuste.value = [];
+        await loadData(); // Recarga la tabla de atrás para ver los nuevos números
+    } else {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Hubo un problema al ingresar el stock', life: 3000 });
+    }
+    loadingAjuste.value = false;
+};
 
 const hasChanges = computed(() => {
   if (!product.value && !originalProduct.value) return false;
@@ -772,5 +905,146 @@ onMounted(loadData);
   .card-body { padding: 1rem; }
   .form-row { grid-template-columns: 1fr; gap: 1.25rem; }
   .custom-inventory-dialog :deep(.p-dialog) { width: 90% !important; margin: 1rem; }
+}
+
+.header-buttons {
+  display: flex;
+  gap: 1rem; 
+}
+
+/* --- MODAL DE INGRESO DE STOCK --- */
+.adjustment-table-container {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: 0.5rem;
+  background: var(--bg-app);
+}
+
+.adjustment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adjustment-table thead {
+  background: var(--bg-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.adjustment-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.col-qty { text-align: center !important; width: 140px; }
+.col-action { width: 50px; text-align: center !important; }
+
+.adjustment-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.product-name {
+  display: block;
+  font-weight: 700;
+  color: var(--color-text-main);
+  font-size: 0.9rem;
+}
+
+.product-stock {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+}
+
+/* Input de Cantidad con botones horizontales [ - ] [ + ] */
+:deep(.qty-input-adjust) {
+  width: 100%;
+  height: 36px;
+  display: flex;
+}
+
+:deep(.qty-input-adjust .p-inputtext) {
+  text-align: center;
+  width: 50px;
+  flex: 1;
+  padding: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  border-left: none;
+  border-right: none;
+  background: var(--bg-surface-alt);
+  font-weight: 700;
+  color: var(--color-text-main);
+  box-shadow: none;
+}
+
+:deep(.qty-input-adjust .p-inputnumber-button) {
+  width: 36px;
+  background: var(--bg-app);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  transition: all 0.2s;
+}
+
+:deep(.qty-input-adjust .p-inputnumber-button:hover) {
+  background: var(--bg-surface-alt);
+  color: var(--color-text-main);
+}
+
+.btn-remove-row {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-remove-row:hover {
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+
+.empty-ajuste-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.empty-icon-circle {
+  width: 64px;
+  height: 64px;
+  background: var(--bg-app);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+}
+
+.empty-icon-circle i {
+  font-size: 1.75rem;
+  color: var(--color-text-muted);
 }
 </style>
