@@ -357,6 +357,14 @@ const puedeAgregar = computed(() => {
   return val && val.length > 0 && prodPrice.value !== null && prodPrice.value >= 0
 })
 
+const puedeProcederAlPago = computed(() => {
+  const tieneItems = cart.value.length > 0
+  const tieneMontoManual = quickAmount.value !== null && quickAmount.value > 0
+
+  return tieneItems || tieneMontoManual
+})
+
+// VARIABLE CALCULADA PARA MOSTRAR LA UNIDAD DINÁMICAMENTE
 const unidadActual = computed(() => {
   if (typeof prodName.value === 'object' && prodName.value.unidad) {
     return prodName.value.unidad;
