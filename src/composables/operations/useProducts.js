@@ -10,13 +10,32 @@ import {
   doc,
   increment,
   serverTimestamp,
-  runTransaction
+  runTransaction,
+  getDoc
 } from 'firebase/firestore'
 import { useAuth } from '@/composables/core/useAuth'
 
 export function useProducts() {
   const { user } = useAuth()
   const suggestions = ref([])
+
+  /**
+   * Genera un EAN aleatorio con el formato '19XXXX' 
+   * y garantiza que no exista previamente en Firestore
+   */
+  const generarCodigoEANAleatorio = async (userUid) => {
+    const productsRef = collection(db, 'users', userUid, 'products')
+    let newCode = ''
+    let exists = true
+    while (exists) {
+      const randomDigits = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+      newCode = `19${randomDigits}`
+      const q = query(productsRef, where('codEAN', '==', newCode), limit(1))
+      const snap = await getDocs(q)
+      exists = !snap.empty
+    }
+    return newCode
+  }
 
   /**
    * Búsqueda en el Catálogo Maestro (Nivel Usuario, no Sucursal)
@@ -71,6 +90,12 @@ const buscarProductos = async (text) => {
     const productRef = doc(db, 'users', user.value.uid, 'products', productId)
 
     try {
+      let autoCodEAN = ""
+      const docSnapExterno = await getDoc(productRef)
+      if (!docSnapExterno.exists() && (!item.barcode || item.barcode.trim() === '')) {
+        autoCodEAN = await generarCodigoEANAleatorio(user.value.uid)
+      }
+
       await runTransaction(db, async (transaction) => {
         const docSnap = await transaction.get(productRef)
         const hoy = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD formato local
@@ -78,7 +103,7 @@ const buscarProductos = async (text) => {
 
         let pData = docSnap.exists() ? docSnap.data() : {
           name: item.name.toUpperCase(),
-          codEAN: item.barcode || "",
+          codEAN: autoCodEAN,
           stock: 0,
           soldToday: 0,
           lastDateSold: hoy,
@@ -95,7 +120,7 @@ const buscarProductos = async (text) => {
         transaction.set(productRef, {
           name: item.name.toUpperCase(),
           lastPrice: Number(item.price),
-          codEAN: item.barcode || pData.codEAN || "",
+          codEAN: item.barcode || pData.codEAN || autoCodEAN || "",
           stock: (pData.stock || 0) - qtySold,
           soldToday: newSoldToday,
           lastDateSold: hoy,
@@ -132,10 +157,16 @@ const buscarProductos = async (text) => {
   const crearProducto = async (newData) => {
     if (!user.value?.uid) return null
     try {
+      let finalCodEAN = newData.codEAN
+      if (!finalCodEAN || finalCodEAN.trim() === '') {
+        finalCodEAN = await generarCodigoEANAleatorio(user.value.uid)
+      }
+
       const productsRef = collection(db, 'users', user.value.uid, 'products')
       const newDocRef = doc(productsRef) // Auto-genera ID único
       const fullData = {
         ...newData,
+        codEAN: finalCodEAN,
         updatedAt: serverTimestamp(),
         frequency: 0 // Inicia con 0 ventas
       }
