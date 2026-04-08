@@ -161,21 +161,17 @@ export function useAuth() {
 
       if (!userSnap.exists()) return false;
 
-      const storedData = String(userSnap.data().adminPin);
-      const inputHash = await hashPin(String(inputPin));
+      const storedData = String(userSnap.data().adminPin).trim();
+      const inputHash = (await hashPin(String(inputPin))).trim();
 
       if (storedData.length > 10) {
         return storedData === inputHash;
       }
 
-      if (storedData === String(inputPin)) {
-        // Aprovechamos el éxito para actualizar a Hash en Firebase de una vez
+      if (storedData === String(inputPin.trim())) {
         await updateDoc(userRef, { adminPin: inputHash });
-        
-        // Opcional: Actualizar el store local para que no pida cambio de PIN
         store.userProfile.adminPin = inputHash; 
         
-        console.log("✅ Usuario migrado a Hash con éxito");
         return true;
       }
 
@@ -184,7 +180,7 @@ export function useAuth() {
       console.error('Error verificando PIN:', err);
       return false;
     } finally {
-      loading.value = true;
+      loading.value = false;
     }
   }
 
