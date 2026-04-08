@@ -5,7 +5,9 @@ import LoginView from '@/views/LoginView.vue'
 import DashboardView from '@/views/DashboardView.vue'
 import AdminLayout from '@/layout/AdminLayout.vue'
 import AdminView from '@/views/AdminView.vue'
+import AdminBranchs from '@/components/admin/AdminBranchs.vue'
 import UserProfileView from '@/views/ProfileView.vue'
+import ProductosView from '@/views/ProductosView.vue'
 import { store, setAdminAuth } from '@/store'
 
 /**
@@ -56,6 +58,16 @@ const router = createRouter({
           path: 'profile',
           name: 'profile',
           component: UserProfileView,
+        },
+        {
+          path: 'productos',
+          name: 'productos',
+          component: ProductosView,
+        },
+        {          
+          path: 'branchs',
+          name: 'branchs',
+          component: AdminBranchs,
         }
       ]
     },

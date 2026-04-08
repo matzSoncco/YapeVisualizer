@@ -7,8 +7,9 @@
           :suggestions="suggestions"
           @complete="search"
           @item-select="onProductSelect"
+          @keyup.enter="onEnterBusqueda"
           optionLabel="name"
-          placeholder="Buscar producto..."
+          placeholder="Buscar producto o escanear código..."
           class="full-width-search"
           ref="mainInput"
         />
@@ -17,7 +18,7 @@
 
       <div class="input-level details-row">
         <div class="detail-field qty-group">
-          <label>Cant.</label>
+          <label>Cant. ({{ unidadActual }})</label>
           <InputNumber
             v-model="prodQty"
             :min="1"
@@ -90,7 +91,7 @@
             <td class="td-qty">{{ item.qty }}</td>
             <td class="td-desc">
               <span class="item-name">{{ item.name }}</span>
-              <span class="item-unit">S/ {{ (item.price ?? 0).toFixed(2) }} u.</span>
+              <span class="item-unit">S/ {{ (item.price ?? 0).toFixed(2) }} x {{ item.unidad || 'UNI' }}</span>
             </td>
             <td class="td-total">S/ {{ (item.subtotal ?? 0).toFixed(2) }}</td>
             <td class="td-action">
@@ -138,6 +139,68 @@
       </div>
     </footer>
 
+    <Dialog v-model:visible="showUnknownBarcodeWizard" :modal="true" :style="{width: '450px'}" header="Código Detectado" class="p-fluid">
+      
+      <div v-if="wizardMode === 'CHOOSE'" class="text-center py-4">
+        <i class="pi pi-question-circle text-5xl text-orange-500 mb-4 block"></i>
+        <p class="mb-5 text-lg">El código <strong>{{ scannedUnknownBarcode }}</strong> no está en tu inventario. ¿Qué deseas hacer?</p>
+        <div class="flex flex-col gap-3">
+          <Button label="Enlazar a producto existente" icon="pi pi-link" outlined @click="wizardMode = 'LINK'" />
+          <Button label="Crear producto nuevo" icon="pi pi-plus" severity="success" @click="wizardMode = 'CREATE'" />
+        </div>
+      </div>
+
+      <div v-else-if="wizardMode === 'LINK'">
+        <p class="mb-4 text-sm text-slate-600">Busca el producto de tu inventario al cual le guardaremos el código permanente <strong>{{ scannedUnknownBarcode }}</strong>.</p>
+        <div class="field mb-5">
+          <label class="font-bold block mb-2">Buscar Producto Físico</label>
+          <AutoComplete 
+            v-model="linkTarget" 
+            :suggestions="suggestions" 
+            @complete="search" 
+            optionLabel="name" 
+            placeholder="Escribe su nombre..." 
+            class="w-full"
+            autofocus
+          />
+        </div>
+        <div class="flex justify-between gap-2 mt-4">
+          <Button label="Atrás" icon="pi pi-arrow-left" text severity="secondary" @click="wizardMode = 'CHOOSE'" />
+          <Button label="Vincular y Cobrar" icon="pi pi-check" :disabled="!linkTarget || !linkTarget.id" @click="confirmarVinculacion" />
+        </div>
+      </div>
+
+      <div v-else-if="wizardMode === 'CREATE'">
+        <p class="mb-4 text-sm text-slate-600">Este producto quedará guardado para siempre en tu inventario y saltará directamente al carrito.</p>
+        
+        <div class="field mb-3">
+          <label class="font-bold block mb-1">Nombre</label>
+          <InputText v-model="newProdName" autofocus placeholder="Ej. Galletas Soda" class="w-full" />
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem; width: 100%;">
+          <div style="flex: 1;">
+            <label class="font-bold block mb-1">Precio Unitario</label>
+            <InputNumber v-model="newProdPrice" mode="currency" currency="PEN" locale="es-PE" placeholder="0.00" style="width: 100%;" />
+          </div>
+          <div style="flex: 1;">
+            <label class="font-bold block mb-1">Medida</label>
+            <Select 
+              v-model="newProdUnidad" 
+              :options="PRODUCT_UNITS" 
+              optionLabel="label" 
+              optionValue="value" 
+              style="width: 100%;" 
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-between gap-2 mt-4">
+          <Button label="Atrás" icon="pi pi-arrow-left" text severity="secondary" @click="wizardMode = 'CHOOSE'" />
+          <Button label="Guardar y Cobrar" icon="pi pi-check" severity="success" :disabled="!newProdName || newProdPrice === null" @click="confirmarCreacion" />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
@@ -149,9 +212,11 @@ import { useMovements } from '@/composables/operations/useMovements'
 import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
 import { useMatcher } from '@/composables/operations/useMatcher'
 import { cartStorageKey } from '@/store'
+import Select from 'primevue/select'
+import { PRODUCT_UNITS } from '@/utils/constants'
 import '@/assets/pospanel.css'
 
-const { suggestions, buscarProductos } = useProducts()
+const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto, crearProducto } = useProducts()
 const { registrarVenta } = useMovements()
 const { reclamarPagoDigital } = useDigitalPayments()
 const { iniciarEspera, cancelarEspera, matcherState } = useMatcher()
@@ -165,9 +230,14 @@ const prodQty = ref(1)
 const prodPrice = ref(null)
 const emit = defineEmits(['transaction-completed'])
 
-/**
- *
- */
+const showUnknownBarcodeWizard = ref(false);
+const wizardMode = ref('CHOOSE');
+const scannedUnknownBarcode = ref('');
+const linkTarget = ref(null);
+const newProdName = ref('');
+const newProdPrice = ref(null);
+const newProdUnidad = ref('UNI');
+
 watch(
   cartStorageKey,
   (newKey) => {
@@ -187,9 +257,6 @@ watch(
   { immediate: true },
 )
 
-/**
- *
- */
 watch(
   cart,
   (newVal) => {
@@ -206,26 +273,16 @@ watch(
   { deep: true },
 )
 
-/**
- * Valores calculados para la UI
- */
 const totalGeneral = computed(() => {
   const subtotalCart = cart.value.reduce((acc, item) => acc + item.subtotal, 0)
   return subtotalCart > 0 ? subtotalCart : quickAmount.value || 0
 })
 
-/**
- * Método para determinar si el botón de agregar al carrito debe estar activo
- */
 const puedeAgregar = computed(() => {
   const val = typeof prodName.value === 'object' ? prodName.value.name : prodName.value
   return val && val.length > 0 && prodPrice.value !== null && prodPrice.value >= 0
 })
 
-/**
- * Lógica de validación de pago reactiva
- * Se habilita si hay productos en el carrito O si hay un monto manual detectado
- */
 const puedeProcederAlPago = computed(() => {
   const tieneItems = cart.value.length > 0
   const tieneMontoManual = quickAmount.value !== null && quickAmount.value > 0
@@ -233,21 +290,100 @@ const puedeProcederAlPago = computed(() => {
   return tieneItems || tieneMontoManual
 })
 
+// VARIABLE CALCULADA PARA MOSTRAR LA UNIDAD DINÁMICAMENTE
+const unidadActual = computed(() => {
+  if (typeof prodName.value === 'object' && prodName.value.unidad) {
+    return prodName.value.unidad;
+  }
+  return 'UNI'; // Valor por defecto
+});
+
 const search = (e) => buscarProductos(e.query)
 const onProductSelect = (e) => {
   prodPrice.value = e.value.lastPrice
 }
 
+const onEnterBusqueda = async () => {
+  const text = typeof prodName.value === 'string' ? prodName.value.trim() : '';
+  
+  if (text.length > 0) {
+    const productByEAN = await buscarPorCodigoBarras(text);
+    if (productByEAN) {
+      prodName.value = productByEAN; 
+      prodPrice.value = productByEAN.lastPrice;
+      agregarAlCarrito();
+      toast.add({ severity: 'success', summary: 'Escaneado', detail: productByEAN.name, life: 2000 });
+      return;
+    } else if (/^\d{4,}$/.test(text)) {
+      scannedUnknownBarcode.value = text;
+      wizardMode.value = 'CHOOSE';
+      linkTarget.value = null;
+      newProdName.value = '';
+      newProdPrice.value = null;
+      newProdUnidad.value = 'UNI';
+      showUnknownBarcodeWizard.value = true;
+      prodName.value = ''; 
+      return;
+    }
+  }
+
+  if (typeof prodName.value === 'object' && puedeAgregar.value) {
+    agregarAlCarrito();
+  }
+};
+
+const confirmarVinculacion = async () => {
+    if (!linkTarget.value || !linkTarget.value.id) return;
+    
+    await actualizarProducto(linkTarget.value.id, { codEAN: scannedUnknownBarcode.value });
+    
+    prodName.value = linkTarget.value; 
+    prodPrice.value = linkTarget.value.lastPrice;
+    agregarAlCarrito();
+
+    toast.add({ severity: 'success', summary: 'Código Vinculado', detail: `El código se guardó en ${linkTarget.value.name}`, life: 3000 });
+    showUnknownBarcodeWizard.value = false;
+};
+
+const confirmarCreacion = async () => {
+    if (!newProdName.value || newProdPrice.value === null) return;
+
+    const savedProd = await crearProducto({
+        name: newProdName.value.toUpperCase().trim(),
+        lastPrice: newProdPrice.value,
+        codEAN: scannedUnknownBarcode.value,
+        stock: 0,
+        unidad: newProdUnidad.value 
+    });
+
+    if (savedProd) {
+        prodName.value = savedProd; 
+        prodPrice.value = savedProd.lastPrice;
+        agregarAlCarrito();
+        toast.add({ severity: 'success', summary: 'Producto Creado', detail: savedProd.name, life: 3000 });
+    } else {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear el producto', life: 3000 });
+    }
+    
+    showUnknownBarcodeWizard.value = false;
+};
+
 const agregarAlCarrito = () => {
   if (!puedeAgregar.value) return
-  const nameStr =
-    typeof prodName.value === 'object' ? prodName.value.name : prodName.value.toUpperCase()
+
+  const isObject = typeof prodName.value === 'object'
+  const nameStr = isObject ? prodName.value.name : prodName.value.toUpperCase()
+  
+  const prodId = isObject ? prodName.value.id : null
+  const prodUnidad = isObject ? (prodName.value.unidad || 'UNI') : 'UNI'
 
   cart.value.push({
+    id: prodId,
     name: nameStr,
     qty: prodQty.value,
     price: prodPrice.value,
     subtotal: prodQty.value * prodPrice.value,
+    unidad: prodUnidad
   })
 
   prodName.value = ''
@@ -257,9 +393,6 @@ const agregarAlCarrito = () => {
 
 const removerItem = (idx) => cart.value.splice(idx, 1)
 
-/**
- * Iniciar el flujo de venta con espera de pago digital. Si ya se está esperando, cancela la espera actual.
- */
 const iniciarFlujo = () => {
   if (matcherState.isListening) {
     cancelarEspera()
@@ -285,29 +418,16 @@ const iniciarFlujo = () => {
   }
 }
 
-/**
- * Método para finalizar la venta una vez que el matcher confirma el pago digital
- * @param candidato - Objeto de la transacción confirmada por el matcher
- */
 const finalizarVentaDigitalConfirmada = async (candidato) => {
   await procesarPago('DIGITAL', candidato)
 }
 
-/**
- * Método helper para prellenar el carrito con un monto específico
- * @param monto - Obj
- */
 const prellenarCarrito = (monto) => {
   if (cart.value.length === 0) {
     quickAmount.value = monto
   }
 }
 
-/**
- * Método para determinar si un movimiento es un pago con Yape basado en su metadata
- * @param method - Método de pago del movimiento
- * @param pagoDigitalConfirmado - Objeto de la transacción Yape confirmada
- */
 const procesarPago = async (method, pagoDigitalConfirmado = null) => {
   if (loading.value) return
   loading.value = true

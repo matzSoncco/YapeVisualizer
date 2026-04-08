@@ -49,6 +49,7 @@
     <section class="admin-viewport">
       <Transition name="fade-slide" mode="out-in">
         <div :key="activeTab" class="view-wrapper">
+          
           <div v-if="activeTab === 'overview'" class="view-content">
             <AdminStats :kpis="kpis" />
           </div>
@@ -64,6 +65,7 @@
               <AdminTable :data="reportes" :loading="loadingReportes" @ver-detalle="verDetalle" />
             </div>
           </div>
+
         </div>
       </Transition>
     </section>
@@ -79,6 +81,7 @@ import { useSucursal } from '@/composables/admin/useSucursal'
 import { useAdmin } from '@/composables/admin/useAdmin'
 import { useToast } from 'primevue/usetoast'
 import { store } from '@/store'
+import { useAuth } from '@/composables/core/useAuth'
 
 import AdminHeader from '@/components/admin/AdminHeader.vue'
 import AdminTable from '@/components/admin/AdminTable.vue'
@@ -91,6 +94,7 @@ const toast = useToast()
 const { sucursales } = useSucursal()
 const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } =
   useAdmin()
+const { tienePinInseguro } = useAuth()
 
 const activeTab = ref('overview')
 const isDetailVisible = ref(false)
@@ -98,7 +102,7 @@ const selectedCierre = ref(null)
 
 const tabs = [
   { id: 'overview', label: 'Resumen', icon: 'pi pi-th-large' },
-  { id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' },
+  //{ id: 'charts', label: 'Análisis', icon: 'pi pi-chart-line' }, TODO: Implementar gráficos en el futuro
   { id: 'table', label: 'Cierres', icon: 'pi pi-history' },
 ]
 
@@ -130,12 +134,11 @@ const verDetalle = (data) => {
   isDetailVisible.value = true
 }
 
-// TODO: Esto es solo un recordatorio para implementar
-// una verificación real del PIN en el futuro
-// no es seguro dejarlo así en producción.
-// Mover la logica al backend y forzar a cambiar el PIN si es el default
+/**
+ * Al montar el componente, verifica que el usuario no tenga el PIN por defecto o inseguro
+ */
 onMounted(() => {
-  if (store.userProfile?.adminPin === '1234') {
+  if (tienePinInseguro.value) {
     toast.add({
       severity: 'warn',
       summary: 'Acción Requerida',

@@ -10,6 +10,7 @@ import {
   doc,
   increment,
   serverTimestamp,
+  runTransaction
 } from 'firebase/firestore'
 import { useAuth } from '@/composables/core/useAuth'
 
@@ -40,9 +41,9 @@ export function useProducts() {
       )
 
       const snapshot = await getDocs(q)
-      suggestions.value = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      suggestions.value = snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
       }))
     } catch (error) {
       console.error('Error en catálogo:', error)
@@ -50,28 +51,127 @@ export function useProducts() {
   }
 
   /**
-   * Auto-aprendizaje del Catálogo
-   * Si el cajero vende "X", el sistema aprende "X" para la próxima
+   * Auto-aprendizaje del Catálogo y Control de Stock Diario
    */
   const actualizarCatalogo = async (item) => {
     if (!user.value?.uid || !item.name) return
 
-    const productId = item.name.trim().toUpperCase().replace(/\s+/g, '_')
+    // Si el item viene con ID de Firebase (fue seleccionado o escaneado), usarlo directo
+    const productId = item.id || item.name.trim().toUpperCase().replace(/\s+/g, '_')
     const productRef = doc(db, 'users', user.value.uid, 'products', productId)
 
     try {
-      await setDoc(
-        productRef,
-        {
+      await runTransaction(db, async (transaction) => {
+        const docSnap = await transaction.get(productRef)
+        const hoy = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD formato local
+        const qtySold = item.qty || 1
+
+        let pData = docSnap.exists() ? docSnap.data() : {
+          name: item.name.toUpperCase(),
+          codEAN: item.barcode || "",
+          stock: 0,
+          soldToday: 0,
+          lastDateSold: hoy,
+          frequency: 0
+        }
+
+        let newSoldToday = pData.soldToday || 0
+        if (pData.lastDateSold !== hoy) {
+          newSoldToday = qtySold // Reset matemático si es nuevo día
+        } else {
+          newSoldToday += qtySold
+        }
+
+        transaction.set(productRef, {
           name: item.name.toUpperCase(),
           lastPrice: Number(item.price),
+          codEAN: item.barcode || pData.codEAN || "",
+          stock: (pData.stock || 0) - qtySold,
+          soldToday: newSoldToday,
+          lastDateSold: hoy,
           updatedAt: serverTimestamp(),
-          frequency: increment(1),
-        },
-        { merge: true },
-      )
+          frequency: (pData.frequency || 0) + qtySold
+        }, { merge: true })
+      })
     } catch (error) {
-      console.error('Error aprendiendo producto:', error)
+      console.error("Error actualizando stock y ventas del producto:", error)
+    }
+  }
+
+  /**
+   * Actualizar manualmente un producto desde el inventario
+   */
+  const actualizarProducto = async (productId, newData) => {
+    if (!user.value?.uid || !productId) return false
+    try {
+      const productRef = doc(db, 'users', user.value.uid, 'products', productId)
+      await setDoc(productRef, {
+        ...newData,
+        updatedAt: serverTimestamp()
+      }, { merge: true })
+      return true
+    } catch (error) {
+      console.error("Error actualizando producto:", error)
+      return false
+    }
+  }
+
+  /**
+   * Crear un producto manualmente desde el inventario con ID dinámico
+   */
+  const crearProducto = async (newData) => {
+    if (!user.value?.uid) return null
+    try {
+      const productsRef = collection(db, 'users', user.value.uid, 'products')
+      const newDocRef = doc(productsRef) // Auto-genera ID único
+      const fullData = {
+        ...newData,
+        updatedAt: serverTimestamp(),
+        frequency: 0 // Inicia con 0 ventas
+      }
+      await setDoc(newDocRef, fullData)
+      return { id: newDocRef.id, ...fullData }
+    } catch (error) {
+      console.error("Error creando producto:", error)
+      return null
+    }
+  }
+
+  /**
+   * Búsqueda por Código de Barras (EAN)
+   */
+  const buscarPorCodigoBarras = async (codigo) => {
+    if (!user.value?.uid || !codigo) return null
+    try {
+      const productsRef = collection(db, 'users', user.value.uid, 'products')
+      const q = query(productsRef, where('codEAN', '==', codigo), limit(1))
+      const snapshot = await getDocs(q)
+      if (!snapshot.empty) {
+        const docInfo = snapshot.docs[0]
+        return { id: docInfo.id, ...docInfo.data() }
+      }
+      return null
+    } catch (error) {
+      console.error("Error buscando por código:", error)
+      return null
+    }
+  }
+
+  /**
+   * Obtiene todo el catálogo de productos (Módulo Inventario)
+   */
+  const obtenerTodosLosProductos = async () => {
+    if (!user.value?.uid) return []
+    try {
+      const productsRef = collection(db, 'users', user.value.uid, 'products')
+      const snapshot = await getDocs(productsRef)
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+    } catch (error) {
+      console.error("Error obteniendo inventario:", error)
+      return []
     }
   }
 
@@ -79,5 +179,9 @@ export function useProducts() {
     suggestions,
     buscarProductos,
     actualizarCatalogo,
+    actualizarProducto,
+    crearProducto,
+    buscarPorCodigoBarras,
+    obtenerTodosLosProductos
   }
 }

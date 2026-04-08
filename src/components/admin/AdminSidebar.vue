@@ -34,8 +34,9 @@
     <button
       v-for="item in managementNav"
       :key="item.path"
-      :class="['nav-item', { disabled: item.disabled }]"
+      :class="['nav-item', { disabled: item.disabled }, { active: isActive(item.path) }]"
       :disabled="item.disabled"
+      @click="navigateTo(item.path)"
       :title="!isExpanded ? item.label : ''"
     >
       <i :class="item.icon"></i>
@@ -86,14 +87,14 @@ const mainNav = [{ label: 'Panel', icon: 'pi pi-th-large', path: '/admin' }]
 
 // TODO: Habilitar estas rutas cuando estén listas
 const managementNav = [
-  { label: 'Productos', icon: 'pi pi-box', path: '/admin/productos', disabled: true },
+  { label: 'Productos', icon: 'pi pi-box', path: '/admin/productos'},
   { label: 'Cajeros', icon: 'pi pi-users', path: '/admin/cajeros', disabled: true },
-  { label: 'Sedes', icon: 'pi pi-building', path: '/admin/sedes', disabled: true },
+  { label: 'Sedes', icon: 'pi pi-building', path: '/admin/branchs' },
   { label: 'Exportar', icon: 'pi pi-file-export', path: '/admin/exportar', disabled: true },
 ]
 
 const footerNav = computed(() => [
-  { id: 'profile', label: 'Mi perfil', icon: 'pi pi-user', path: '/admin/perfil' },
+  { id: 'profile', label: 'Mi perfil', icon: 'pi pi-user', path: '/admin/profile' },
   { id: 'monitor', label: 'Monitor POS', icon: 'pi pi-arrow-left', path: '/dashboard' },
   {
     id: 'logout',

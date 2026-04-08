@@ -4,7 +4,7 @@
     <main class="admin-main">
       <router-view v-slot="{ Component }">
         <transition name="fade-slide" mode="out-in">
-          <component :is="Component" />
+              <component :is="Component" class="admin-view" />
         </transition>
       </router-view>
     </main>
@@ -28,10 +28,19 @@ import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 .admin-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-surface-alt);
+}
+
+:deep(.admin-view) {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .fade-slide-enter-active,

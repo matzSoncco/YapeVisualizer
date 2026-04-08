@@ -1,15 +1,15 @@
 import { computed } from 'vue'
-import { db } from '../../firebaseConfig'
+import { db } from '@/firebaseConfig'
 import { collection, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { useAuth } from '../core/useAuth'
-import { store, setSucursalActual } from '../../store'
+import { store, setSucursalActual } from '@/store'
 
 /**
  * Composable para manejar sucursales
  * @returns {Object} Funciones y propiedades relacionadas con sucursales
  */
 export function useSucursal() {
-  const { user } = useAuth()
+  const { user, verifyAdminPin } = useAuth()
 
   /**
    * Agrega una nueva sucursal a la subcolección del usuario actual en Firestore.
@@ -78,15 +78,17 @@ export function useSucursal() {
    * @param {string} nombreId - uid de la sucursal o 'ADMIN'
    * @param {string|null} pinIngresado - El PIN que viene del Modal (solo si es ADMIN)
    */
-  const seleccionar = (nombreId, pinIngresado = null) => {
+  const seleccionar = async (nombreId, pinIngresado = null) => {
     if (nombreId !== 'ADMIN') {
       setSucursalActual(nombreId)
       return true
     }
 
-    const pinReal = String(store.userProfile.adminPin || '1234')
+    if (!pinIngresado) return false
 
-    if (!pinIngresado || String(pinIngresado).trim() === pinReal) {
+    const esValido = await verifyAdminPin(pinIngresado)
+
+    if (esValido) {
       setSucursalActual('ADMIN')
       return true
     }
