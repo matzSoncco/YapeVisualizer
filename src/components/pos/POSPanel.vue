@@ -14,7 +14,7 @@
           ref="mainInput"
           :disabled="paymentModeActivo"
         />
-        <Button icon="pi pi-minus-circle" severity="secondary" @click="prodName = ''" :disabled="paymentModeActivo" />
+        <Button icon="pi pi-trash" severity="danger" @click="confirmarLimpiarCarrito" :disabled="(cart.length === 0 && quickAmount === null) || partialPayments.some(p => p.method === 'DIGITAL')" v-tooltip.bottom="'Cancelar Venta y vaciar carrito'" />
       </div>
 
       <div class="input-level details-row">
@@ -54,7 +54,17 @@
     </header>
 
     <main class="pos-cart-area">
-      <div v-if="cart.length === 0" class="cart-empty-state">
+      <div v-if="transactionCompletedMode" class="transaction-success-state" @click="completarYPonerSiguiente" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; cursor: pointer; text-align: center; animation: fadeIn 0.3s ease;">
+        <i class="pi pi-check-circle success-icon text-primary" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">¡Venta Completada!</h2>
+        <div class="vuelto-display" style="margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-surface-alt); border-radius: var(--radius-lg); border: 2px dashed var(--color-border); min-width: 300px; text-align: center;">
+          <span class="vuelto-label" style="display: block; color: var(--color-text-muted); font-size: 1rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 1px;">Vuelto a entregar</span>
+          <span class="vuelto-amount" style="display: block; color: var(--color-primary); font-size: 3.5rem; font-weight: 800; line-height: 1;">S/ {{ vueltoGenerado.toFixed(2) }}</span>
+        </div>
+        <p class="next-action-hint" style="color: var(--color-text-muted); font-size: 1.1rem;">Presione <strong style="color: var(--color-text); background: var(--bg-surface-alt); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--color-border);">ENTER</strong> (o haga clic) para la siguiente venta</p>
+      </div>
+
+      <div v-else-if="cart.length === 0" class="cart-empty-state">
         <div class="empty-info">
           <i class="pi pi-shopping-cart"></i>
           <p>Carrito vacío</p>
@@ -113,7 +123,7 @@
       </table>
     </main>
 
-    <footer class="pos-footer-area">
+    <footer class="pos-footer-area" v-if="!transactionCompletedMode">
       <div class="summary-line">
         <span class="summary-lbl">Total a cobrar</span>
         <div class="summary-val-wrap">
@@ -128,6 +138,7 @@
             :class="paymentModeActivo ? 'p-button-danger ml-2' : 'gold-cobrar-btn ml-2'"
             @click="togglePaymentMode"
             size="small"
+            :disabled="paymentModeActivo && partialPayments.some(p => p.method === 'DIGITAL')"
           />
         </div>
       </div>
@@ -317,8 +328,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { useConfirm } from 'primevue/useconfirm'
 import { useProducts } from '@/composables/operations/useProducts'
 import { useMovements } from '@/composables/operations/useMovements'
 import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
@@ -335,10 +347,42 @@ import { PRODUCT_UNITS } from '@/utils/constants'
 import '@/assets/pospanel.css'
 
 const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto, crearProducto } = useProducts()
-const { registrarVenta } = useMovements()
+const { registrarVenta, registrarVentaCancelada } = useMovements()
 const { reclamarPagoDigital } = useDigitalPayments()
 const { iniciarEspera, cancelarEspera, matcherState } = useMatcher()
 const toast = useToast()
+const confirm = useConfirm()
+
+const confirmarLimpiarCarrito = () => {
+    confirm.require({
+        message: '¿Estás seguro que deseas cancelar esta venta y vaciar el carrito por completo?',
+        header: 'Confirmar Cancelación',
+        icon: 'pi pi-exclamation-triangle',
+        acceptClass: 'p-button-danger',
+        rejectLabel: 'Volver',
+        acceptLabel: 'Sí, cancelar venta',
+        accept: async () => {
+          if (partialPayments.value.length > 0) {
+              await registrarVentaCancelada({
+                  items: cart.value,
+                  payments: partialPayments.value,
+                  total: totalGeneral.value,
+                  clientName: 'Cancelada por Cajero'
+              })
+              toast.add({ severity: 'info', summary: 'Venta Anulada', detail: 'La venta parcial en efectivo fue registrada como anulada.', life: 3000 })
+          } else {
+              toast.add({ severity: 'info', summary: 'Venta descartada', detail: 'El carrito se limpió por completo.', life: 3000 })
+          }
+
+          cart.value = []
+          quickAmount.value = null
+          prodName.value = ''
+          partialPayments.value = []
+          paymentAmountToApply.value = null
+          paymentModeActivo.value = false
+        }
+    })
+}
 
 const cart = ref([])
 const quickAmount = ref(null)
@@ -351,9 +395,44 @@ const emit = defineEmits(['transaction-completed'])
 const partialPayments = ref([])
 const paymentAmountToApply = ref(null)
 const paymentModeActivo = ref(false)
+const transactionCompletedMode = ref(false)
+const vueltoGenerado = ref(0)
 
-const togglePaymentMode = () => {
+const handleGlobalKeydown = (e) => {
+  if (transactionCompletedMode.value && e.key === 'Enter') {
+    e.preventDefault()
+    completarYPonerSiguiente()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleGlobalKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeydown)
+})
+
+const completarYPonerSiguiente = () => {
+    cart.value = []
+    quickAmount.value = null
+    prodName.value = ''
+    partialPayments.value = []
+    paymentAmountToApply.value = null
+    paymentModeActivo.value = false
+    transactionCompletedMode.value = false
+    vueltoGenerado.value = 0
+    emit('transaction-completed')
+}
+
+const togglePaymentMode = async () => {
     if (paymentModeActivo.value) {
+        const tieneYapeo = partialPayments.value.some(p => p.method === 'DIGITAL')
+        if (tieneYapeo) {
+            toast.add({ severity: 'warn', summary: 'Acción bloqueada', detail: 'Ya existe un Yapeo registrado. Termine de cobrar.', life: 3000 })
+            return
+        }
+
         paymentModeActivo.value = false;
         partialPayments.value = [];
         paymentAmountToApply.value = null;
@@ -566,17 +645,23 @@ const registrarPagoEfectivo = () => {
     let amt = paymentAmountToApply.value || saldoPendiente.value;
     if (amt <= 0) return;
     
+    let vueltoCalculado = amt - saldoPendiente.value;
+    if(vueltoCalculado < 0) vueltoCalculado = 0;
+
     // Si paga de mas, solo guardamos lo que falta para el saldo para registrar la venta limpia
     const realApplied = Math.min(amt, saldoPendiente.value);
 
     partialPayments.value.push({ method: 'CASH', amount: realApplied });
     paymentAmountToApply.value = null; // reset
     
-    evaluarCierreVenta();
+    evaluarCierreVenta(vueltoCalculado);
 }
 
 const finalizarVentaDigitalConfirmada = async (candidato) => {
     const validAmount = Number(candidato.amount);
+    let vueltoCalculado = validAmount - saldoPendiente.value;
+    if(vueltoCalculado < 0) vueltoCalculado = 0;
+
     const realApplied = Math.min(validAmount, saldoPendiente.value);
     
     partialPayments.value.push({
@@ -586,12 +671,12 @@ const finalizarVentaDigitalConfirmada = async (candidato) => {
     });
     
     paymentAmountToApply.value = null;
-    evaluarCierreVenta();
+    evaluarCierreVenta(vueltoCalculado);
 }
 
-const evaluarCierreVenta = async () => {
+const evaluarCierreVenta = async (vueltoCalculado = 0) => {
     if (saldoPendiente.value <= 0) {
-        await procesarVentaParciales()
+        await procesarVentaParciales(vueltoCalculado)
     }
 }
 
@@ -601,7 +686,7 @@ const prellenarCarrito = (monto) => {
   }
 }
 
-const procesarVentaParciales = async () => {
+const procesarVentaParciales = async (vueltoCalculado = 0) => {
   if (loading.value) return
   loading.value = true
 
@@ -675,15 +760,10 @@ const procesarVentaParciales = async () => {
         }
     }
 
-    cart.value = []
-    quickAmount.value = null
-    prodName.value = ''
-    partialPayments.value = []
-    paymentAmountToApply.value = null
-    paymentModeActivo.value = false
+    vueltoGenerado.value = vueltoCalculado;
+    transactionCompletedMode.value = true;
     
     toast.add({ severity: 'success', summary: 'Venta exitosa', life: 3000 })
-    emit('transaction-completed')
   } catch (e) {
     console.error('Error en el flujo de pago mixto:', e)
     throw e

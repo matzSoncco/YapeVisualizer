@@ -36,6 +36,9 @@
             <div v-if="slotProps.data.type === 'EXPENSE'" class="expense-row-info">
               <span>GASTO OPERATIVO</span>
             </div>
+            <div v-else-if="slotProps.data.type === 'CANCELLED_SALE'" class="expense-row-info" style="color: var(--color-warning);">
+              <span>VENTA CANCELADA</span>
+            </div>
             <div v-else class="client-info">
               <span class="client-name">{{ slotProps.data.clientName || 'Cliente Eventual' }}</span>
               <span v-if="slotProps.data.ticketNumber" class="ticket-ref">
@@ -53,6 +56,12 @@
                 severity="danger"
                 rounded
               />
+              <Tag
+                v-else-if="slotProps.data.type === 'CANCELLED_SALE'"
+                value="Anulado"
+                severity="warning"
+                rounded
+              />
               <template v-else-if="obtenerBilletera(slotProps.data)">
                 <Tag
                   :value="obtenerBilletera(slotProps.data).label"
@@ -67,7 +76,7 @@
 
         <Column header="Monto" class="col-amount">
           <template #body="slotProps">
-            <span class="amount-text" :class="{ 'is-expense': slotProps.data.type === 'EXPENSE' }">
+            <span class="amount-text" :class="{ 'is-expense': slotProps.data.type === 'EXPENSE', 'is-cancelled': slotProps.data.type === 'CANCELLED_SALE' }">
               {{ slotProps.data.type === 'EXPENSE' ? '-' : '' }} S/
               {{ Number(slotProps.data.totalAmount || slotProps.data.amount).toFixed(2) }}
             </span>
@@ -310,6 +319,11 @@ const imprimirTicket = (data) => {
 
   &.is-expense {
     color: var(--color-error-dark);
+  }
+  
+  &.is-cancelled {
+    color: var(--color-text-muted);
+    text-decoration: line-through;
   }
 }
 
