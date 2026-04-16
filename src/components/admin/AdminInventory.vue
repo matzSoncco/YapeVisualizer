@@ -205,9 +205,9 @@
           />
           <Button
             label="Guardar"
-            icon="pi pi-check"
+            :icon="savingProduct ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
             @click="saveProduct"
-            :disabled="!hasChanges"
+            :disabled="!hasChanges || savingProduct"
             class="btn-save"
           />
         </div>
@@ -344,6 +344,7 @@ const productDialog = ref(false);
 const product = ref({});
 const originalProduct = ref({});
 const submitted = ref(false);
+const savingProduct = ref(false);
 const showAjusteModal = ref(false);
 const selectedForAjuste = ref(null);
 const listaAjuste = ref([]);
@@ -473,6 +474,9 @@ const saveProduct = async () => {
         return;
     }
     
+    if (savingProduct.value) return;
+    savingProduct.value = true;
+    
     submitted.value = true;
     if (product.value.name?.trim()) {
         const newData = {
@@ -484,21 +488,27 @@ const saveProduct = async () => {
             logo: product.value.logo || null
         };
 
-        let exito = false;
-        if (product.value.id) {
-            exito = await actualizarProducto(product.value.id, newData);
-        } else {
-            const res = await crearProducto(newData);
-            exito = !!res;
-        }
+        try {
+            let exito = false;
+            if (product.value.id) {
+                exito = await actualizarProducto(product.value.id, newData);
+            } else {
+                const res = await crearProducto(newData);
+                exito = !!res;
+            }
 
-        if (exito) {
-            toast.add({ severity: 'success', summary: 'Completado', detail: 'Inventario actualizado', life: 3000 });
-            await loadData();
-            hideDialog();
-        } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar', life: 3000 });
+            if (exito) {
+                toast.add({ severity: 'success', summary: 'Completado', detail: 'Inventario actualizado', life: 3000 });
+                await loadData();
+                hideDialog();
+            } else {
+                toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar', life: 3000 });
+            }
+        } finally {
+            savingProduct.value = false;
         }
+    } else {
+        savingProduct.value = false;
     }
 };
 

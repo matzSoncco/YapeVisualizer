@@ -213,55 +213,11 @@ export function useMovements() {
     }
   }
 
-  const registrarVentaCancelada = async ({ items, payments, total, clientName }) => {
-    if (!store.currentShift?.id) return
-    if (!user.value?.uid) return
-
-    const shiftId = store.currentShift.id
-    const sucursalId = store.sucursalActual
-
-    try {
-      await runTransaction(db, async (transaction) => {
-        const sucursalRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId)
-        const shiftRef = doc(db, 'users', user.value.uid, 'sucursales', sucursalId, 'shifts', shiftId)
-        const movementsRef = collection(shiftRef, 'movements')
-        const newMovRef = doc(movementsRef)
-
-        const sucursalSnap = await transaction.get(sucursalRef)
-        const config = sucursalSnap.data() || {}
-        const serie = config.serie || 'NV001'
-        const correlativoActual = config.proximoCorrelativo || 1
-        const ticketNumber = `${serie}-${String(correlativoActual).padStart(8, '0')}`
-
-        const saleDoc = {
-          type: 'CANCELLED_SALE',
-          ticketNumber: ticketNumber,
-          timestamp: serverTimestamp(),
-          items: items || [],
-          payments: payments.map((p) => ({
-            method: p.method,
-            amount: p.amount,
-          })),
-          totalAmount: total,
-          clientName: clientName || 'Venta Cancelada',
-        }
-
-        transaction.set(newMovRef, saleDoc)
-        transaction.update(sucursalRef, {
-          proximoCorrelativo: increment(1),
-        })
-      })
-    } catch (error) {
-      console.error('Fallo cancelacion:', error)
-    }
-  }
-
   return {
     movimientosTurno,
     escucharMovimientos,
     detenerEscuchaMovimientos,
     registrarVenta,
-    registrarVentaCancelada,
     expenseState,
     registrarGasto,
   }

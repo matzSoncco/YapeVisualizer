@@ -12,9 +12,8 @@
           placeholder="Buscar producto o escanear código..."
           class="full-width-search"
           ref="mainInput"
-          :disabled="paymentModeActivo"
         />
-        <Button icon="pi pi-trash" severity="danger" @click="confirmarLimpiarCarrito" :disabled="(cart.length === 0 && quickAmount === null) || partialPayments.some(p => p.method === 'DIGITAL')" v-tooltip.bottom="'Cancelar Venta y vaciar carrito'" />
+        <Button icon="pi pi-minus-circle" severity="secondary" @click="prodName = ''" />
       </div>
 
       <div class="input-level details-row">
@@ -25,7 +24,6 @@
             :min="1"
             class="compact-qty"
             inputClass="qty-field-inner"
-            :disabled="paymentModeActivo"
           />
         </div>
 
@@ -40,31 +38,20 @@
             class="compact-price"
             inputClass="price-field-inner"
             @keyup.enter="agregarAlCarrito"
-            :disabled="paymentModeActivo"
           />
         </div>
 
         <Button
           icon="pi pi-cart-plus"
           @click="agregarAlCarrito"
-          :disabled="!puedeAgregar || paymentModeActivo"
+          :disabled="!puedeAgregar"
           class="btn-add-line"
         />
       </div>
     </header>
 
     <main class="pos-cart-area">
-      <div v-if="transactionCompletedMode" class="transaction-success-state" @click="completarYPonerSiguiente" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; cursor: pointer; text-align: center; animation: fadeIn 0.3s ease;">
-        <i class="pi pi-check-circle success-icon text-primary" style="font-size: 4rem; margin-bottom: 1rem;"></i>
-        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">¡Venta Completada!</h2>
-        <div class="vuelto-display" style="margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-surface-alt); border-radius: var(--radius-lg); border: 2px dashed var(--color-border); min-width: 300px; text-align: center;">
-          <span class="vuelto-label" style="display: block; color: var(--color-text-muted); font-size: 1rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.5rem; letter-spacing: 1px;">Vuelto a entregar</span>
-          <span class="vuelto-amount" style="display: block; color: var(--color-primary); font-size: 3.5rem; font-weight: 800; line-height: 1;">S/ {{ vueltoGenerado.toFixed(2) }}</span>
-        </div>
-        <p class="next-action-hint" style="color: var(--color-text-muted); font-size: 1.1rem;">Presione <strong style="color: var(--color-text); background: var(--bg-surface-alt); padding: 0.2rem 0.5rem; border-radius: 4px; border: 1px solid var(--color-border);">ENTER</strong> (o haga clic) para la siguiente venta</p>
-      </div>
-
-      <div v-else-if="cart.length === 0" class="cart-empty-state">
+      <div v-if="cart.length === 0" class="cart-empty-state">
         <div class="empty-info">
           <i class="pi pi-shopping-cart"></i>
           <p>Carrito vacío</p>
@@ -115,7 +102,6 @@
                 rounded
                 class="btn-remove-item"
                 @click="removerItem(index)"
-                :disabled="paymentModeActivo"
               />
             </td>
           </tr>
@@ -123,64 +109,23 @@
       </table>
     </main>
 
-    <footer class="pos-footer-area" v-if="!transactionCompletedMode">
+    <footer class="pos-footer-area">
       <div class="summary-line">
         <span class="summary-lbl">Total a cobrar</span>
-        <div class="summary-val-wrap">
-          <span class="summary-val">
-            <span class="summary-currency">S/</span>
-            {{ totalGeneral.toFixed(2) }}
-          </span>
-          <Button 
-            v-if="cart.length > 0 || quickAmount > 0"
-            :label="paymentModeActivo ? 'Cancelar' : 'Cobrar'" 
-            :icon="paymentModeActivo ? 'pi pi-times' : 'pi pi-check'" 
-            :class="paymentModeActivo ? 'p-button-danger ml-2' : 'gold-cobrar-btn ml-2'"
-            @click="togglePaymentMode"
-            size="small"
-            :disabled="paymentModeActivo && partialPayments.some(p => p.method === 'DIGITAL')"
-          />
-        </div>
+        <span class="summary-val">
+          <span class="summary-currency">S/</span>
+          {{ totalGeneral.toFixed(2) }}
+        </span>
       </div>
 
-      <div class="inline-payment-section" v-if="paymentModeActivo && (cart.length > 0 || quickAmount > 0)">
-        <div class="partial-payments-list" v-if="partialPayments.length > 0">
-          <div v-for="(pago, i) in partialPayments" :key="i" class="partial-payment-item">
-            <span>{{ pago.method === 'CASH' ? 'Efectivo' : 'Yape/Plin' }}</span>
-            <span>S/ {{ pago.amount.toFixed(2) }}</span>
-          </div>
-        </div>
-
-        <div class="payment-action-row">
-          <div class="saldo-pend-bloque">
-            <label>{{ saldoPendiente >= 0 ? 'Saldo' : 'Vuelto' }}:</label>
-            <span :class="saldoPendiente >= 0 ? 'text-primary' : 'text-success'">
-              S/ {{ Math.abs(saldoPendiente).toFixed(2) }}
-            </span>
-          </div>
-
-          <div class="input-monto-bloque">
-            <InputNumber 
-              v-model="paymentAmountToApply" 
-              mode="currency" 
-              currency="PEN" 
-              locale="es-PE"
-              class="cash-input-inline"
-              placeholder="Monto exacto"
-              :minFractionDigits="2"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="payment-grid mt-2" v-if="paymentModeActivo">
+      <div class="payment-grid">
         <button
           class="pay-btn-custom cash-btn"
-          @click="registrarPagoEfectivo"
+          @click="procesarPago('CASH', null)"
           :disabled="!puedeProcederAlPago || matcherState.isLocked"
         >
           <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
-          <span>{{ loading ? 'Proces...' : 'Efectivo' }}</span>
+          <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
         </button>
         <button
           class="pay-btn-custom yape-btn"
@@ -188,7 +133,7 @@
           :disabled="!puedeProcederAlPago || loading"
         >
           <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
-          <span>{{ loading ? 'Registr...' : 'Yape / Plin' }}</span>
+          <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
           <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
         </button>
       </div>
@@ -328,9 +273,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { useConfirm } from 'primevue/useconfirm'
 import { useProducts } from '@/composables/operations/useProducts'
 import { useMovements } from '@/composables/operations/useMovements'
 import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
@@ -347,42 +291,10 @@ import { PRODUCT_UNITS } from '@/utils/constants'
 import '@/assets/pospanel.css'
 
 const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto, crearProducto } = useProducts()
-const { registrarVenta, registrarVentaCancelada } = useMovements()
+const { registrarVenta } = useMovements()
 const { reclamarPagoDigital } = useDigitalPayments()
 const { iniciarEspera, cancelarEspera, matcherState } = useMatcher()
 const toast = useToast()
-const confirm = useConfirm()
-
-const confirmarLimpiarCarrito = () => {
-    confirm.require({
-        message: '¿Estás seguro que deseas cancelar esta venta y vaciar el carrito por completo?',
-        header: 'Confirmar Cancelación',
-        icon: 'pi pi-exclamation-triangle',
-        acceptClass: 'p-button-danger',
-        rejectLabel: 'Volver',
-        acceptLabel: 'Sí, cancelar venta',
-        accept: async () => {
-          if (partialPayments.value.length > 0) {
-              await registrarVentaCancelada({
-                  items: cart.value,
-                  payments: partialPayments.value,
-                  total: totalGeneral.value,
-                  clientName: 'Cancelada por Cajero'
-              })
-              toast.add({ severity: 'info', summary: 'Venta Anulada', detail: 'La venta parcial en efectivo fue registrada como anulada.', life: 3000 })
-          } else {
-              toast.add({ severity: 'info', summary: 'Venta descartada', detail: 'El carrito se limpió por completo.', life: 3000 })
-          }
-
-          cart.value = []
-          quickAmount.value = null
-          prodName.value = ''
-          partialPayments.value = []
-          paymentAmountToApply.value = null
-          paymentModeActivo.value = false
-        }
-    })
-}
 
 const cart = ref([])
 const quickAmount = ref(null)
@@ -391,60 +303,6 @@ const prodName = ref('')
 const prodQty = ref(1)
 const prodPrice = ref(null)
 const emit = defineEmits(['transaction-completed'])
-
-const partialPayments = ref([])
-const paymentAmountToApply = ref(null)
-const paymentModeActivo = ref(false)
-const transactionCompletedMode = ref(false)
-const vueltoGenerado = ref(0)
-
-const handleGlobalKeydown = (e) => {
-  if (transactionCompletedMode.value && e.key === 'Enter') {
-    e.preventDefault()
-    completarYPonerSiguiente()
-  }
-}
-
-onMounted(() => {
-  window.addEventListener('keydown', handleGlobalKeydown)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleGlobalKeydown)
-})
-
-const completarYPonerSiguiente = () => {
-    cart.value = []
-    quickAmount.value = null
-    prodName.value = ''
-    partialPayments.value = []
-    paymentAmountToApply.value = null
-    paymentModeActivo.value = false
-    transactionCompletedMode.value = false
-    vueltoGenerado.value = 0
-    emit('transaction-completed')
-}
-
-const togglePaymentMode = async () => {
-    if (paymentModeActivo.value) {
-        const tieneYapeo = partialPayments.value.some(p => p.method === 'DIGITAL')
-        if (tieneYapeo) {
-            toast.add({ severity: 'warn', summary: 'Acción bloqueada', detail: 'Ya existe un Yapeo registrado. Termine de cobrar.', life: 3000 })
-            return
-        }
-
-        paymentModeActivo.value = false;
-        partialPayments.value = [];
-        paymentAmountToApply.value = null;
-    } else {
-        paymentModeActivo.value = true;
-    }
-}
-
-const saldoPendiente = computed(() => {
-  const sumPartials = partialPayments.value.reduce((acc, p) => acc + p.amount, 0)
-  return totalGeneral.value - sumPartials
-})
 
 const showUnknownBarcodeWizard = ref(false);
 const wizardMode = ref('CHOOSE');
@@ -503,7 +361,7 @@ const puedeProcederAlPago = computed(() => {
   const tieneItems = cart.value.length > 0
   const tieneMontoManual = quickAmount.value !== null && quickAmount.value > 0
 
-  return (tieneItems || tieneMontoManual) && saldoPendiente.value > 0
+  return tieneItems || tieneMontoManual
 })
 
 // VARIABLE CALCULADA PARA MOSTRAR LA UNIDAD DINÁMICAMENTE
@@ -620,20 +478,19 @@ const iniciarFlujo = () => {
     cancelarEspera()
     toast.add({ severity: 'info', summary: 'Escucha cancelada', life: 3000 })
   } else {
-    const amountEsperado = paymentAmountToApply.value || saldoPendiente.value;
-    const exito = iniciarEspera(amountEsperado)
+    const exito = iniciarEspera(totalGeneral.value)
 
     if (exito) {
       toast.add({
         severity: 'info',
         summary: 'Esperando Pago Digital...',
-        detail: `Monitoreando ingresos por S/ ${amountEsperado.toFixed(2)}`,
+        detail: `Monitoreando ingresos por S/ ${totalGeneral.value.toFixed(2)}`,
         life: 3000,
       })
     } else {
       toast.add({
         severity: 'warn',
-        summary: 'Carrito vacío o sin saldo pendiente',
+        summary: 'Carrito vacío',
         detail: 'Agrega productos antes de esperar un pago.',
         life: 3000,
       })
@@ -641,43 +498,8 @@ const iniciarFlujo = () => {
   }
 }
 
-const registrarPagoEfectivo = () => {
-    let amt = paymentAmountToApply.value || saldoPendiente.value;
-    if (amt <= 0) return;
-    
-    let vueltoCalculado = amt - saldoPendiente.value;
-    if(vueltoCalculado < 0) vueltoCalculado = 0;
-
-    // Si paga de mas, solo guardamos lo que falta para el saldo para registrar la venta limpia
-    const realApplied = Math.min(amt, saldoPendiente.value);
-
-    partialPayments.value.push({ method: 'CASH', amount: realApplied });
-    paymentAmountToApply.value = null; // reset
-    
-    evaluarCierreVenta(vueltoCalculado);
-}
-
 const finalizarVentaDigitalConfirmada = async (candidato) => {
-    const validAmount = Number(candidato.amount);
-    let vueltoCalculado = validAmount - saldoPendiente.value;
-    if(vueltoCalculado < 0) vueltoCalculado = 0;
-
-    const realApplied = Math.min(validAmount, saldoPendiente.value);
-    
-    partialPayments.value.push({
-        method: 'DIGITAL',
-        amount: realApplied,
-        pagoDigitalInfo: candidato
-    });
-    
-    paymentAmountToApply.value = null;
-    evaluarCierreVenta(vueltoCalculado);
-}
-
-const evaluarCierreVenta = async (vueltoCalculado = 0) => {
-    if (saldoPendiente.value <= 0) {
-        await procesarVentaParciales(vueltoCalculado)
-    }
+  await procesarPago('DIGITAL', candidato)
 }
 
 const prellenarCarrito = (monto) => {
@@ -686,7 +508,7 @@ const prellenarCarrito = (monto) => {
   }
 }
 
-const procesarVentaParciales = async (vueltoCalculado = 0) => {
+const procesarPago = async (method, pagoDigitalConfirmado = null) => {
   if (loading.value) return
   loading.value = true
 
@@ -694,7 +516,17 @@ const procesarVentaParciales = async (vueltoCalculado = 0) => {
     let itemsFinales = []
     let esVentaRapida = false
 
-    if (cart.value.length > 0) {
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+      const montoValidado = Number(pagoDigitalConfirmado.amount) || 0
+      itemsFinales = [
+        {
+          name: 'VENTA DIGITAL DIRECTA',
+          qty: 1,
+          price: montoValidado,
+          subtotal: montoValidado,
+        },
+      ]
+    } else if (cart.value.length > 0) {
       itemsFinales = cart.value
     } else if (quickAmount.value > 0) {
       itemsFinales = [
@@ -707,65 +539,59 @@ const procesarVentaParciales = async (vueltoCalculado = 0) => {
       ]
       esVentaRapida = true
     } else {
-      if (partialPayments.value.length === 1 && partialPayments.value[0].method === 'DIGITAL') {
-          itemsFinales = [{
-              name: 'VENTA DIGITAL DIRECTA',
-              qty: 1,
-              price: partialPayments.value[0].amount,
-              subtotal: partialPayments.value[0].amount
-          }]
-      } else {
-          return
-      }
+      return
     }
 
     const totalReal = itemsFinales.reduce((acc, item) => acc + item.subtotal, 0)
-    
-    // Convertir partialPayments a structure for registrarVenta
-    const payments = partialPayments.value.map(p => {
-        if (p.method === 'CASH') {
-            return { method: 'CASH', amount: p.amount, refId: null, wallet: null }
-        } else {
-            return {
-                method: 'DIGITAL',
-                amount: p.amount,
-                refId: p.pagoDigitalInfo ? p.pagoDigitalInfo.id : null,
-                wallet: p.pagoDigitalInfo ? p.pagoDigitalInfo.wallet : 'YAPE'
-            }
-        }
-    })
+
+    const payments = [
+      {
+        method,
+        amount: totalReal,
+        refId: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.id : null,
+        wallet:
+          method === 'DIGITAL' && pagoDigitalConfirmado
+            ? pagoDigitalConfirmado.wallet
+            : method === 'DIGITAL'
+              ? 'YAPE'
+              : null,
+      },
+    ]
 
     let nombreCliente = 'Cliente Eventual'
-    const digitalPayment = partialPayments.value.find(p => p.method === 'DIGITAL')
-    if (digitalPayment && digitalPayment.pagoDigitalInfo) {
-        nombreCliente = digitalPayment.pagoDigitalInfo.senderName
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+      nombreCliente = pagoDigitalConfirmado.senderName
     }
 
     const resultadoVenta = await registrarVenta({
       items: itemsFinales,
       payments,
       total: totalReal,
-      clientName: nombreCliente,
+      clientName:
+        method === 'DIGITAL' && pagoDigitalConfirmado
+          ? pagoDigitalConfirmado.senderName
+          : 'Cliente Eventual',
       metadata: {
         isQuickSale: esVentaRapida,
-        walletUsed: digitalPayment && digitalPayment.pagoDigitalInfo ? digitalPayment.pagoDigitalInfo.wallet : null,
+        walletUsed:
+          method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.wallet : null,
       },
     })
 
     const movId = resultadoVenta.id
 
-    for (const p of partialPayments.value) {
-        if (p.method === 'DIGITAL' && p.pagoDigitalInfo) {
-            await reclamarPagoDigital(p.pagoDigitalInfo.id, movId)
-        }
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+      await reclamarPagoDigital(pagoDigitalConfirmado.id, movId)
     }
 
-    vueltoGenerado.value = vueltoCalculado;
-    transactionCompletedMode.value = true;
-    
+    cart.value = []
+    quickAmount.value = null
+    prodName.value = ''
     toast.add({ severity: 'success', summary: 'Venta exitosa', life: 3000 })
+
+    emit('transaction-completed')
   } catch (e) {
-    console.error('Error en el flujo de pago mixto:', e)
+    console.error('Error en el flujo de pago:', e)
     throw e
   } finally {
     loading.value = false
@@ -781,103 +607,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.summary-val-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.gold-cobrar-btn {
-  background-color: #d4af37 !important;
-  border-color: #d4af37 !important;
-  color: #000 !important;
-  font-weight: 800;
-  transition: all 0.2s ease;
-}
-
-.gold-cobrar-btn:hover {
-  background-color: #b5952f !important;
-  border-color: #b5952f !important;
-  transform: translateY(-1px);
-}
-
-.ml-2 { margin-left: 0.5rem; }
-
-.inline-payment-section {
-  background: var(--bg-surface-alt);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1rem;
-  margin-top: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.partial-payments-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  border-bottom: 1px dashed var(--color-border);
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.25rem;
-}
-
-.partial-payment-item {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-}
-
-.payment-action-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-}
-
-.saldo-pend-bloque {
-  display: flex;
-  flex-direction: column;
-}
-
-.saldo-pend-bloque label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  letter-spacing: 0.5px;
-}
-
-.saldo-pend-bloque span {
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-
-.text-primary {
-  color: var(--color-primary);
-}
-
-.text-success {
-  color: #10b981; 
-}
-
-.input-monto-bloque {
-  flex: 1;
-  max-width: 140px;
-}
-
-.cash-input-inline :deep(.p-inputtext) {
-  width: 100%;
-  font-size: 1.1rem !important;
-  font-weight: 700 !important;
-  padding: 0.5rem 0.5rem !important;
-  text-align: right;
-  border-radius: var(--radius-md);
-}
-
 .custom-inventory-dialog :deep(.p-dialog-header) {
   padding: 1.25rem 1.5rem;
   background: var(--bg-app);
