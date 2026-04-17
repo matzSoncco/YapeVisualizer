@@ -85,7 +85,6 @@ const buscarProductos = async (text) => {
   const actualizarCatalogo = async (item) => {
     if (!user.value?.uid || !item.name) return
 
-    // Si el item viene con ID de Firebase (fue seleccionado o escaneado), usarlo directo
     const productId = item.id || item.name.trim().toUpperCase().replace(/\s+/g, '_')
     const productRef = doc(db, 'users', user.value.uid, 'products', productId)
 
@@ -98,22 +97,39 @@ const buscarProductos = async (text) => {
 
       await runTransaction(db, async (transaction) => {
         const docSnap = await transaction.get(productRef)
-        const hoy = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD formato local
+        
+        // ----------------------------------------------------
+        // NUEVA FORMA ESTRICTA DE OBTENER LA FECHA DE HOY (Soluciona el bug)
+        // ----------------------------------------------------
+        const dateObj = new Date();
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const hoy = `${year}-${month}-${day}`; // Siempre será formato exacto "2026-04-16"
+        
         const qtySold = item.qty || 1
 
         let pData = docSnap.exists() ? docSnap.data() : {
           name: item.name.toUpperCase(),
           codEAN: autoCodEAN,
           stock: 0,
+          stockInicial: 0,  
           soldToday: 0,
+          costPrice: 0,
           lastDateSold: hoy,
           frequency: 0
         }
 
         let newSoldToday = pData.soldToday || 0
+        // Aseguramos que tome el inicial, o el real si es muy antiguo
+        let newStockInicial = pData.stockInicial || pData.stock || 0
+
         if (pData.lastDateSold !== hoy) {
-          newSoldToday = qtySold // Reset matemático si es nuevo día
+          // ES UN NUEVO DÍA: Solo aquí se congela el stock inicial
+          newStockInicial = pData.stock || 0
+          newSoldToday = qtySold 
         } else {
+          // MISMO DÍA: Solo sumamos ventas, el inicial NO se toca
           newSoldToday += qtySold
         }
 
@@ -121,7 +137,8 @@ const buscarProductos = async (text) => {
           name: item.name.toUpperCase(),
           lastPrice: Number(item.price),
           codEAN: item.barcode || pData.codEAN || autoCodEAN || "",
-          stock: (pData.stock || 0) - qtySold,
+          stock: (pData.stock || 0) - qtySold, // Solo baja el stock real
+          stockInicial: newStockInicial,       // Se mantiene fijo
           soldToday: newSoldToday,
           lastDateSold: hoy,
           updatedAt: serverTimestamp(),
@@ -132,7 +149,6 @@ const buscarProductos = async (text) => {
       console.error("Error actualizando stock y ventas del producto:", error)
     }
   }
-
   /**
    * Actualizar manualmente un producto desde el inventario
    */
@@ -154,19 +170,28 @@ const buscarProductos = async (text) => {
   /**
    * Crear un producto manualmente desde el inventario con ID dinámico
    */
-  const crearProducto = async (newData) => {
+const crearProducto = async (newData) => {
     if (!user.value?.uid) return null
     try {
       let finalCodEAN = newData.codEAN
       if (!finalCodEAN || finalCodEAN.trim() === '') {
         finalCodEAN = await generarCodigoEANAleatorio(user.value.uid)
       }
+      const dateObj = new Date();
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const hoy = `${year}-${month}-${day}`;
 
       const productsRef = collection(db, 'users', user.value.uid, 'products')
       const newDocRef = doc(productsRef) // Auto-genera ID único
       const fullData = {
         ...newData,
         codEAN: finalCodEAN,
+        stockInicial: newData.stock || 0, // Al crearlo, el stock inicial es igual al stock real
+        soldToday: 0,
+        lastDateSold: hoy, // <-- Ahora sí sabe qué es 'hoy'
+        costPrice: newData.costPrice || 0,
         updatedAt: serverTimestamp(),
         frequency: 0 // Inicia con 0 ventas
       }
@@ -228,6 +253,7 @@ const buscarProductos = async (text) => {
           const productRef = doc(db, 'users', user.value.uid, 'products', item.id);
           transaction.update(productRef, {
             stock: increment(item.cantidadNueva),
+            stockInicial: increment(item.cantidadNueva), //para mmodificar el stock inicial también
             updatedAt: serverTimestamp()
           });
         }

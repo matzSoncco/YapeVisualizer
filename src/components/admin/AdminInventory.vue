@@ -81,6 +81,22 @@
               </template>
             </Column>
 
+            <Column field="stockInicial" header="Stock Inicial" :sortable="true">
+              <template #body="slotProps">
+                <span class="stock-badge stock-neutral">
+                  {{ slotProps.data.stockInicial || 0 }} {{ slotProps.data.unidad || 'UNI' }}
+                </span>
+              </template>
+            </Column>
+
+            <Column field="soldToday" header="Ventas Hoy" :sortable="true">
+              <template #body="slotProps">
+                <span style="color: var(--color-primary); font-weight: 800;">
+                  {{ slotProps.data.soldToday || 0 }}
+                </span>
+              </template>
+            </Column>
+
             <Column header="Stock Real" :sortable="true">
               <template #body="slotProps">
                 <span 
@@ -88,6 +104,14 @@
                   :class="getStockClass(slotProps.data.stock)"
                 >
                   {{ slotProps.data.stock || 0 }} {{ slotProps.data.unidad || 'UNI' }}
+                </span>
+              </template>
+            </Column>
+
+            <Column header="Ganancia Hoy">
+              <template #body="slotProps">
+                <span style="color: #059669; font-weight: 700;">
+                  S/ {{ (((slotProps.data.lastPrice || 0) - (slotProps.data.costPrice || 0)) * (slotProps.data.soldToday || 0)).toFixed(2) }}
                 </span>
               </template>
             </Column>
@@ -149,7 +173,18 @@
         
         <div class="form-row">
           <div class="form-group">
-            <label for="price" class="field-label">Precio Venta</label>
+            <label for="costPrice" class="field-label">Costo de Compra (S/)</label>
+            <InputNumber 
+              id="costPrice"
+              v-model="product.costPrice" 
+              mode="currency" 
+              currency="PEN" 
+              locale="es-PE"
+              class="custom-input-number"
+            />
+          </div>
+          <div class="form-group">
+            <label for="price" class="field-label">Precio Venta (S/)</label>
             <InputNumber 
               id="price"
               v-model="product.lastPrice" 
@@ -159,18 +194,21 @@
               class="custom-input-number"
             />
           </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
-            <label for="stock" class="field-label">Stock Inicial</label>
+            <label for="stock" class="field-label">
+              {{ product.id ? 'Stock (No editable aquí)' : 'Stock Inicial' }}
+            </label>
             <InputNumber 
               id="stock"
               v-model="product.stock" 
               :min="0"
               class="custom-input-number"
+              :disabled="!!product.id"
             />
           </div>
-        </div>
-
-        <div class="form-row">
           <div class="form-group">
             <label for="unidad" class="field-label">Unidad de Medida</label>
             <Select 
@@ -182,6 +220,9 @@
               class="custom-input"
             />
           </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
             <label for="barcode" class="field-label">Cód. Barras</label>
             <InputText 
@@ -224,19 +265,22 @@
       @hide="listaAjuste = []"
     >
       <div class="modal-form-content">
-        <div class="form-group">
-          <AutoComplete
-            v-model="selectedForAjuste"
-            :suggestions="suggestions"
-            @complete="searchForAjuste"
-            @item-select="agregarAListaAjuste"
-            @keyup.enter="onAjusteSearchEnter"
-            optionLabel="name"
-            placeholder="Buscar o escanear..."
-            class="w-full"
-            inputClass="form-input-control"
-            autofocus
-          />
+<div class="form-group">
+          <IconField iconPosition="left">
+            <InputIcon class="pi pi-search" />
+            <AutoComplete
+              v-model="selectedForAjuste"
+              :suggestions="suggestions"
+              @complete="searchForAjuste"
+              @item-select="agregarAListaAjuste"
+              @keyup.enter="onAjusteSearchEnter"
+              optionLabel="name"
+              placeholder="Buscar o escanear..."
+              class="w-full custom-autocomplete"
+              inputClass="custom-input"
+              autofocus
+            />
+          </IconField>
         </div>
 
         <div v-if="listaAjuste.length > 0" class="adjustment-table-container">
@@ -422,6 +466,7 @@ const hasChanges = computed(() => {
   return (
     current.name !== original.name ||
     current.lastPrice !== original.lastPrice ||
+    current.costPrice !== original.costPrice ||
     current.stock !== original.stock ||
     current.unidad !== original.unidad ||
     current.codEAN !== original.codEAN ||
@@ -446,7 +491,7 @@ watch(globalFilter, (val) => {
 });
 
 const openNew = () => {
-    product.value = { unidad: 'UNI', stock: 0, lastPrice: 0, logo: null };
+    product.value = { unidad: 'UNI', stock: 0, lastPrice: 0, costPrice: 0, logo: null };
     originalProduct.value = { ...product.value };
     submitted.value = false;
     productDialog.value = true;
@@ -456,6 +501,7 @@ const editProduct = (prod) => {
     product.value = { ...prod };
     if (!product.value.unidad) product.value.unidad = 'UNI';
     if (!product.value.logo) product.value.logo = null;
+    if (product.value.costPrice === undefined) product.value.costPrice = 0;
     originalProduct.value = { ...product.value };
     productDialog.value = true;
     submitted.value = false;
@@ -482,11 +528,16 @@ const saveProduct = async () => {
         const newData = {
             name: product.value.name.toUpperCase(),
             lastPrice: product.value.lastPrice || 0,
+            costPrice: product.value.costPrice || 0,
             codEAN: product.value.codEAN || "",
-            stock: product.value.stock || 0,
             unidad: product.value.unidad || 'UNI',
             logo: product.value.logo || null
         };
+
+        if (!product.value.id) {
+            newData.stock = product.value.stock || 0;
+            newData.stockInicial = product.value.stock || 0;
+        }
 
         try {
             let exito = false;
@@ -700,6 +751,12 @@ onMounted(loadData);
 .stock-success { background: #d1fae5; color: #065f46; }
 .stock-warning { background: #fed7aa; color: #92400e; }
 .stock-danger { background: #fee2e2; color: #991b1b; }
+
+.stock-neutral { 
+  background: var(--bg-surface-alt); 
+  color: var(--color-text-muted); 
+  border: 1px solid var(--color-border); 
+}
 
 .action-btn {
   width: 32px;
@@ -1082,4 +1139,5 @@ onMounted(loadData);
   font-size: 1.75rem;
   color: var(--color-text-muted);
 }
+
 </style>
