@@ -10,7 +10,8 @@ import {
   doc,
   increment,
   serverTimestamp,
-  runTransaction
+  runTransaction,
+  getDoc
 } from 'firebase/firestore'
 import { useAuth } from '@/composables/core/useAuth'
 
@@ -19,26 +20,54 @@ export function useProducts() {
   const suggestions = ref([])
 
   /**
+   * Genera un EAN aleatorio con el formato '19XXXX' 
+   * y garantiza que no exista previamente en Firestore
+   */
+  const generarCodigoEANAleatorio = async (userUid) => {
+    const productsRef = collection(db, 'users', userUid, 'products')
+    let newCode = ''
+    let exists = true
+    while (exists) {
+      const randomDigits = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+      newCode = `19${randomDigits}`
+      const q = query(productsRef, where('codEAN', '==', newCode), limit(1))
+      const snap = await getDocs(q)
+      exists = !snap.empty
+    }
+    return newCode
+  }
+
+  /**
    * Búsqueda en el Catálogo Maestro (Nivel Usuario, no Sucursal)
    * Optimizado para reducir lecturas (Limit 5)
    */
-  const buscarProductos = async (text) => {
+const buscarProductos = async (text) => {
     if (!user.value?.uid || !text || text.length < 2) {
       suggestions.value = []
       return
     }
 
     const searchTerm = text.toUpperCase()
+    const productsRef = collection(db, 'users', user.value.uid, 'products')
 
     try {
-      const productsRef = collection(db, 'users', user.value.uid, 'products')
-
-      const q = query(
-        productsRef,
-        where('name', '>=', searchTerm),
-        where('name', '<=', searchTerm + '\uf8ff'),
-        limit(5),
-      )
+      let q;
+      // Si el texto es numérico y largo, priorizamos búsqueda por código EAN
+      if (/^\d{4,}$/.test(text)) {
+        q = query(
+          productsRef,
+          where('codEAN', '==', text),
+          limit(5)
+        )
+      } else {
+        // Búsqueda normal por nombre
+        q = query(
+          productsRef,
+          where('name', '>=', searchTerm),
+          where('name', '<=', searchTerm + '\uf8ff'),
+          limit(5),
+        )
+      }
 
       const snapshot = await getDocs(q)
       suggestions.value = snapshot.docs.map((d) => ({
@@ -56,37 +85,60 @@ export function useProducts() {
   const actualizarCatalogo = async (item) => {
     if (!user.value?.uid || !item.name) return
 
-    // Si el item viene con ID de Firebase (fue seleccionado o escaneado), usarlo directo
     const productId = item.id || item.name.trim().toUpperCase().replace(/\s+/g, '_')
     const productRef = doc(db, 'users', user.value.uid, 'products', productId)
 
     try {
+      let autoCodEAN = ""
+      const docSnapExterno = await getDoc(productRef)
+      if (!docSnapExterno.exists() && (!item.barcode || item.barcode.trim() === '')) {
+        autoCodEAN = await generarCodigoEANAleatorio(user.value.uid)
+      }
+
       await runTransaction(db, async (transaction) => {
         const docSnap = await transaction.get(productRef)
-        const hoy = new Date().toLocaleDateString('en-CA') // YYYY-MM-DD formato local
+        
+        // ----------------------------------------------------
+        // NUEVA FORMA ESTRICTA DE OBTENER LA FECHA DE HOY (Soluciona el bug)
+        // ----------------------------------------------------
+        const dateObj = new Date();
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const hoy = `${year}-${month}-${day}`; // Siempre será formato exacto "2026-04-16"
+        
         const qtySold = item.qty || 1
 
         let pData = docSnap.exists() ? docSnap.data() : {
           name: item.name.toUpperCase(),
-          codEAN: item.barcode || "",
+          codEAN: autoCodEAN,
           stock: 0,
+          stockInicial: 0,  
           soldToday: 0,
+          costPrice: 0,
           lastDateSold: hoy,
           frequency: 0
         }
 
         let newSoldToday = pData.soldToday || 0
+        // Aseguramos que tome el inicial, o el real si es muy antiguo
+        let newStockInicial = pData.stockInicial || pData.stock || 0
+
         if (pData.lastDateSold !== hoy) {
-          newSoldToday = qtySold // Reset matemático si es nuevo día
+          // ES UN NUEVO DÍA: Solo aquí se congela el stock inicial
+          newStockInicial = pData.stock || 0
+          newSoldToday = qtySold 
         } else {
+          // MISMO DÍA: Solo sumamos ventas, el inicial NO se toca
           newSoldToday += qtySold
         }
 
         transaction.set(productRef, {
           name: item.name.toUpperCase(),
           lastPrice: Number(item.price),
-          codEAN: item.barcode || pData.codEAN || "",
-          stock: (pData.stock || 0) - qtySold,
+          codEAN: item.barcode || pData.codEAN || autoCodEAN || "",
+          stock: (pData.stock || 0) - qtySold, // Solo baja el stock real
+          stockInicial: newStockInicial,       // Se mantiene fijo
           soldToday: newSoldToday,
           lastDateSold: hoy,
           updatedAt: serverTimestamp(),
@@ -97,7 +149,6 @@ export function useProducts() {
       console.error("Error actualizando stock y ventas del producto:", error)
     }
   }
-
   /**
    * Actualizar manualmente un producto desde el inventario
    */
@@ -119,13 +170,28 @@ export function useProducts() {
   /**
    * Crear un producto manualmente desde el inventario con ID dinámico
    */
-  const crearProducto = async (newData) => {
+const crearProducto = async (newData) => {
     if (!user.value?.uid) return null
     try {
+      let finalCodEAN = newData.codEAN
+      if (!finalCodEAN || finalCodEAN.trim() === '') {
+        finalCodEAN = await generarCodigoEANAleatorio(user.value.uid)
+      }
+      const dateObj = new Date();
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const hoy = `${year}-${month}-${day}`;
+
       const productsRef = collection(db, 'users', user.value.uid, 'products')
       const newDocRef = doc(productsRef) // Auto-genera ID único
       const fullData = {
         ...newData,
+        codEAN: finalCodEAN,
+        stockInicial: newData.stock || 0, // Al crearlo, el stock inicial es igual al stock real
+        soldToday: 0,
+        lastDateSold: hoy, // <-- Ahora sí sabe qué es 'hoy'
+        costPrice: newData.costPrice || 0,
         updatedAt: serverTimestamp(),
         frequency: 0 // Inicia con 0 ventas
       }
@@ -175,6 +241,30 @@ export function useProducts() {
     }
   }
 
+  /**
+   * Ingreso Masivo de Stock
+   */
+  const abastecerStockMasivo = async (listaAjuste) => {
+    if (!user.value?.uid || listaAjuste.length === 0) return false;
+    
+    try {
+      await runTransaction(db, async (transaction) => {
+        for (const item of listaAjuste) {
+          const productRef = doc(db, 'users', user.value.uid, 'products', item.id);
+          transaction.update(productRef, {
+            stock: increment(item.cantidadNueva),
+            stockInicial: increment(item.cantidadNueva), //para mmodificar el stock inicial también
+            updatedAt: serverTimestamp()
+          });
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error("Error en carga masiva:", error);
+      return false;
+    }
+  };
+
   return {
     suggestions,
     buscarProductos,
@@ -182,6 +272,7 @@ export function useProducts() {
     actualizarProducto,
     crearProducto,
     buscarPorCodigoBarras,
-    obtenerTodosLosProductos
+    obtenerTodosLosProductos,
+    abastecerStockMasivo
   }
 }

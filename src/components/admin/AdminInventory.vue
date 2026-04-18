@@ -1,216 +1,347 @@
 <template>
-  <div class="admin-inventory-container">
-    <div class="header-actions">
-      <h3 class="m-0">Catálogo de Productos</h3>
-      
-      <div class="search-and-actions">
-        <Button 
-          label="Nuevo Producto" 
-          icon="pi pi-plus" 
-          severity="success" 
-          @click="openNew" 
-          class="p-button-sm font-bold shadow-sm btn-new" 
-        />
-        
-        <IconField iconPosition="left">
-          <InputIcon class="pi pi-search text-slate-400" />
-          <InputText 
-            ref="searchInput" 
-            v-model="globalFilter" 
-            @keyup.enter="onSearchEnter" 
-            placeholder="Buscar o escanear..." 
-            class="p-inputtext-sm search-input-custom" 
-          />
-        </IconField>
-      </div>
-    </div>
-    
-    <DataTable :value="productos" 
-                :paginator="true" :rows="10" 
-                :loading="loading"
-                dataKey="id"
-                :globalFilterFields="['name', 'codEAN']"
-                v-model:filters="filters"
-                filterDisplay="menu"
-                responsiveLayout="scroll"
-                class="p-datatable-sm custom-inventory-table">
-                
-      <template #empty>
-        No se encontraron productos en el inventario.
-      </template>
-
-      <Column header="Logo" style="width: 70px">
-        <template #body="slotProps">
-          <div class="product-logo">
-            <img 
-              v-if="slotProps.data.logo" 
-              :src="slotProps.data.logo" 
-              class="logo-image"
-              :alt="slotProps.data.name"
-            />
-            <div v-else class="product-icon-placeholder">
-              <i class="pi pi-image text-slate-300"></i>
-            </div>
+  <div class="inventory-view-root">
+    <main class="inventory-container">
+      <div class="inventory-card">
+        <div class="card-header">
+          <div class="card-header-title">
+            <i class="pi pi-box" />
+            <h2>Catálogo de Productos</h2>
           </div>
-        </template>
-      </Column>
+          <div class="header-buttons">
+            <button class="btn-new" @click="showAjusteModal = true">
+              <i class="pi pi-box" /> Ingreso de Stock
+            </button>
+            <button class="btn-new" @click="openNew">
+              <i class="pi pi-plus" /> Nuevo producto
+            </button>
+          </div>
+        </div>
 
-      <Column field="name" header="Producto" :sortable="true" class="font-bold"></Column>
-      
-      <Column field="lastPrice" header="Precio Unitario" :sortable="true">
-        <template #body="slotProps">
-          <span class="font-semibold text-slate-700">S/ {{ (slotProps.data.lastPrice || 0).toFixed(2) }}</span>
-        </template>
-      </Column>
+        <div class="card-body">
+          <div class="search-bar">
+            <IconField iconPosition="left">
+              <InputIcon class="pi pi-search" />
+              <InputText 
+                v-model="globalFilter" 
+                @keyup.enter="onSearchEnter" 
+                placeholder="Buscar o escanear..." 
+                class="search-input"
+              />
+            </IconField>
+          </div>
 
-      <Column field="codEAN" header="Cód. Barras" :sortable="true">
-        <template #body="slotProps">
-          <code class="text-xs bg-slate-100 px-2 py-1 rounded">{{ slotProps.data.codEAN || '---' }}</code>
-        </template>
-      </Column>
+          <DataTable :value="productos" 
+                      :paginator="true" :rows="10" 
+                      :loading="loading"
+                      dataKey="id"
+                      :globalFilterFields="['name', 'codEAN']"
+                      v-model:filters="filters"
+                      filterDisplay="menu"
+                      responsiveLayout="scroll"
+                      class="inventory-table">
+                      
+            <template #empty>
+              <div class="empty-state">
+                <div class="empty-icon">📦</div>
+                <p class="empty-title">Sin productos aún</p>
+                <p class="empty-sub">Agrega tu primer producto al inventario.</p>
+                <button class="btn-new-empty" @click="openNew">
+                  <i class="pi pi-plus" /> Crear primer producto
+                </button>
+              </div>
+            </template>
 
-      <Column header="Stock Real" :sortable="true">
-        <template #body="slotProps">
-          <Badge 
-            :value="`${slotProps.data.stock || 0} ${slotProps.data.unidad || 'UNI'}`" 
-            :severity="getStockSeverity(slotProps.data.stock)" 
-            class="stock-badge-custom"
-          />
-        </template>
-      </Column>
+            <Column header="Logo" style="width: 70px">
+              <template #body="slotProps">
+                <div class="product-logo">
+                  <img 
+                    v-if="slotProps.data.logo" 
+                    :src="slotProps.data.logo" 
+                    class="logo-image"
+                    :alt="slotProps.data.name"
+                  />
+                  <div v-else class="product-icon-placeholder">
+                    <i class="pi pi-image" />
+                  </div>
+                </div>
+              </template>
+            </Column>
 
-      <Column header="Acciones" :exportable="false" style="width: 5rem">
-        <template #body="slotProps">
-          <Button icon="pi pi-pencil" text rounded severity="success" @click="editProduct(slotProps.data)" />
-        </template>
-      </Column>
-    </DataTable>
+            <Column field="name" header="Producto" :sortable="true"></Column>
+            
+            <Column field="lastPrice" header="Precio Unitario" :sortable="true">
+              <template #body="slotProps">
+                <span class="price-text">S/ {{ (slotProps.data.lastPrice || 0).toFixed(2) }}</span>
+              </template>
+            </Column>
+
+            <Column field="codEAN" header="Cód. Barras" :sortable="true">
+              <template #body="slotProps">
+                <code class="barcode">{{ slotProps.data.codEAN || '---' }}</code>
+              </template>
+            </Column>
+
+            <Column field="stockInicial" header="Stock Inicial" :sortable="true">
+              <template #body="slotProps">
+                <span class="stock-badge stock-neutral">
+                  {{ slotProps.data.stockInicial || 0 }} {{ slotProps.data.unidad || 'UNI' }}
+                </span>
+              </template>
+            </Column>
+
+            <Column field="soldToday" header="Ventas Hoy" :sortable="true">
+              <template #body="slotProps">
+                <span style="color: var(--color-primary); font-weight: 800;">
+                  {{ slotProps.data.soldToday || 0 }}
+                </span>
+              </template>
+            </Column>
+
+            <Column header="Stock Real" :sortable="true">
+              <template #body="slotProps">
+                <span 
+                  class="stock-badge"
+                  :class="getStockClass(slotProps.data.stock)"
+                >
+                  {{ slotProps.data.stock || 0 }} {{ slotProps.data.unidad || 'UNI' }}
+                </span>
+              </template>
+            </Column>
+
+            <Column header="Ganancia Hoy">
+              <template #body="slotProps">
+                <span style="color: #059669; font-weight: 700;">
+                  S/ {{ (((slotProps.data.lastPrice || 0) - (slotProps.data.costPrice || 0)) * (slotProps.data.soldToday || 0)).toFixed(2) }}
+                </span>
+              </template>
+            </Column>
+
+            <Column header="Acciones" :exportable="false" style="width: 5rem">
+              <template #body="slotProps">
+                <button class="action-btn" @click="editProduct(slotProps.data)" title="Editar producto">
+                  <i class="pi pi-pencil" />
+                </button>
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+      </div>
+    </main>
 
     <Dialog 
       v-model:visible="productDialog" 
-      :style="{width: '560px'}" 
-      :header="product.id ? 'Editar Producto' : 'Crear Nuevo Producto'" 
+      :style="{width: '450px'}" 
+      :header="product.id ? 'Editar Producto' : 'Nuevo Producto'" 
       :modal="true" 
-      class="p-fluid inventory-modal-custom"
-      :closable="true"
+      class="custom-inventory-dialog"
+      :draggable="false"
     >
-      <div class="dialog-content">
-        <!-- Selección de Logo -->
-        <div class="field">
-          <label class="font-bold block mb-2 text-slate-600">
-            <i class="pi pi-image mr-2 text-slate-400"></i>
-            Logo del Producto (Opcional)
-          </label>
-          
+      <div class="modal-form-content">
+        <div class="form-group">
+          <label class="field-label">Logo del Producto</label>
           <div class="logo-selector">
             <div 
               v-for="logo in PREDEFINED_LOGOS" 
               :key="logo.value"
               class="logo-option"
-              :class="{ 'logo-option-selected': product.logo === logo.value }"
+              :class="{ 'selected': product.logo === logo.value }"
               @click="product.logo = logo.value"
             >
-              <img :src="logo.value" :alt="logo.label" class="logo-option-img" />
-              <span class="logo-option-label">{{ logo.label }}</span>
+              <img :src="logo.value" :alt="logo.label" />
             </div>
             <div 
-              class="logo-option logo-option-clear"
-              :class="{ 'logo-option-selected': !product.logo }"
+              class="logo-option clear"
+              :class="{ 'selected': !product.logo }"
               @click="product.logo = null"
             >
-              <i class="pi pi-times-circle text-slate-400 text-xl"></i>
-              <span class="logo-option-label">Sin logo</span>
+              <i class="pi pi-ban" />
             </div>
           </div>
         </div>
 
-        <div class="field">
-          <label for="name" class="font-bold block mb-2 text-slate-600">
-            <i class="pi pi-tag mr-2 text-slate-400"></i>
-            Nombre del Producto
-          </label>
+        <div class="form-group">
+          <label for="name" class="field-label">Nombre del Producto *</label>
           <InputText 
-            id="name" 
+            id="name"
             v-model.trim="product.name" 
-            required="true" 
-            autofocus 
-            :invalid="submitted && !product.name" 
-            placeholder="Ej: ACEITE PRIMOR 1L" 
-            class="w-full"
+            placeholder="Ej: ACEITE PRIMOR 1L"
+            class="custom-input uppercase-input"
+            autofocus
           />
-          <small class="p-error" v-if="submitted && !product.name">El nombre es requerido.</small>
+          <small class="error-msg" v-if="submitted && !product.name">El nombre es requerido</small>
         </div>
         
         <div class="form-row">
-          <div class="field flex-1">
-            <label for="price" class="font-bold block mb-2 text-slate-600">
-              <i class="pi pi-currency-sol mr-2 text-slate-400"></i>
-              Precio Venta
-            </label>
+          <div class="form-group">
+            <label for="costPrice" class="field-label">Costo de Compra (S/)</label>
             <InputNumber 
-              id="price" 
+              id="costPrice"
+              v-model="product.costPrice" 
+              mode="currency" 
+              currency="PEN" 
+              locale="es-PE"
+              class="custom-input-number"
+            />
+          </div>
+          <div class="form-group">
+            <label for="price" class="field-label">Precio Venta (S/)</label>
+            <InputNumber 
+              id="price"
               v-model="product.lastPrice" 
               mode="currency" 
               currency="PEN" 
-              locale="es-PE" 
-              class="w-full" 
-            />
-          </div>
-          <div class="field flex-1">
-            <label for="stock" class="font-bold block mb-2 text-slate-600">
-              <i class="pi pi-box mr-2 text-slate-400"></i>
-              Stock Inicial
-            </label>
-            <InputNumber 
-              id="stock" 
-              v-model="product.stock" 
-              showButtons 
-              :min="0" 
-              class="w-full" 
+              locale="es-PE"
+              class="custom-input-number"
             />
           </div>
         </div>
 
         <div class="form-row">
-          <div class="field flex-1">
-            <label for="unidad" class="font-bold block mb-2 text-slate-600">
-              <i class="pi pi-cog mr-2 text-slate-400"></i>
-              Unidad de Medida
+          <div class="form-group">
+            <label for="stock" class="field-label">
+              {{ product.id ? 'Stock (No editable aquí)' : 'Stock Inicial' }}
             </label>
+            <InputNumber 
+              id="stock"
+              v-model="product.stock" 
+              :min="0"
+              class="custom-input-number"
+              :disabled="!!product.id"
+            />
+          </div>
+          <div class="form-group">
+            <label for="unidad" class="field-label">Unidad de Medida</label>
             <Select 
-              id="unidad" 
+              id="unidad"
               v-model="product.unidad" 
               :options="PRODUCT_UNITS" 
               optionLabel="label" 
-              optionValue="value" 
-              class="w-full" 
+              optionValue="value"
+              class="custom-input"
             />
           </div>
-          <div class="field flex-1">
-            <label for="barcode" class="font-bold block mb-2 text-slate-600">
-              <i class="pi pi-barcode mr-2 text-slate-400"></i>
-              Código EAN / Barras
-            </label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="barcode" class="field-label">Cód. Barras</label>
             <InputText 
-              id="barcode" 
+              id="barcode"
               v-model.trim="product.codEAN" 
-              placeholder="Opcional" 
-              class="w-full"
+              placeholder="Opcional"
+              class="custom-input"
             />
           </div>
         </div>
       </div>
 
       <template #footer>
-        <div class="dialog-footer">
-          <Button label="Cancelar" icon="pi pi-times" text severity="danger" @click="hideDialog" class="p-button-text" />
+        <div class="modal-actions">
+          <Button
+            label="Cancelar"
+            icon="pi pi-times"
+            text
+            @click="hideDialog"
+            class="btn-cancel"
+          />
+          <Button
+            label="Guardar"
+            :icon="savingProduct ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
+            @click="saveProduct"
+            :disabled="!hasChanges || savingProduct"
+            class="btn-save"
+          />
+        </div>
+      </template>
+    </Dialog>
+
+    <Dialog 
+      v-model:visible="showAjusteModal" 
+      :style="{width: '560px'}" 
+      header="Ingreso de Stock" 
+      :modal="true" 
+      class="custom-inventory-dialog"
+      :draggable="false"
+      @hide="listaAjuste = []"
+    >
+      <div class="modal-form-content">
+<div class="form-group">
+          <IconField iconPosition="left">
+            <InputIcon class="pi pi-search" />
+            <AutoComplete
+              v-model="selectedForAjuste"
+              :suggestions="suggestions"
+              @complete="searchForAjuste"
+              @item-select="agregarAListaAjuste"
+              @keyup.enter="onAjusteSearchEnter"
+              optionLabel="name"
+              placeholder="Buscar o escanear..."
+              class="w-full custom-autocomplete"
+              inputClass="custom-input"
+              autofocus
+            />
+          </IconField>
+        </div>
+
+        <div v-if="listaAjuste.length > 0" class="adjustment-table-container">
+          <table class="adjustment-table">
+            <thead>
+              <tr>
+                <th class="col-product">Producto</th>
+                <th class="col-qty">Cantidad a sumar</th>
+                <th class="col-action"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(item, index) in listaAjuste" :key="item.id">
+                <td class="col-product">
+                  <span class="product-name">{{ item.name }}</span>
+                  <span class="product-stock">Stock actual: {{ item.stock || 0 }} {{ item.unidad }}</span>
+                </td>
+                <td class="col-qty">
+                  <InputNumber 
+                    v-model="item.cantidadNueva" 
+                    :min="1" 
+                    showButtons
+                    buttonLayout="horizontal"
+                    incrementButtonIcon="pi pi-plus"
+                    decrementButtonIcon="pi pi-minus"
+                    class="qty-input-adjust"
+                  />
+                </td>
+                <td class="col-action">
+                  <button class="btn-remove-row" @click="listaAjuste.splice(index, 1)" title="Quitar">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div v-else class="empty-ajuste-state">
+          <div class="empty-icon-circle">
+            <i class="pi pi-inbox"></i>
+          </div>
+          <p>Busca o escanea productos y añádelos a la lista para sumar stock.</p>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="modal-actions">
           <Button 
-            label="Guardar Producto" 
+            label="Cancelar" 
+            icon="pi pi-times" 
+            text 
+            @click="showAjusteModal = false" 
+            class="btn-cancel" 
+          />
+          <Button 
+            label="Confirmar Ingreso" 
             icon="pi pi-check" 
-            severity="success" 
-            @click="saveProduct" 
-            class="px-6"
-            :disabled="!hasChanges"
+            @click="procesarAbastecimiento" 
+            :disabled="listaAjuste.length === 0 || loadingAjuste" 
+            class="btn-save"
           />
         </div>
       </template>
@@ -227,18 +358,16 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
-import Badge from 'primevue/badge';
-import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
-import Select from 'primevue/select'; 
+import Select from 'primevue/select';
+import Button from 'primevue/button';
 import { PRODUCT_UNITS } from '@/utils/constants';
 
-const { obtenerTodosLosProductos, actualizarProducto, crearProducto } = useProducts();
+const { obtenerTodosLosProductos, actualizarProducto, crearProducto, buscarProductos, suggestions, abastecerStockMasivo } = useProducts();
 const toast = useToast();
 
-// Logos predefinidos (puedes cambiar las rutas por las que necesites)
 const PREDEFINED_LOGOS = [
   { label: 'Abarrotes', value: '/logos/bowl-rice_1.svg' },
   { label: 'Bebidas', value: '/logos/bottle-water_1.svg' },
@@ -251,33 +380,93 @@ const PREDEFINED_LOGOS = [
 const productos = ref([]);
 const loading = ref(true);
 const globalFilter = ref('');
-const searchInput = ref(null);
 const filters = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
 
 const productDialog = ref(false);
 const product = ref({});
-const originalProduct = ref({}); // Guardar estado original para detectar cambios
+const originalProduct = ref({});
 const submitted = ref(false);
+const savingProduct = ref(false);
+const showAjusteModal = ref(false);
+const selectedForAjuste = ref(null);
+const listaAjuste = ref([]);
+const loadingAjuste = ref(false);
 
-// Computed para detectar si hubo cambios
+const searchForAjuste = async (e) => {
+    await buscarProductos(e.query);
+};
+
+const agregarAListaAjuste = (e) => {
+    const producto = e.value;
+    // Evita duplicados en la lista temporal, si ya existe solo le suma 1 a la cantidad a ingresar
+    const existe = listaAjuste.value.find(p => p.id === producto.id);
+    if (existe) {
+        existe.cantidadNueva += 1;
+    } else {
+        listaAjuste.value.unshift({
+            ...producto,
+            cantidadNueva: 1
+        });
+    }
+    selectedForAjuste.value = null; // Limpia el buscador para el siguiente
+};
+
+const onAjusteSearchEnter = (e) => {
+    // Si se seleccionó desde la sugerencia (es un objeto), el evento item-select ya se encarga
+    if (typeof selectedForAjuste.value === 'object' && selectedForAjuste.value !== null) {
+        return;
+    }
+    
+    // Si es texto ingresado o leído por el escáner
+    const query = (e.target.value || '').trim();
+    if (!query) return;
+
+    // Busca coincidencia exacta por código de barras o nombre del producto
+    const exactMatch = productos.value.find(p => 
+        p.codEAN === query || 
+        p.name.toUpperCase() === query.toUpperCase()
+    );
+
+    if (exactMatch) {
+        agregarAListaAjuste({ value: exactMatch });
+        if (e.target) e.target.value = ''; // Limpia el input físicamente para el siguiente escaneo
+    } else {
+        toast.add({ severity: 'warn', summary: 'No encontrado', detail: 'No se encontró un producto con ese código', life: 3000 });
+    }
+};
+
+const procesarAbastecimiento = async () => {
+    if (listaAjuste.value.length === 0) return;
+    loadingAjuste.value = true;
+
+    const exito = await abastecerStockMasivo(listaAjuste.value);
+
+    if (exito) {
+        toast.add({ severity: 'success', summary: 'Ingreso Completado', detail: 'El stock fue sumado correctamente', life: 3000 });
+        showAjusteModal.value = false;
+        listaAjuste.value = [];
+        await loadData(); // Recarga la tabla de atrás para ver los nuevos números
+    } else {
+        toast.add({ severity: 'error', summary: 'Error', detail: 'Hubo un problema al ingresar el stock', life: 3000 });
+    }
+    loadingAjuste.value = false;
+};
+
 const hasChanges = computed(() => {
   if (!product.value && !originalProduct.value) return false;
-  
-  // Para nuevo producto (sin id)
   if (!originalProduct.value.id) {
-    // Si es nuevo y tiene nombre o algún campo lleno, permitir guardar
     return !!(product.value.name?.trim());
   }
   
-  // Para edición, comparar campos relevantes
   const current = product.value;
   const original = originalProduct.value;
   
   return (
     current.name !== original.name ||
     current.lastPrice !== original.lastPrice ||
+    current.costPrice !== original.costPrice ||
     current.stock !== original.stock ||
     current.unidad !== original.unidad ||
     current.codEAN !== original.codEAN ||
@@ -291,10 +480,10 @@ const loadData = async () => {
     loading.value = false;
 };
 
-const getStockSeverity = (stock) => {
-  if (!stock || stock <= 0) return 'danger';
-  if (stock <= 10) return 'warn';
-  return 'success';
+const getStockClass = (stock) => {
+  if (!stock || stock <= 0) return 'stock-danger';
+  if (stock <= 10) return 'stock-warning';
+  return 'stock-success';
 };
 
 watch(globalFilter, (val) => {
@@ -302,7 +491,7 @@ watch(globalFilter, (val) => {
 });
 
 const openNew = () => {
-    product.value = { unidad: 'UNI', stock: 0, lastPrice: 0, logo: null };
+    product.value = { unidad: 'UNI', stock: 0, lastPrice: 0, costPrice: 0, logo: null };
     originalProduct.value = { ...product.value };
     submitted.value = false;
     productDialog.value = true;
@@ -312,6 +501,7 @@ const editProduct = (prod) => {
     product.value = { ...prod };
     if (!product.value.unidad) product.value.unidad = 'UNI';
     if (!product.value.logo) product.value.logo = null;
+    if (product.value.costPrice === undefined) product.value.costPrice = 0;
     originalProduct.value = { ...product.value };
     productDialog.value = true;
     submitted.value = false;
@@ -330,32 +520,46 @@ const saveProduct = async () => {
         return;
     }
     
+    if (savingProduct.value) return;
+    savingProduct.value = true;
+    
     submitted.value = true;
     if (product.value.name?.trim()) {
         const newData = {
             name: product.value.name.toUpperCase(),
             lastPrice: product.value.lastPrice || 0,
+            costPrice: product.value.costPrice || 0,
             codEAN: product.value.codEAN || "",
-            stock: product.value.stock || 0,
             unidad: product.value.unidad || 'UNI',
             logo: product.value.logo || null
         };
 
-        let exito = false;
-        if (product.value.id) {
-            exito = await actualizarProducto(product.value.id, newData);
-        } else {
-            const res = await crearProducto(newData);
-            exito = !!res;
+        if (!product.value.id) {
+            newData.stock = product.value.stock || 0;
+            newData.stockInicial = product.value.stock || 0;
         }
 
-        if (exito) {
-            toast.add({ severity: 'success', summary: 'Completado', detail: 'Inventario actualizado', life: 3000 });
-            await loadData();
-            hideDialog();
-        } else {
-            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar', life: 3000 });
+        try {
+            let exito = false;
+            if (product.value.id) {
+                exito = await actualizarProducto(product.value.id, newData);
+            } else {
+                const res = await crearProducto(newData);
+                exito = !!res;
+            }
+
+            if (exito) {
+                toast.add({ severity: 'success', summary: 'Completado', detail: 'Inventario actualizado', life: 3000 });
+                await loadData();
+                hideDialog();
+            } else {
+                toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar', life: 3000 });
+            }
+        } finally {
+            savingProduct.value = false;
         }
+    } else {
+        savingProduct.value = false;
     }
 };
 
@@ -375,233 +579,565 @@ onMounted(loadData);
 </script>
 
 <style scoped>
-.admin-inventory-container {
-    background: #ffffff;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 25px rgba(0,0,0,0.04);
+/* ── CONTENEDOR PRINCIPAL DE VISTA ── */
+.inventory-view-root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.header-actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid #f1f5f9;
-    padding-bottom: 1.5rem;
+.inventory-container {
+  flex: 1;
+  padding: 1.5rem; /* Ajustado el padding para que no se vea tan separado */
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  overflow-y: auto;
 }
 
-.header-actions h3 {
-    margin: 0;
-    color: #1e293b;
-    font-size: 1.4rem;
-    font-weight: 800;
+/* ── TARJETA Y HEADER ── */
+.inventory-card {
+  background: var(--bg-app);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
 
-.search-and-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.5);
 }
 
+.card-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card-header-title i {
+  font-size: 1.25rem;
+  color: var(--color-text-muted);
+}
+
+.card-header-title h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+/* ── BOTÓN NUEVO ── */
 .btn-new {
-    white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.search-input-custom {
-    width: 280px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    transition: all 0.2s;
-    padding: 0.5rem 1rem;
+.btn-new:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
 }
 
-.search-input-custom:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+/* ── BODY Y BÚSQUEDA ── */
+.card-body {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.search-bar {
+  max-width: 320px;
+}
+
+.search-input {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 1rem;
+}
+
+.search-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+  outline: none;
+}
+
+/* ── TABLA DE PRODUCTOS ── */
+.inventory-table {
+  width: 100%;
+}
+
+:deep(.inventory-table .p-datatable-wrapper) {
+  border-radius: var(--radius-md);
+}
+
+:deep(.inventory-table .p-datatable-thead > tr > th) {
+  background: rgba(255, 255, 255, 0.5);
+  border-bottom: 1px solid var(--color-border);
+  padding: 1rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+:deep(.inventory-table .p-datatable-tbody > tr > td) {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .product-logo {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .logo-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 6px;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
 }
 
 .product-icon-placeholder {
-    width: 36px;
-    height: 36px;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
 }
 
-/* Logo Selector Styles */
-.logo-selector {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-    gap: 0.75rem;
-    margin-top: 0.5rem;
+.price-text {
+  font-weight: 600;
+  color: var(--color-text-main);
 }
 
-.logo-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 0.5rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: white;
+.barcode {
+  font-size: 0.75rem;
+  background: var(--bg-surface-alt);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
 }
 
-.logo-option:hover {
-    border-color: #10b981;
-    background: #f0fdf4;
-    transform: translateY(-2px);
+/* Badges de Stock */
+.stock-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.stock-success { background: #d1fae5; color: #065f46; }
+.stock-warning { background: #fed7aa; color: #92400e; }
+.stock-danger { background: #fee2e2; color: #991b1b; }
+
+.stock-neutral { 
+  background: var(--bg-surface-alt); 
+  color: var(--color-text-muted); 
+  border: 1px solid var(--color-border); 
 }
 
-.logo-option-selected {
-    border-color: #10b981;
-    background: #f0fdf4;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+.action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.logo-option-clear {
-    border-style: dashed;
+.action-btn:hover {
+  background: var(--bg-surface);
+  color: var(--color-primary);
 }
 
-.logo-option-img {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
+/* ── EMPTY STATE ── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3rem 1rem;
+  text-align: center;
+}
+.empty-icon { font-size: 3.5rem; opacity: 0.25; line-height: 1; }
+.empty-title { margin: 0; font-size: 1.1rem; font-weight: 800; color: var(--color-text-main); }
+.empty-sub { margin: 0; font-size: 0.9rem; color: var(--color-text-muted); }
+
+.btn-new-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+  padding: 0.6rem 1.25rem;
+  background: transparent;
+  color: var(--color-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-new-empty:hover {
+  background: var(--color-primary);
+  color: var(--color-accent);
+  border-color: var(--color-primary);
 }
 
-.logo-option-label {
-    font-size: 0.7rem;
-    font-weight: 500;
-    color: #64748b;
-    text-align: center;
+/* ══════════════════════════════════════════════
+   ESTILOS PREMIUM DEL MODAL
+   ══════════════════════════════════════════════ */
+.custom-inventory-dialog :deep(.p-dialog-header) {
+  padding: 1.5rem;
+  background: var(--bg-app);
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 800;
+  color: var(--color-text-main);
 }
 
-/* Dialog Styles */
-:deep(.p-dialog-header) {
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 1.5rem 1.75rem;
+.custom-inventory-dialog :deep(.p-dialog-content) {
+  padding: 1.5rem;
 }
 
-:deep(.p-dialog-header .p-dialog-title) {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #1e293b;
+.custom-inventory-dialog :deep(.p-dialog-footer) {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border);
+  background: var(--bg-surface-alt);
 }
 
-:deep(.p-dialog-content) {
-    padding: 1.75rem;
+/* ── CONTENEDOR DE FORMULARIO ── */
+.modal-form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding-top: 0.5rem;
 }
 
-:deep(.p-dialog-footer) {
-    border-top: 1px solid #e2e8f0;
-    padding: 1.25rem 1.75rem;
-    background: #fafbfc;
-}
-
-.dialog-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.field {
-    margin-bottom: 0;
-}
-
-.field label {
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-    color: #475569;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
 }
 
 .form-row {
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
-.form-row .flex-1 {
-    flex: 1;
+/* ── ETIQUETAS (LABELS) ── */
+.field-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
 }
 
-.dialog-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.75rem;
+/* ── INPUTS GENÉRICOS Y SELECTS ── */
+.custom-input,
+:deep(.custom-input-number .p-inputtext),
+:deep(.p-select.custom-input) {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--bg-surface-alt);
+  color: var(--color-text-main);
+  transition: all 0.2s ease;
+  box-shadow: none;
 }
 
-:deep(.p-inputtext),
-:deep(.p-inputnumber),
-:deep(.p-dropdown) {
-    width: 100%;
+/* Arreglo para el padding interno del componente Select de PrimeVue */
+:deep(.p-select.custom-input .p-select-label) {
+  padding: 0;
 }
 
-:deep(.p-button-success:disabled) {
-    opacity: 0.5;
-    cursor: not-allowed;
+.custom-input:hover,
+:deep(.custom-input-number .p-inputtext:hover),
+:deep(.p-select.custom-input:hover) {
+  border-color: var(--color-primary-mid);
 }
 
-@media (max-width: 640px) {
-    .admin-inventory-container {
-        padding: 1rem;
-    }
-    
-    .header-actions {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1rem;
-    }
-    
-    .search-and-actions {
-        width: 100%;
-        flex-direction: column;
-    }
-    
-    .btn-new {
-        width: 100%;
-    }
-    
-    .search-input-custom {
-        width: 100%;
-    }
-    
-    .form-row {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .logo-selector {
-        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-    }
-    
-    :deep(.p-dialog) {
-        width: 90% !important;
-        margin: 1rem;
-    }
+.custom-input:focus,
+:deep(.custom-input-number .p-inputtext:focus),
+:deep(.p-select.custom-input.p-focus) {
+  border-color: var(--color-primary);
+  background: var(--bg-input-focus);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+  outline: none;
 }
+
+.uppercase-input {
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ── SELECTOR DE LOGOS ── */
+.logo-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.logo-option {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-app);
+}
+
+.logo-option:hover {
+  border-color: var(--color-primary-mid);
+  transform: translateY(-2px);
+}
+
+.logo-option.selected {
+  border-color: var(--color-primary);
+  background: var(--bg-input-focus);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+.logo-option img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.logo-option.clear {
+  border-style: dashed;
+}
+.logo-option.clear i {
+  font-size: 1.2rem;
+  color: var(--color-text-muted);
+}
+
+.error-msg {
+  font-size: 0.75rem;
+  color: var(--color-error);
+  margin-top: 0.25rem;
+}
+
+/* ── ACCIONES FOOTER DEL MODAL ── */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.btn-cancel {
+  color: var(--color-text-muted) !important;
+  font-weight: 600 !important;
+}
+
+.btn-cancel:hover {
+  background: var(--color-error-soft) !important;
+  color: var(--color-error-dark) !important;
+}
+
+.btn-save {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+  color: var(--color-accent) !important;
+  font-weight: 700 !important;
+  padding: 0.6rem 1.25rem !important;
+  border-radius: var(--radius-md) !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: var(--color-primary-hover) !important;
+  transform: translateY(-1px);
+}
+
+.btn-save:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 768px) {
+  .inventory-container { padding: 1rem; }
+  .card-header { flex-direction: column; gap: 1rem; align-items: stretch; }
+  .btn-new { width: 100%; justify-content: center; }
+  .card-body { padding: 1rem; }
+  .form-row { grid-template-columns: 1fr; gap: 1.25rem; }
+  .custom-inventory-dialog :deep(.p-dialog) { width: 90% !important; margin: 1rem; }
+}
+
+.header-buttons {
+  display: flex;
+  gap: 1rem; 
+}
+
+/* --- MODAL DE INGRESO DE STOCK --- */
+.adjustment-table-container {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-top: 0.5rem;
+  background: var(--bg-app);
+}
+
+.adjustment-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.adjustment-table thead {
+  background: var(--bg-surface-alt);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.adjustment-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.col-qty { text-align: center !important; width: 140px; }
+.col-action { width: 50px; text-align: center !important; }
+
+.adjustment-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+
+.product-name {
+  display: block;
+  font-weight: 700;
+  color: var(--color-text-main);
+  font-size: 0.9rem;
+}
+
+.product-stock {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+}
+
+/* Input de Cantidad con botones horizontales [ - ] [ + ] */
+:deep(.qty-input-adjust) {
+  width: 100%;
+  height: 36px;
+  display: flex;
+}
+
+:deep(.qty-input-adjust .p-inputtext) {
+  text-align: center;
+  width: 50px;
+  flex: 1;
+  padding: 0;
+  border-radius: 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  border-left: none;
+  border-right: none;
+  background: var(--bg-surface-alt);
+  font-weight: 700;
+  color: var(--color-text-main);
+  box-shadow: none;
+}
+
+:deep(.qty-input-adjust .p-inputnumber-button) {
+  width: 36px;
+  background: var(--bg-app);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  transition: all 0.2s;
+}
+
+:deep(.qty-input-adjust .p-inputnumber-button:hover) {
+  background: var(--bg-surface-alt);
+  color: var(--color-text-main);
+}
+
+.btn-remove-row {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-remove-row:hover {
+  background: var(--color-error-soft);
+  color: var(--color-error);
+}
+
+.empty-ajuste-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.empty-icon-circle {
+  width: 64px;
+  height: 64px;
+  background: var(--bg-app);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+}
+
+.empty-icon-circle i {
+  font-size: 1.75rem;
+  color: var(--color-text-muted);
+}
+
 </style>
