@@ -54,8 +54,13 @@
   text-transform: uppercase;
 }
 
-.qty-group  { flex: 0 0 90px; }
-.price-group { flex: 1; }
+.qty-group {
+  flex: 0 0 90px;
+}
+
+.price-group {
+  flex: 1;
+}
 
 .pos-input-area .compact-qty,
 .pos-input-area .compact-qty .p-inputnumber-input {
@@ -154,6 +159,66 @@
   font-size: 1rem;
 }
 
+/* ============================================================
+   PANTALLA POST-VENTA (VUELTO)
+   ============================================================ */
+.post-sale-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 2rem;
+  background: var(--bg-surface);
+  text-align: center;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.success-icon {
+  font-size: 4.5rem;
+  color: var(--color-yape, #22c55e);
+  margin-bottom: 1rem;
+}
+
+.vuelto-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.vuelto-amount {
+  font-size: 3.5rem;
+  font-weight: 900;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.vuelto-details {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border: 1px solid var(--color-border);
+}
+
+.vuelto-help {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 
 /* ============================================================
    CARRITO — Tabla
@@ -186,10 +251,24 @@
    El truco: qty y action son los más pequeños,
    price y total tienen ancho suficiente para "S/ 9,999.99"
    desc toma el resto con overflow ellipsis            */
-.th-qty    { width: 10%; text-align: center; }
-.th-desc   { width: 55%; }
-.th-total  { width: 25%; text-align: right; }
-.th-action { width: 10%; text-align: center; }
+.th-qty {
+  width: 10%;
+  text-align: center;
+}
+
+.th-desc {
+  width: 55%;
+}
+
+.th-total {
+  width: 25%;
+  text-align: right;
+}
+
+.th-action {
+  width: 10%;
+  text-align: center;
+}
 
 .cart-item-row {
   border-bottom: 1px solid var(--bg-surface);
@@ -305,6 +384,39 @@
   width: 100%;
 }
 
+.abono-input-line {
+  margin-top: 0.2rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.2);
+  padding-top: 0.6rem;
+}
+
+.summary-input-val {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 90px;
+}
+
+.inline-abono {
+  width: 100%;
+  max-width: 90px;
+}
+
+.inline-abono :deep(.p-inputnumber-input),
+.inline-abono-inner {
+  width: 90px !important;
+  max-width: 90px;
+  min-width: 0 !important;
+  box-sizing: border-box;
+  height: 36px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-primary);
+}
+
 .checkout-btn {
   width: 100%;
   background: var(--color-accent);
@@ -342,7 +454,8 @@
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  height: 36px;          /* era 44px */
+  height: 36px;
+  /* era 44px */
   background: rgba(255, 255, 255, 0.07);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;

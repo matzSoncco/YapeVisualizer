@@ -71,7 +71,17 @@
     </header>
 
     <main class="pos-cart-area">
-      <div v-if="cart.length === 0" class="cart-empty-state">
+      <div v-if="postSaleView" class="post-sale-screen">
+          <i class="pi pi-check-circle success-icon"></i>
+          <h2 class="vuelto-title">Vuelto a entregar</h2>
+          <div class="vuelto-amount">S/ {{ postSaleView.vuelto.toFixed(2) }}</div>
+          <div class="vuelto-details">
+             Efectivo recibido: S/ {{ postSaleView.entregado.toFixed(2) }}
+          </div>
+          <p class="vuelto-help">Presiona ENTER o comienza a buscar para continuar</p>
+      </div>
+
+      <div v-else-if="cart.length === 0" class="cart-empty-state">
         <div class="empty-info">
           <i class="pi pi-shopping-cart"></i>
           <p>Carrito vacío</p>
@@ -134,10 +144,32 @@
 
     <footer class="pos-footer-area">
       <div class="summary-line">
-        <span class="summary-lbl">Total a cobrar</span>
-        <span class="summary-val">
+        <span class="summary-lbl">{{ isPaymentMode ? 'Saldo Pendiente' : 'Total a cobrar' }}</span>
+        <span class="summary-val" :class="{'is-saldo': isPaymentMode}">
           <span class="summary-currency">S/</span>
-          {{ totalGeneral.toFixed(2) }}
+          {{ isPaymentMode ? saldoPendiente.toFixed(2) : totalGeneral.toFixed(2) }}
+        </span>
+      </div>
+
+      <div v-if="isPaymentMode" class="summary-line abono-input-line">
+        <span class="summary-lbl">Monto a cobrar</span>
+        <span class="summary-input-val">
+          <InputNumber
+             v-model="montoAbono"
+             mode="currency"
+             currency="PEN"
+             locale="es-PE"
+             placeholder="0.00"
+             class="inline-abono"
+             inputClass="inline-abono-inner"
+             :min="0"
+          />
+        </span>
+      </div>
+
+      <div v-if="pagosAcumulados.length > 0" class="abonos-list">
+        <span v-for="(p, i) in pagosAcumulados" :key="i" class="abono-badge">
+           Abono {{ p.method === 'CASH' ? 'EFECTIVO' : 'DIGITAL' }}: S/ {{ p.amount.toFixed(2) }}
         </span>
       </div>
 
@@ -152,31 +184,35 @@
         </button>
       </div>
 
-      <div v-else class="payment-grid">
-        <button 
-          class="pay-btn-custom back-btn" 
-          @click="isPaymentMode = false"
-          title="Regresar"
-        >
-          <i class="pi pi-times"></i>
-        </button>
-        <button
-          class="pay-btn-custom cash-btn"
-          @click="procesarPago('CASH', null)"
-          :disabled="!puedeProcederAlPago || matcherState.isLocked"
-        >
-          <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
-          <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
-        </button>
-        <button
-          class="pay-btn-custom yape-btn"
-          @click="iniciarFlujo"
-          :disabled="!puedeProcederAlPago || loading"
-        >
-          <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
-          <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
-          <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
-        </button>
+      <div v-else class="payment-hibrido-container">
+
+        <div class="payment-grid">
+          <button 
+            class="pay-btn-custom back-btn" 
+            @click="regresarEdicion"
+            v-tooltip.top="tienePagoDigital ? 'No puedes regresar si hay pagos por Yape' : 'Regresar'"
+            :disabled="tienePagoDigital"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+          <button
+            class="pay-btn-custom cash-btn"
+            @click="procesarPago('CASH', null)"
+            :disabled="!puedeProcederAlPago || matcherState.isLocked"
+          >
+            <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
+            <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
+          </button>
+          <button
+            class="pay-btn-custom yape-btn"
+            @click="iniciarFlujo"
+            :disabled="!puedeProcederAlPago || loading"
+          >
+            <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
+            <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
+            <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
+          </button>
+        </div>
       </div>
     </footer>
 
@@ -273,7 +309,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useProducts } from '@/composables/operations/useProducts'
 import { useMovements } from '@/composables/operations/useMovements'
@@ -307,7 +343,32 @@ const wizardMode = ref('LINK');
 const scannedUnknownBarcode = ref('');
 const linkTarget = ref(null);
 
+const pagosAcumulados = ref([]);
+const montoAbono = ref(null);
+
+const postSaleView = ref(null);
+let postSaleTimer = null;
+
+const limpiarPostSale = () => {
+    postSaleView.value = null;
+    if (postSaleTimer) clearTimeout(postSaleTimer);
+};
+
+onMounted(() => {
+   window.addEventListener('keydown', (e) => {
+       if (e.key === 'Enter' && postSaleView.value) {
+           limpiarPostSale();
+       }
+   });
+});
+
+onUnmounted(() => {
+   // La validación interna la omitiremos desde Vue para simplificar el Unmount general si es Single Page, 
+   // pero el timer asegura que desaparezca.
+});
+
 watch(prodName, (newVal) => {
+  if (postSaleView.value) limpiarPostSale();
   if (scannedUnknownBarcode.value && typeof newVal === 'string' && newVal !== scannedUnknownBarcode.value) {
     scannedUnknownBarcode.value = '';
   }
@@ -346,8 +407,27 @@ watch(
 watch(() => cart.value.length, (newLen) => {
   if (newLen === 0) {
     isPaymentMode.value = false;
+    pagosAcumulados.value = [];
   }
 });
+
+watch(isPaymentMode, (newVal) => {
+  if (!newVal) {
+    pagosAcumulados.value = [];
+    montoAbono.value = null;
+  }
+});
+
+const saldoPendiente = computed(() => {
+   return totalGeneral.value - pagosAcumulados.value.reduce((s, p) => s + p.amount, 0);
+});
+
+const tienePagoDigital = computed(() => pagosAcumulados.value.some(p => p.method === 'DIGITAL'));
+
+const regresarEdicion = () => {
+  if (tienePagoDigital.value) return;
+  isPaymentMode.value = false;
+};
 
 watch(
   cart,
@@ -474,17 +554,24 @@ const agregarAlCarrito = () => {
 const removerItem = (idx) => cart.value.splice(idx, 1)
 
 const iniciarFlujo = () => {
+  const montoAIngresar = montoAbono.value > 0 ? montoAbono.value : saldoPendiente.value;
+  
+  if (montoAIngresar > saldoPendiente.value) {
+     toast.add({ severity: 'error', summary: 'Error', detail: 'Yape no puede exceder el monto pendiente.', life: 3000 });
+     return;
+  }
+
   if (matcherState.isListening) {
     cancelarEspera()
     toast.add({ severity: 'info', summary: 'Escucha cancelada', life: 3000 })
   } else {
-    const exito = iniciarEspera(totalGeneral.value)
+    const exito = iniciarEspera(montoAIngresar)
 
     if (exito) {
       toast.add({
         severity: 'info',
-        summary: 'Esperando Pago Digital...',
-        detail: `Monitoreando ingresos por S/ ${totalGeneral.value.toFixed(2)}`,
+        summary: 'Esperando Pago...',
+        detail: `Monitoreando Yape/Plin por S/ ${montoAIngresar.toFixed(2)}`,
         life: 3000,
       })
     } else {
@@ -513,20 +600,63 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
   loading.value = true
 
   try {
+    let amountPaid = 0;
+    let wallet = null;
+    let senderName = null;
+
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+       amountPaid = Number(pagoDigitalConfirmado.amount) || 0;
+       wallet = pagoDigitalConfirmado.wallet;
+       senderName = pagoDigitalConfirmado.senderName;
+    } else {
+       amountPaid = montoAbono.value > 0 ? montoAbono.value : saldoPendiente.value;
+    }
+
+    if (amountPaid > saldoPendiente.value) {
+       if (method === 'DIGITAL') {
+           toast.add({ severity: 'error', summary: 'Error', detail: 'El cobro por Yape no puede superar el saldo pendiente.', life: 3000 });
+           loading.value = false;
+           return;
+       }
+    }
+
+    let abonoARegistrar = amountPaid;
+    let vuelto = 0;
+    
+    if (amountPaid > saldoPendiente.value) {
+       vuelto = amountPaid - saldoPendiente.value;
+       abonoARegistrar = saldoPendiente.value;
+    }
+
+    const paymentObj = {
+       method,
+       amount: abonoARegistrar,
+       refId: pagoDigitalConfirmado ? pagoDigitalConfirmado.id : null,
+       wallet: wallet || (method === 'DIGITAL' ? 'YAPE' : null),
+       senderName
+    };
+
+    pagosAcumulados.value.push(paymentObj);
+    montoAbono.value = null;
+
+    if (Math.round(saldoPendiente.value * 100) <= 0) {
+       await finalizarVentaAcumulada(vuelto > 0 ? { vuelto, entregado: amountPaid } : null);
+    } else {
+       toast.add({ severity: 'info', summary: 'Abono registrado', detail: `Se abonó S/ ${amountPaid.toFixed(2)}`, life: 3000 });
+    }
+  } catch (e) {
+    console.error('Error procesando pago:', e)
+    toast.add({ severity: 'error', summary: 'Error en caja', detail: e.message, life: 3000 })
+  } finally {
+    loading.value = false
+  }
+}
+
+const finalizarVentaAcumulada = async (infoVuelto = null) => {
     let itemsFinales = []
     let esVentaRapida = false
 
-    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
-      const montoValidado = Number(pagoDigitalConfirmado.amount) || 0
-      itemsFinales = [
-        {
-          name: 'VENTA DIGITAL DIRECTA',
-          qty: 1,
-          price: montoValidado,
-          subtotal: montoValidado,
-        },
-      ]
-    } else if (cart.value.length > 0) {
+    if (cart.value.length > 0) {
       itemsFinales = cart.value
     } else if (quickAmount.value > 0) {
       itemsFinales = [
@@ -539,70 +669,83 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
       ]
       esVentaRapida = true
     } else {
-      return
+      itemsFinales = [
+        {
+          name: 'VENTA DIRECTA',
+          qty: 1,
+          price: totalGeneral.value,
+          subtotal: totalGeneral.value,
+        },
+      ]
+      esVentaRapida = true
     }
 
-    const totalReal = itemsFinales.reduce((acc, item) => acc + item.subtotal, 0)
-
-    const payments = [
-      {
-        method,
-        amount: totalReal,
-        refId: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.id : null,
-        wallet:
-          method === 'DIGITAL' && pagoDigitalConfirmado
-            ? pagoDigitalConfirmado.wallet
-            : method === 'DIGITAL'
-              ? 'YAPE'
-              : null,
-      },
-    ]
-
+    const digitalPayments = pagosAcumulados.value.filter(p => p.method === 'DIGITAL');
+    const esMixto = pagosAcumulados.value.length > 1;
     let nombreCliente = 'Cliente Eventual'
-    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
-      nombreCliente = pagoDigitalConfirmado.senderName
+
+    if (digitalPayments.length > 0 && digitalPayments[0].senderName) {
+      nombreCliente = digitalPayments[0].senderName;
     }
+
+    const totalReal = totalGeneral.value;
+    const paymentsParaDB = pagosAcumulados.value.map(p => ({
+        method: p.method,
+        amount: p.amount,
+        refId: p.refId,
+        wallet: p.wallet
+    }));
 
     const resultadoVenta = await registrarVenta({
       items: itemsFinales,
-      payments,
+      payments: paymentsParaDB,
       total: totalReal,
-      clientName:
-        method === 'DIGITAL' && pagoDigitalConfirmado
-          ? pagoDigitalConfirmado.senderName
-          : 'Cliente Eventual',
+      clientName: nombreCliente,
       metadata: {
         isQuickSale: esVentaRapida,
-        walletUsed:
-          method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.wallet : null,
+        isSplitPayment: esMixto,
+        walletUsed: digitalPayments.length > 0 ? digitalPayments.map(d=>d.wallet).join(', ') : null,
       },
     })
 
     const movId = resultadoVenta.id
 
-    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
-      await reclamarPagoDigital(pagoDigitalConfirmado.id, movId)
+    for (const p of digitalPayments) {
+        if (p.refId) {
+            await reclamarPagoDigital(p.refId, movId);
+        }
     }
 
     cart.value = []
     quickAmount.value = null
     prodName.value = ''
+    isPaymentMode.value = false;
+    pagosAcumulados.value = [];
+    montoAbono.value = null;
+    
+    if (infoVuelto) {
+        postSaleView.value = infoVuelto;
+        if (postSaleTimer) clearTimeout(postSaleTimer);
+        postSaleTimer = setTimeout(() => {
+            postSaleView.value = null;
+        }, 120000);
+    }
+    
     toast.add({ severity: 'success', summary: 'Venta exitosa', life: 3000 })
 
     emit('transaction-completed')
-  } catch (e) {
-    console.error('Error en el flujo de pago:', e)
-    throw e
-  } finally {
-    loading.value = false
-  }
 }
+
+const montoAUsarParaPesca = computed(() => {
+  return montoAbono.value > 0 ? montoAbono.value : saldoPendiente.value;
+});
 
 defineExpose({
   finalizarVentaDigitalConfirmada,
   prellenarCarrito,
   cart,
   totalGeneral,
+  montoAUsarParaPesca
 })
 </script>
 

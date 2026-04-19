@@ -226,7 +226,7 @@ const handleCierreClick = async () => {
 const handlePesca = (pagoDigital) => {
   if (!posPanelRef.value) return
 
-  const totalCarrito = posPanelRef.value.totalGeneral || 0
+  const totalCarrito = posPanelRef.value.montoAUsarParaPesca || posPanelRef.value.totalGeneral || 0
 
   const resultado = validarSeleccionManual(pagoDigital, totalCarrito)
 
