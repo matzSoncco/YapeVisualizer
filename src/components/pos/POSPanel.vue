@@ -12,8 +12,22 @@
           placeholder="Buscar producto o escanear código..."
           class="full-width-search"
           ref="mainInput"
+        >
+          <template #option="slotProps">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <span>{{ slotProps.option.name }}</span>
+              <i v-if="slotProps.option.codEAN" class="pi pi-exclamation-triangle" style="color: var(--color-warning);" v-tooltip.left="'Este producto ya tiene un código enlazado'"></i>
+            </div>
+          </template>
+        </AutoComplete>
+        <Button icon="pi pi-minus-circle" severity="secondary" @click="limpiarBusqueda" />
+        <Button 
+          v-if="scannedUnknownBarcode" 
+          icon="pi pi-exclamation-triangle" 
+          severity="warning" 
+          @click="abrirModalEnlace" 
+          v-tooltip.top="'Enlazar código desconocido'"
         />
-        <Button icon="pi pi-minus-circle" severity="secondary" @click="prodName = ''" />
       </div>
 
       <div class="input-level details-row">
@@ -21,7 +35,9 @@
           <label>Cant. ({{ unidadActual }})</label>
           <InputNumber
             v-model="prodQty"
-            :min="1"
+            :min="0"
+            :min-fraction-digits="unidadActual !== 'UNI' ? 2 : 0"
+            :max-fraction-digits="unidadActual !== 'UNI' ? 3 : 0"
             class="compact-qty"
             inputClass="qty-field-inner"
           />
@@ -38,6 +54,7 @@
             class="compact-price"
             inputClass="price-field-inner"
             @keyup.enter="agregarAlCarrito"
+            readonly
           />
         </div>
 
@@ -149,34 +166,7 @@
     >
       <div class="modal-form-content">
         
-        <div v-if="wizardMode === 'CHOOSE'" class="choose-container">
-          <div class="barcode-header">
-            <div class="barcode-icon">
-              <i class="pi pi-barcode"></i>
-            </div>
-            <div class="barcode-info">
-              <span class="barcode-label">Código escaneado</span>
-              <strong class="barcode-value">{{ scannedUnknownBarcode }}</strong>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <p class="info-text">Este código no existe en tu inventario. ¿Qué deseas hacer?</p>
-          
-          <div class="action-buttons">
-            <button class="action-link" @click="wizardMode = 'LINK'">
-              <i class="pi pi-link"></i>
-              <span>Enlazar a producto existente</span>
-            </button>
-            <button class="action-create" @click="wizardMode = 'CREATE'">
-              <i class="pi pi-plus-circle"></i>
-              <span>Crear producto nuevo</span>
-            </button>
-          </div>
-        </div>
-
-        <div v-else-if="wizardMode === 'LINK'" class="link-container">
+        <div v-if="wizardMode === 'LINK'" class="link-container">
           <div class="barcode-chip">
             <i class="pi pi-barcode"></i>
             <span>{{ scannedUnknownBarcode }}</span>
@@ -193,14 +183,21 @@
               class="w-full"
               inputClass="form-input-control"
               autofocus
-            />
-            <small class="field-hint">Solo muestra productos sin código de barras</small>
+            >
+              <template #option="slotProps">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <span>{{ slotProps.option.name }}</span>
+                  <i v-if="slotProps.option.codEAN" class="pi pi-exclamation-triangle" style="color: var(--color-warning);" v-tooltip.left="'Este producto ya tiene un código enlazado'"></i>
+                </div>
+              </template>
+            </AutoComplete>
+            <small class="field-hint">Busca el producto al que deseas enlazar este código</small>
           </div>
 
           <div class="modal-footer-actions">
-            <button class="btn-back" @click="wizardMode = 'CHOOSE'">
-              <i class="pi pi-arrow-left"></i>
-              Atrás
+            <button class="btn-back" @click="showUnknownBarcodeWizard = false">
+              <i class="pi pi-times"></i>
+              Cancelar
             </button>
             <button 
               class="btn-confirm" 
@@ -213,57 +210,36 @@
           </div>
         </div>
 
-        <div v-else-if="wizardMode === 'CREATE'" class="create-container">
-          <div class="barcode-chip">
-            <i class="pi pi-barcode"></i>
-            <span>{{ scannedUnknownBarcode }}</span>
-          </div>
-
-          <div class="form-field">
-            <label>Nombre del producto *</label>
-            <InputText 
-              v-model="newProdName" 
-              autofocus 
-              placeholder="Ej. Galletas Soda" 
-              class="uppercase-input form-input-control"
-            />
-          </div>
-          
-          <div class="form-row-2cols">
-            <div class="form-field">
-              <label>Precio *</label>
-              <InputNumber 
-                v-model="newProdPrice" 
-                mode="currency" 
-                currency="PEN" 
-                locale="es-PE"
-                inputClass="form-input-control"
-              />
-            </div>
-            <div class="form-field">
-              <label>Unidad de medida</label>
-              <Select 
-                v-model="newProdUnidad" 
-                :options="PRODUCT_UNITS" 
-                optionLabel="label" 
-                optionValue="value"
-                class="form-select-control"
-              />
+        <div v-else-if="wizardMode === 'CONFIRM_REPLACE'" class="confirm-container">
+          <div style="text-align: center; margin-bottom: 1rem;">
+            <i class="pi pi-exclamation-triangle" style="font-size: 3rem; color: var(--color-warning); margin-bottom: 1rem; display: block;"></i>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--color-text-main);">
+              El producto <strong>{{ linkTarget?.name }}</strong> ya tiene un código asignado. ¿Deseas reemplazarlo medir con el nuevo?
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; background: var(--bg-surface-alt); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+               <div style="display: flex; flex-direction: column;">
+                 <span style="font-size: 0.7rem; color: var(--color-text-muted); font-weight: bold; text-transform: uppercase;">Anterior</span>
+                 <span style="font-family: monospace; color: var(--color-error); text-decoration: line-through;">{{ linkTarget?.codEAN }}</span>
+               </div>
+               <i class="pi pi-arrow-right" style="color: var(--color-text-muted); align-self: center;"></i>
+               <div style="display: flex; flex-direction: column;">
+                 <span style="font-size: 0.7rem; color: var(--color-text-muted); font-weight: bold; text-transform: uppercase;">Nuevo</span>
+                 <span style="font-family: monospace; color: var(--color-success); font-weight: bold;">{{ scannedUnknownBarcode }}</span>
+               </div>
             </div>
           </div>
 
           <div class="modal-footer-actions">
-            <button class="btn-back" @click="wizardMode = 'CHOOSE'">
+            <button class="btn-back" @click="wizardMode = 'LINK'">
               <i class="pi pi-arrow-left"></i>
               Atrás
             </button>
             <button 
-              class="btn-confirm" 
-              :disabled="!newProdName || newProdPrice === null" 
-              @click="confirmarCreacion"
+              class="btn-confirm"
+              @click="ejecutarVinculacion"
             >
-              <i class="pi pi-save"></i>
-              Guardar producto
+              <i class="pi pi-check"></i>
+              Sí, reemplazar
             </button>
           </div>
         </div>
@@ -280,17 +256,14 @@ import { useMovements } from '@/composables/operations/useMovements'
 import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
 import { useMatcher } from '@/composables/operations/useMatcher'
 import { cartStorageKey } from '@/store'
-import Select from 'primevue/select'
 import AutoComplete from 'primevue/autocomplete'
-import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Badge from 'primevue/badge'
-import { PRODUCT_UNITS } from '@/utils/constants'
 import '@/assets/pospanel.css'
 
-const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto, crearProducto } = useProducts()
+const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto } = useProducts()
 const { registrarVenta } = useMovements()
 const { reclamarPagoDigital } = useDigitalPayments()
 const { iniciarEspera, cancelarEspera, matcherState } = useMatcher()
@@ -305,12 +278,26 @@ const prodPrice = ref(null)
 const emit = defineEmits(['transaction-completed'])
 
 const showUnknownBarcodeWizard = ref(false);
-const wizardMode = ref('CHOOSE');
+const wizardMode = ref('LINK');
 const scannedUnknownBarcode = ref('');
 const linkTarget = ref(null);
-const newProdName = ref('');
-const newProdPrice = ref(null);
-const newProdUnidad = ref('UNI');
+
+watch(prodName, (newVal) => {
+  if (scannedUnknownBarcode.value && typeof newVal === 'string' && newVal !== scannedUnknownBarcode.value) {
+    scannedUnknownBarcode.value = '';
+  }
+});
+
+const limpiarBusqueda = () => {
+  prodName.value = '';
+  scannedUnknownBarcode.value = '';
+}
+
+const abrirModalEnlace = () => {
+  wizardMode.value = 'LINK';
+  linkTarget.value = null;
+  showUnknownBarcodeWizard.value = true;
+}
 
 watch(
   cartStorageKey,
@@ -376,7 +363,6 @@ const search = async (e) => await buscarProductos(e.query)
 
 const searchForLink = async (e) => {
   await buscarProductos(e.query);
-  suggestions.value = suggestions.value.filter(p => !p.codEAN || p.codEAN.trim() === '');
 }
 
 const onProductSelect = (e) => {
@@ -396,13 +382,7 @@ const onEnterBusqueda = async () => {
       return;
     } else if (/^\d{4,}$/.test(text)) {
       scannedUnknownBarcode.value = text;
-      wizardMode.value = 'CHOOSE';
-      linkTarget.value = null;
-      newProdName.value = '';
-      newProdPrice.value = null;
-      newProdUnidad.value = 'UNI';
-      showUnknownBarcodeWizard.value = true;
-      prodName.value = ''; 
+      toast.add({ severity: 'warn', summary: 'Código no encontrado', detail: 'Haz clic en el botón de alerta ⚠️ para enlazarlo.', life: 4000 });
       return;
     }
   }
@@ -415,6 +395,15 @@ const onEnterBusqueda = async () => {
 const confirmarVinculacion = async () => {
     if (!linkTarget.value || !linkTarget.value.id) return;
     
+    if (linkTarget.value.codEAN && linkTarget.value.codEAN !== scannedUnknownBarcode.value) {
+        wizardMode.value = 'CONFIRM_REPLACE';
+        return;
+    }
+
+    await ejecutarVinculacion();
+};
+
+const ejecutarVinculacion = async () => {
     await actualizarProducto(linkTarget.value.id, { codEAN: scannedUnknownBarcode.value });
     
     prodName.value = linkTarget.value; 
@@ -423,30 +412,10 @@ const confirmarVinculacion = async () => {
 
     toast.add({ severity: 'success', summary: 'Código Vinculado', detail: `El código se guardó en ${linkTarget.value.name}`, life: 3000 });
     showUnknownBarcodeWizard.value = false;
+    wizardMode.value = 'LINK';
+    scannedUnknownBarcode.value = '';
 };
 
-const confirmarCreacion = async () => {
-    if (!newProdName.value || newProdPrice.value === null) return;
-
-    const savedProd = await crearProducto({
-        name: newProdName.value.toUpperCase().trim(),
-        lastPrice: newProdPrice.value,
-        codEAN: scannedUnknownBarcode.value,
-        stock: 0,
-        unidad: newProdUnidad.value 
-    });
-
-    if (savedProd) {
-        prodName.value = savedProd; 
-        prodPrice.value = savedProd.lastPrice;
-        agregarAlCarrito();
-        toast.add({ severity: 'success', summary: 'Producto Creado', detail: savedProd.name, life: 3000 });
-    } else {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear el producto', life: 3000 });
-    }
-    
-    showUnknownBarcodeWizard.value = false;
-};
 
 const agregarAlCarrito = () => {
   if (!puedeAgregar.value) return
