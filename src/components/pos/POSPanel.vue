@@ -12,8 +12,23 @@
           placeholder="Buscar producto o escanear código..."
           class="full-width-search"
           ref="mainInput"
+          :disabled="isPaymentMode"
+        >
+          <template #option="slotProps">
+            <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+              <span>{{ slotProps.option.name }}</span>
+            </div>
+          </template>
+        </AutoComplete>
+        <Button icon="pi pi-minus-circle" severity="secondary" @click="limpiarBusqueda" :disabled="isPaymentMode" />
+        <Button 
+          v-if="scannedUnknownBarcode" 
+          icon="pi pi-exclamation-triangle" 
+          severity="warning" 
+          @click="abrirModalEnlace" 
+          v-tooltip.top="'Enlazar código desconocido'"
+          :disabled="isPaymentMode"
         />
-        <Button icon="pi pi-minus-circle" severity="secondary" @click="prodName = ''" />
       </div>
 
       <div class="input-level details-row">
@@ -21,9 +36,12 @@
           <label>Cant. ({{ unidadActual }})</label>
           <InputNumber
             v-model="prodQty"
-            :min="1"
+            :min="0"
+            :min-fraction-digits="unidadActual !== 'UNI' ? 2 : 0"
+            :max-fraction-digits="unidadActual !== 'UNI' ? 3 : 0"
             class="compact-qty"
             inputClass="qty-field-inner"
+            :disabled="isPaymentMode"
           />
         </div>
 
@@ -38,20 +56,32 @@
             class="compact-price"
             inputClass="price-field-inner"
             @keyup.enter="agregarAlCarrito"
+            readonly
+            :disabled="isPaymentMode"
           />
         </div>
 
         <Button
           icon="pi pi-cart-plus"
           @click="agregarAlCarrito"
-          :disabled="!puedeAgregar"
+          :disabled="!puedeAgregar || isPaymentMode"
           class="btn-add-line"
         />
       </div>
     </header>
 
     <main class="pos-cart-area">
-      <div v-if="cart.length === 0" class="cart-empty-state">
+      <div v-if="postSaleView" class="post-sale-screen">
+          <i class="pi pi-check-circle success-icon"></i>
+          <h2 class="vuelto-title">Vuelto a entregar</h2>
+          <div class="vuelto-amount">S/ {{ postSaleView.vuelto.toFixed(2) }}</div>
+          <div class="vuelto-details">
+             Efectivo recibido: S/ {{ postSaleView.entregado.toFixed(2) }}
+          </div>
+          <p class="vuelto-help">Presiona ENTER o comienza a buscar para continuar</p>
+      </div>
+
+      <div v-else-if="cart.length === 0" class="cart-empty-state">
         <div class="empty-info">
           <i class="pi pi-shopping-cart"></i>
           <p>Carrito vacío</p>
@@ -66,12 +96,14 @@
               locale="es-PE"
               placeholder="Monto"
               :min-fraction-digits="2"
+              :disabled="isPaymentMode"
             />
             <Button
               v-if="quickAmount"
               icon="pi pi-times"
               severity="secondary"
               @click="quickAmount = null"
+              :disabled="isPaymentMode"
             />
           </div>
         </div>
@@ -102,6 +134,7 @@
                 rounded
                 class="btn-remove-item"
                 @click="removerItem(index)"
+                :disabled="isPaymentMode"
               />
             </td>
           </tr>
@@ -111,31 +144,75 @@
 
     <footer class="pos-footer-area">
       <div class="summary-line">
-        <span class="summary-lbl">Total a cobrar</span>
-        <span class="summary-val">
+        <span class="summary-lbl">{{ isPaymentMode ? 'Saldo Pendiente' : 'Total a cobrar' }}</span>
+        <span class="summary-val" :class="{'is-saldo': isPaymentMode}">
           <span class="summary-currency">S/</span>
-          {{ totalGeneral.toFixed(2) }}
+          {{ isPaymentMode ? saldoPendiente.toFixed(2) : totalGeneral.toFixed(2) }}
         </span>
       </div>
 
-      <div class="payment-grid">
-        <button
-          class="pay-btn-custom cash-btn"
-          @click="procesarPago('CASH', null)"
+      <div v-if="isPaymentMode" class="summary-line abono-input-line">
+        <span class="summary-lbl">Monto a cobrar</span>
+        <span class="summary-input-val">
+          <InputNumber
+             v-model="montoAbono"
+             mode="currency"
+             currency="PEN"
+             locale="es-PE"
+             placeholder="0.00"
+             class="inline-abono"
+             inputClass="inline-abono-inner"
+             :min="0"
+          />
+        </span>
+      </div>
+
+      <div v-if="pagosAcumulados.length > 0" class="abonos-list">
+        <span v-for="(p, i) in pagosAcumulados" :key="i" class="abono-badge">
+           Abono {{ p.method === 'CASH' ? 'EFECTIVO' : 'DIGITAL' }}: S/ {{ p.amount.toFixed(2) }}
+        </span>
+      </div>
+
+      <div v-if="!isPaymentMode" class="payment-action-single">
+        <button 
+          class="pay-btn-custom checkout-btn" 
+          @click="isPaymentMode = true"
           :disabled="!puedeProcederAlPago || matcherState.isLocked"
         >
-          <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
-          <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
+          <i class="pi pi-check-circle"></i>
+          <span>Cobrar</span>
         </button>
-        <button
-          class="pay-btn-custom yape-btn"
-          @click="iniciarFlujo"
-          :disabled="!puedeProcederAlPago || loading"
-        >
-          <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
-          <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
-          <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
-        </button>
+      </div>
+
+      <div v-else class="payment-hibrido-container">
+
+        <div class="payment-grid">
+          <button 
+            class="pay-btn-custom back-btn" 
+            @click="regresarEdicion"
+            v-tooltip.top="tienePagoDigital ? 'No puedes regresar si hay pagos por Yape' : 'Regresar'"
+            :disabled="tienePagoDigital"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+          <button
+            class="pay-btn-custom cash-btn"
+            @click="procesarPago('CASH', null)"
+            :disabled="!puedeProcederAlPago || matcherState.isLocked"
+          >
+            <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
+            <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
+          </button>
+          <button
+            class="pay-btn-custom yape-btn"
+            @click="iniciarFlujo"
+            :disabled="!puedeProcederAlPago || loading"
+          >
+            <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
+            <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
+            <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
+          </button>
+        </div>
       </div>
     </footer>
 
@@ -149,34 +226,7 @@
     >
       <div class="modal-form-content">
         
-        <div v-if="wizardMode === 'CHOOSE'" class="choose-container">
-          <div class="barcode-header">
-            <div class="barcode-icon">
-              <i class="pi pi-barcode"></i>
-            </div>
-            <div class="barcode-info">
-              <span class="barcode-label">Código escaneado</span>
-              <strong class="barcode-value">{{ scannedUnknownBarcode }}</strong>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <p class="info-text">Este código no existe en tu inventario. ¿Qué deseas hacer?</p>
-          
-          <div class="action-buttons">
-            <button class="action-link" @click="wizardMode = 'LINK'">
-              <i class="pi pi-link"></i>
-              <span>Enlazar a producto existente</span>
-            </button>
-            <button class="action-create" @click="wizardMode = 'CREATE'">
-              <i class="pi pi-plus-circle"></i>
-              <span>Crear producto nuevo</span>
-            </button>
-          </div>
-        </div>
-
-        <div v-else-if="wizardMode === 'LINK'" class="link-container">
+        <div v-if="wizardMode === 'LINK'" class="link-container">
           <div class="barcode-chip">
             <i class="pi pi-barcode"></i>
             <span>{{ scannedUnknownBarcode }}</span>
@@ -193,14 +243,21 @@
               class="w-full"
               inputClass="form-input-control"
               autofocus
-            />
-            <small class="field-hint">Solo muestra productos sin código de barras</small>
+            >
+              <template #option="slotProps">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                  <span>{{ slotProps.option.name }}</span>
+                  <i v-if="slotProps.option.codEAN" class="pi pi-exclamation-triangle" style="color: var(--color-warning);" v-tooltip.left="'Este producto ya tiene un código enlazado'"></i>
+                </div>
+              </template>
+            </AutoComplete>
+            <small class="field-hint">Busca el producto al que deseas enlazar este código</small>
           </div>
 
           <div class="modal-footer-actions">
-            <button class="btn-back" @click="wizardMode = 'CHOOSE'">
-              <i class="pi pi-arrow-left"></i>
-              Atrás
+            <button class="btn-back" @click="showUnknownBarcodeWizard = false">
+              <i class="pi pi-times"></i>
+              Cancelar
             </button>
             <button 
               class="btn-confirm" 
@@ -213,57 +270,36 @@
           </div>
         </div>
 
-        <div v-else-if="wizardMode === 'CREATE'" class="create-container">
-          <div class="barcode-chip">
-            <i class="pi pi-barcode"></i>
-            <span>{{ scannedUnknownBarcode }}</span>
-          </div>
-
-          <div class="form-field">
-            <label>Nombre del producto *</label>
-            <InputText 
-              v-model="newProdName" 
-              autofocus 
-              placeholder="Ej. Galletas Soda" 
-              class="uppercase-input form-input-control"
-            />
-          </div>
-          
-          <div class="form-row-2cols">
-            <div class="form-field">
-              <label>Precio *</label>
-              <InputNumber 
-                v-model="newProdPrice" 
-                mode="currency" 
-                currency="PEN" 
-                locale="es-PE"
-                inputClass="form-input-control"
-              />
-            </div>
-            <div class="form-field">
-              <label>Unidad de medida</label>
-              <Select 
-                v-model="newProdUnidad" 
-                :options="PRODUCT_UNITS" 
-                optionLabel="label" 
-                optionValue="value"
-                class="form-select-control"
-              />
+        <div v-else-if="wizardMode === 'CONFIRM_REPLACE'" class="confirm-container">
+          <div style="text-align: center; margin-bottom: 1rem;">
+            <i class="pi pi-exclamation-triangle" style="font-size: 3rem; color: var(--color-warning); margin-bottom: 1rem; display: block;"></i>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--color-text-main);">
+              El producto <strong>{{ linkTarget?.name }}</strong> ya tiene un código asignado. ¿Deseas reemplazarlo medir con el nuevo?
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; background: var(--bg-surface-alt); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+               <div style="display: flex; flex-direction: column;">
+                 <span style="font-size: 0.7rem; color: var(--color-text-muted); font-weight: bold; text-transform: uppercase;">Anterior</span>
+                 <span style="font-family: monospace; color: var(--color-error); text-decoration: line-through;">{{ linkTarget?.codEAN }}</span>
+               </div>
+               <i class="pi pi-arrow-right" style="color: var(--color-text-muted); align-self: center;"></i>
+               <div style="display: flex; flex-direction: column;">
+                 <span style="font-size: 0.7rem; color: var(--color-text-muted); font-weight: bold; text-transform: uppercase;">Nuevo</span>
+                 <span style="font-family: monospace; color: var(--color-success); font-weight: bold;">{{ scannedUnknownBarcode }}</span>
+               </div>
             </div>
           </div>
 
           <div class="modal-footer-actions">
-            <button class="btn-back" @click="wizardMode = 'CHOOSE'">
+            <button class="btn-back" @click="wizardMode = 'LINK'">
               <i class="pi pi-arrow-left"></i>
               Atrás
             </button>
             <button 
-              class="btn-confirm" 
-              :disabled="!newProdName || newProdPrice === null" 
-              @click="confirmarCreacion"
+              class="btn-confirm"
+              @click="ejecutarVinculacion"
             >
-              <i class="pi pi-save"></i>
-              Guardar producto
+              <i class="pi pi-check"></i>
+              Sí, reemplazar
             </button>
           </div>
         </div>
@@ -273,24 +309,21 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useProducts } from '@/composables/operations/useProducts'
 import { useMovements } from '@/composables/operations/useMovements'
 import { useDigitalPayments } from '@/composables/operations/useDigitalPayments'
 import { useMatcher } from '@/composables/operations/useMatcher'
 import { cartStorageKey } from '@/store'
-import Select from 'primevue/select'
 import AutoComplete from 'primevue/autocomplete'
-import InputText from 'primevue/inputtext'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Badge from 'primevue/badge'
-import { PRODUCT_UNITS } from '@/utils/constants'
 import '@/assets/pospanel.css'
 
-const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto, crearProducto } = useProducts()
+const { suggestions, buscarProductos, buscarPorCodigoBarras, actualizarProducto } = useProducts()
 const { registrarVenta } = useMovements()
 const { reclamarPagoDigital } = useDigitalPayments()
 const { iniciarEspera, cancelarEspera, matcherState } = useMatcher()
@@ -304,13 +337,53 @@ const prodQty = ref(1)
 const prodPrice = ref(null)
 const emit = defineEmits(['transaction-completed'])
 
+const isPaymentMode = ref(false);
 const showUnknownBarcodeWizard = ref(false);
-const wizardMode = ref('CHOOSE');
+const wizardMode = ref('LINK');
 const scannedUnknownBarcode = ref('');
 const linkTarget = ref(null);
-const newProdName = ref('');
-const newProdPrice = ref(null);
-const newProdUnidad = ref('UNI');
+
+const pagosAcumulados = ref([]);
+const montoAbono = ref(null);
+
+const postSaleView = ref(null);
+let postSaleTimer = null;
+
+const limpiarPostSale = () => {
+    postSaleView.value = null;
+    if (postSaleTimer) clearTimeout(postSaleTimer);
+};
+
+onMounted(() => {
+   window.addEventListener('keydown', (e) => {
+       if (e.key === 'Enter' && postSaleView.value) {
+           limpiarPostSale();
+       }
+   });
+});
+
+onUnmounted(() => {
+   // La validación interna la omitiremos desde Vue para simplificar el Unmount general si es Single Page, 
+   // pero el timer asegura que desaparezca.
+});
+
+watch(prodName, (newVal) => {
+  if (postSaleView.value) limpiarPostSale();
+  if (scannedUnknownBarcode.value && typeof newVal === 'string' && newVal !== scannedUnknownBarcode.value) {
+    scannedUnknownBarcode.value = '';
+  }
+});
+
+const limpiarBusqueda = () => {
+  prodName.value = '';
+  scannedUnknownBarcode.value = '';
+}
+
+const abrirModalEnlace = () => {
+  wizardMode.value = 'LINK';
+  linkTarget.value = null;
+  showUnknownBarcodeWizard.value = true;
+}
 
 watch(
   cartStorageKey,
@@ -330,6 +403,31 @@ watch(
   },
   { immediate: true },
 )
+
+watch(() => cart.value.length, (newLen) => {
+  if (newLen === 0) {
+    isPaymentMode.value = false;
+    pagosAcumulados.value = [];
+  }
+});
+
+watch(isPaymentMode, (newVal) => {
+  if (!newVal) {
+    pagosAcumulados.value = [];
+    montoAbono.value = null;
+  }
+});
+
+const saldoPendiente = computed(() => {
+   return totalGeneral.value - pagosAcumulados.value.reduce((s, p) => s + p.amount, 0);
+});
+
+const tienePagoDigital = computed(() => pagosAcumulados.value.some(p => p.method === 'DIGITAL'));
+
+const regresarEdicion = () => {
+  if (tienePagoDigital.value) return;
+  isPaymentMode.value = false;
+};
 
 watch(
   cart,
@@ -376,7 +474,6 @@ const search = async (e) => await buscarProductos(e.query)
 
 const searchForLink = async (e) => {
   await buscarProductos(e.query);
-  suggestions.value = suggestions.value.filter(p => !p.codEAN || p.codEAN.trim() === '');
 }
 
 const onProductSelect = (e) => {
@@ -396,13 +493,7 @@ const onEnterBusqueda = async () => {
       return;
     } else if (/^\d{4,}$/.test(text)) {
       scannedUnknownBarcode.value = text;
-      wizardMode.value = 'CHOOSE';
-      linkTarget.value = null;
-      newProdName.value = '';
-      newProdPrice.value = null;
-      newProdUnidad.value = 'UNI';
-      showUnknownBarcodeWizard.value = true;
-      prodName.value = ''; 
+      toast.add({ severity: 'warn', summary: 'Código no encontrado', detail: 'Haz clic en el botón de alerta ⚠️ para enlazarlo.', life: 4000 });
       return;
     }
   }
@@ -415,6 +506,15 @@ const onEnterBusqueda = async () => {
 const confirmarVinculacion = async () => {
     if (!linkTarget.value || !linkTarget.value.id) return;
     
+    if (linkTarget.value.codEAN && linkTarget.value.codEAN !== scannedUnknownBarcode.value) {
+        wizardMode.value = 'CONFIRM_REPLACE';
+        return;
+    }
+
+    await ejecutarVinculacion();
+};
+
+const ejecutarVinculacion = async () => {
     await actualizarProducto(linkTarget.value.id, { codEAN: scannedUnknownBarcode.value });
     
     prodName.value = linkTarget.value; 
@@ -423,30 +523,10 @@ const confirmarVinculacion = async () => {
 
     toast.add({ severity: 'success', summary: 'Código Vinculado', detail: `El código se guardó en ${linkTarget.value.name}`, life: 3000 });
     showUnknownBarcodeWizard.value = false;
+    wizardMode.value = 'LINK';
+    scannedUnknownBarcode.value = '';
 };
 
-const confirmarCreacion = async () => {
-    if (!newProdName.value || newProdPrice.value === null) return;
-
-    const savedProd = await crearProducto({
-        name: newProdName.value.toUpperCase().trim(),
-        lastPrice: newProdPrice.value,
-        codEAN: scannedUnknownBarcode.value,
-        stock: 0,
-        unidad: newProdUnidad.value 
-    });
-
-    if (savedProd) {
-        prodName.value = savedProd; 
-        prodPrice.value = savedProd.lastPrice;
-        agregarAlCarrito();
-        toast.add({ severity: 'success', summary: 'Producto Creado', detail: savedProd.name, life: 3000 });
-    } else {
-        toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo crear el producto', life: 3000 });
-    }
-    
-    showUnknownBarcodeWizard.value = false;
-};
 
 const agregarAlCarrito = () => {
   if (!puedeAgregar.value) return
@@ -474,17 +554,24 @@ const agregarAlCarrito = () => {
 const removerItem = (idx) => cart.value.splice(idx, 1)
 
 const iniciarFlujo = () => {
+  const montoAIngresar = montoAbono.value > 0 ? montoAbono.value : saldoPendiente.value;
+  
+  if (montoAIngresar > saldoPendiente.value) {
+     toast.add({ severity: 'error', summary: 'Error', detail: 'Yape no puede exceder el monto pendiente.', life: 3000 });
+     return;
+  }
+
   if (matcherState.isListening) {
     cancelarEspera()
     toast.add({ severity: 'info', summary: 'Escucha cancelada', life: 3000 })
   } else {
-    const exito = iniciarEspera(totalGeneral.value)
+    const exito = iniciarEspera(montoAIngresar)
 
     if (exito) {
       toast.add({
         severity: 'info',
-        summary: 'Esperando Pago Digital...',
-        detail: `Monitoreando ingresos por S/ ${totalGeneral.value.toFixed(2)}`,
+        summary: 'Esperando Pago...',
+        detail: `Monitoreando Yape/Plin por S/ ${montoAIngresar.toFixed(2)}`,
         life: 3000,
       })
     } else {
@@ -513,20 +600,63 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
   loading.value = true
 
   try {
+    let amountPaid = 0;
+    let wallet = null;
+    let senderName = null;
+
+    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
+       amountPaid = Number(pagoDigitalConfirmado.amount) || 0;
+       wallet = pagoDigitalConfirmado.wallet;
+       senderName = pagoDigitalConfirmado.senderName;
+    } else {
+       amountPaid = montoAbono.value > 0 ? montoAbono.value : saldoPendiente.value;
+    }
+
+    if (amountPaid > saldoPendiente.value) {
+       if (method === 'DIGITAL') {
+           toast.add({ severity: 'error', summary: 'Error', detail: 'El cobro por Yape no puede superar el saldo pendiente.', life: 3000 });
+           loading.value = false;
+           return;
+       }
+    }
+
+    let abonoARegistrar = amountPaid;
+    let vuelto = 0;
+    
+    if (amountPaid > saldoPendiente.value) {
+       vuelto = amountPaid - saldoPendiente.value;
+       abonoARegistrar = saldoPendiente.value;
+    }
+
+    const paymentObj = {
+       method,
+       amount: abonoARegistrar,
+       refId: pagoDigitalConfirmado ? pagoDigitalConfirmado.id : null,
+       wallet: wallet || (method === 'DIGITAL' ? 'YAPE' : null),
+       senderName
+    };
+
+    pagosAcumulados.value.push(paymentObj);
+    montoAbono.value = null;
+
+    if (Math.round(saldoPendiente.value * 100) <= 0) {
+       await finalizarVentaAcumulada(vuelto > 0 ? { vuelto, entregado: amountPaid } : null);
+    } else {
+       toast.add({ severity: 'info', summary: 'Abono registrado', detail: `Se abonó S/ ${amountPaid.toFixed(2)}`, life: 3000 });
+    }
+  } catch (e) {
+    console.error('Error procesando pago:', e)
+    toast.add({ severity: 'error', summary: 'Error en caja', detail: e.message, life: 3000 })
+  } finally {
+    loading.value = false
+  }
+}
+
+const finalizarVentaAcumulada = async (infoVuelto = null) => {
     let itemsFinales = []
     let esVentaRapida = false
 
-    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
-      const montoValidado = Number(pagoDigitalConfirmado.amount) || 0
-      itemsFinales = [
-        {
-          name: 'VENTA DIGITAL DIRECTA',
-          qty: 1,
-          price: montoValidado,
-          subtotal: montoValidado,
-        },
-      ]
-    } else if (cart.value.length > 0) {
+    if (cart.value.length > 0) {
       itemsFinales = cart.value
     } else if (quickAmount.value > 0) {
       itemsFinales = [
@@ -539,70 +669,83 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
       ]
       esVentaRapida = true
     } else {
-      return
+      itemsFinales = [
+        {
+          name: 'VENTA DIRECTA',
+          qty: 1,
+          price: totalGeneral.value,
+          subtotal: totalGeneral.value,
+        },
+      ]
+      esVentaRapida = true
     }
 
-    const totalReal = itemsFinales.reduce((acc, item) => acc + item.subtotal, 0)
-
-    const payments = [
-      {
-        method,
-        amount: totalReal,
-        refId: method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.id : null,
-        wallet:
-          method === 'DIGITAL' && pagoDigitalConfirmado
-            ? pagoDigitalConfirmado.wallet
-            : method === 'DIGITAL'
-              ? 'YAPE'
-              : null,
-      },
-    ]
-
+    const digitalPayments = pagosAcumulados.value.filter(p => p.method === 'DIGITAL');
+    const esMixto = pagosAcumulados.value.length > 1;
     let nombreCliente = 'Cliente Eventual'
-    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
-      nombreCliente = pagoDigitalConfirmado.senderName
+
+    if (digitalPayments.length > 0 && digitalPayments[0].senderName) {
+      nombreCliente = digitalPayments[0].senderName;
     }
+
+    const totalReal = totalGeneral.value;
+    const paymentsParaDB = pagosAcumulados.value.map(p => ({
+        method: p.method,
+        amount: p.amount,
+        refId: p.refId,
+        wallet: p.wallet
+    }));
 
     const resultadoVenta = await registrarVenta({
       items: itemsFinales,
-      payments,
+      payments: paymentsParaDB,
       total: totalReal,
-      clientName:
-        method === 'DIGITAL' && pagoDigitalConfirmado
-          ? pagoDigitalConfirmado.senderName
-          : 'Cliente Eventual',
+      clientName: nombreCliente,
       metadata: {
         isQuickSale: esVentaRapida,
-        walletUsed:
-          method === 'DIGITAL' && pagoDigitalConfirmado ? pagoDigitalConfirmado.wallet : null,
+        isSplitPayment: esMixto,
+        walletUsed: digitalPayments.length > 0 ? digitalPayments.map(d=>d.wallet).join(', ') : null,
       },
     })
 
     const movId = resultadoVenta.id
 
-    if (method === 'DIGITAL' && pagoDigitalConfirmado) {
-      await reclamarPagoDigital(pagoDigitalConfirmado.id, movId)
+    for (const p of digitalPayments) {
+        if (p.refId) {
+            await reclamarPagoDigital(p.refId, movId);
+        }
     }
 
     cart.value = []
     quickAmount.value = null
     prodName.value = ''
+    isPaymentMode.value = false;
+    pagosAcumulados.value = [];
+    montoAbono.value = null;
+    
+    if (infoVuelto) {
+        postSaleView.value = infoVuelto;
+        if (postSaleTimer) clearTimeout(postSaleTimer);
+        postSaleTimer = setTimeout(() => {
+            postSaleView.value = null;
+        }, 120000);
+    }
+    
     toast.add({ severity: 'success', summary: 'Venta exitosa', life: 3000 })
 
     emit('transaction-completed')
-  } catch (e) {
-    console.error('Error en el flujo de pago:', e)
-    throw e
-  } finally {
-    loading.value = false
-  }
 }
+
+const montoAUsarParaPesca = computed(() => {
+  return montoAbono.value > 0 ? montoAbono.value : saldoPendiente.value;
+});
 
 defineExpose({
   finalizarVentaDigitalConfirmada,
   prellenarCarrito,
   cart,
   totalGeneral,
+  montoAUsarParaPesca
 })
 </script>
 
