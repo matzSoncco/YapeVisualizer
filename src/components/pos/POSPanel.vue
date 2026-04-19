@@ -16,7 +16,6 @@
           <template #option="slotProps">
             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
               <span>{{ slotProps.option.name }}</span>
-              <i v-if="slotProps.option.codEAN" class="pi pi-exclamation-triangle" style="color: var(--color-warning);" v-tooltip.left="'Este producto ya tiene un código enlazado'"></i>
             </div>
           </template>
         </AutoComplete>
