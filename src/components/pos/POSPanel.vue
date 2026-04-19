@@ -12,6 +12,7 @@
           placeholder="Buscar producto o escanear código..."
           class="full-width-search"
           ref="mainInput"
+          :disabled="isPaymentMode"
         >
           <template #option="slotProps">
             <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
@@ -19,13 +20,14 @@
             </div>
           </template>
         </AutoComplete>
-        <Button icon="pi pi-minus-circle" severity="secondary" @click="limpiarBusqueda" />
+        <Button icon="pi pi-minus-circle" severity="secondary" @click="limpiarBusqueda" :disabled="isPaymentMode" />
         <Button 
           v-if="scannedUnknownBarcode" 
           icon="pi pi-exclamation-triangle" 
           severity="warning" 
           @click="abrirModalEnlace" 
           v-tooltip.top="'Enlazar código desconocido'"
+          :disabled="isPaymentMode"
         />
       </div>
 
@@ -39,6 +41,7 @@
             :max-fraction-digits="unidadActual !== 'UNI' ? 3 : 0"
             class="compact-qty"
             inputClass="qty-field-inner"
+            :disabled="isPaymentMode"
           />
         </div>
 
@@ -54,13 +57,14 @@
             inputClass="price-field-inner"
             @keyup.enter="agregarAlCarrito"
             readonly
+            :disabled="isPaymentMode"
           />
         </div>
 
         <Button
           icon="pi pi-cart-plus"
           @click="agregarAlCarrito"
-          :disabled="!puedeAgregar"
+          :disabled="!puedeAgregar || isPaymentMode"
           class="btn-add-line"
         />
       </div>
@@ -82,12 +86,14 @@
               locale="es-PE"
               placeholder="Monto"
               :min-fraction-digits="2"
+              :disabled="isPaymentMode"
             />
             <Button
               v-if="quickAmount"
               icon="pi pi-times"
               severity="secondary"
               @click="quickAmount = null"
+              :disabled="isPaymentMode"
             />
           </div>
         </div>
@@ -118,6 +124,7 @@
                 rounded
                 class="btn-remove-item"
                 @click="removerItem(index)"
+                :disabled="isPaymentMode"
               />
             </td>
           </tr>
@@ -134,7 +141,25 @@
         </span>
       </div>
 
-      <div class="payment-grid">
+      <div v-if="!isPaymentMode" class="payment-action-single">
+        <button 
+          class="pay-btn-custom checkout-btn" 
+          @click="isPaymentMode = true"
+          :disabled="!puedeProcederAlPago || matcherState.isLocked"
+        >
+          <i class="pi pi-check-circle"></i>
+          <span>Cobrar</span>
+        </button>
+      </div>
+
+      <div v-else class="payment-grid">
+        <button 
+          class="pay-btn-custom back-btn" 
+          @click="isPaymentMode = false"
+          title="Regresar"
+        >
+          <i class="pi pi-times"></i>
+        </button>
         <button
           class="pay-btn-custom cash-btn"
           @click="procesarPago('CASH', null)"
@@ -276,6 +301,7 @@ const prodQty = ref(1)
 const prodPrice = ref(null)
 const emit = defineEmits(['transaction-completed'])
 
+const isPaymentMode = ref(false);
 const showUnknownBarcodeWizard = ref(false);
 const wizardMode = ref('LINK');
 const scannedUnknownBarcode = ref('');
@@ -316,6 +342,12 @@ watch(
   },
   { immediate: true },
 )
+
+watch(() => cart.value.length, (newLen) => {
+  if (newLen === 0) {
+    isPaymentMode.value = false;
+  }
+});
 
 watch(
   cart,
