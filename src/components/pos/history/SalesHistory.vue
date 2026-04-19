@@ -56,6 +56,9 @@
                 severity="danger"
                 rounded
               />
+              <template v-else-if="slotProps.data.payments?.length > 1">
+                 <Tag value="Híbrido" class="tag-hybrid" rounded />
+              </template>
               <template v-else-if="obtenerBilletera(slotProps.data)">
                 <Tag
                   :value="obtenerBilletera(slotProps.data).label"
@@ -367,6 +370,12 @@ const imprimirTicket = (data) => {
 :deep(.p-tag.tag-cash) {
   background: var(--color-cash-soft);
   color: var(--color-cash);
+  border: 1px solid var(--color-border);
+}
+
+:deep(.p-tag.tag-hybrid) {
+  background: var(--color-primary);
+  color: var(--color-accent);
   border: 1px solid var(--color-border);
 }
 
