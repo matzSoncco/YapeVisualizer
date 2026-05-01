@@ -10,13 +10,15 @@ import {
   getDoc,
   updateDoc,
   serverTimestamp,
+  getDocs
 } from 'firebase/firestore'
 import { store } from '@/store'
 import { useAuth } from '@/composables/core/useAuth'
+import { useShift } from './useShift'
 
 /**
  * Composable para manejar las transacciones de Yape
- * Logica de autoasignacion cuando el numero de sucursales es 1
+ * Lógica de autoasignación y gestión de turnos
  * @returns {Object} Propiedades y métodos del composable
  */
 export function useDigitalPayments() {
@@ -30,7 +32,7 @@ export function useDigitalPayments() {
   /**
    * Reclama una transacción pendiente (Método base).
    * @param {string} yapeId - ID del documento
-   * @param {string} nombreSucursal - Nombre de la sede destino
+   * @param {string} movementData - ID o Data del movimiento
    * @returns {Promise<boolean>}
    */
   const reclamarPagoDigital = async (yapeId, movementData) => {
@@ -58,9 +60,9 @@ export function useDigitalPayments() {
         claimedAt: serverTimestamp(),
         branchId: sucursalId,
         branchName: nombreSucursal,
-        sessionId: currentShift.id,
+        sessionId: currentShift?.id || null, // Protección extra si no hay turno
         movementId: finalMovementId,
-        cashierName: currentShift.cajero || 'Cajero no registrado',
+        cashierName: currentShift?.cajero || 'Cajero no registrado',
       })
       return true
     } catch (e) {
@@ -70,7 +72,7 @@ export function useDigitalPayments() {
   }
 
   /**
-   * Escucha las transacciones pendientes para el admin dado
+   * Escucha las transacciones pendientes SÓLO del turno activo
    * @param {string} emailAdmin
    */
   const escucharPendientes = (emailAdmin) => {
@@ -78,11 +80,26 @@ export function useDigitalPayments() {
 
     loading.value = true
     const notificationsRef = collection(db, 'users', user.value.uid, 'yape_notifications')
-    const q = query(
-      notificationsRef,
-      where('status', '==', 'pending'),
-      orderBy('timestamp', 'desc'),
-    )
+    const currentShift = store.currentShift
+
+    let q;
+
+    // LÓGICA DE TURNO: Si hay un turno abierto y tiene fecha de apertura
+    if (currentShift && currentShift.openedAt) {
+      q = query(
+        notificationsRef,
+        where('status', '==', 'pending'),
+        where('timestamp', '>=', currentShift.openedAt), // Filtro de respaldo de madrugada
+        orderBy('timestamp', 'desc')
+      )
+    } else {
+      // Fallback: Si no hay turno abierto, trae todos los pendientes recientes
+      q = query(
+        notificationsRef,
+        where('status', '==', 'pending'),
+        orderBy('timestamp', 'desc')
+      )
+    }
 
     if (unsubPendientes) unsubPendientes()
 
@@ -102,8 +119,47 @@ export function useDigitalPayments() {
       (err) => {
         console.error('Error feed Yape:', err)
         error.value = err.message
-      },
+      }
     )
+  }
+
+  /**
+   * Busca el historial completo de Yapes para una fecha específica
+   * @param {string} fechaString - Formato 'YYYY-MM-DD'
+   * @returns {Promise<Array>} Lista de Yapes
+   */
+  const fetchHistorial = async (fechaString) => {
+    if (!user.value?.uid || !fechaString) return []
+
+    try {
+      // Construimos el rango desde las 00:00:00 hasta las 23:59:59 del día solicitado
+      const inicio = new Date(`${fechaString}T00:00:00`)
+      const fin = new Date(`${fechaString}T23:59:59`)
+
+      const notificationsRef = collection(db, 'users', user.value.uid, 'yape_notifications')
+      
+      // Aquí traemos TODOS los pagos de esa fecha, sin importar si son 'pending' o 'PROCESSED'
+      const q = query(
+        notificationsRef,
+        where('timestamp', '>=', inicio),
+        where('timestamp', '<=', fin),
+        orderBy('timestamp', 'desc')
+      )
+
+      const snapshot = await getDocs(q)
+      
+      return snapshot.docs.map((doc) => {
+        const data = doc.data()
+        return {
+          id: doc.id,
+          ...data,
+          monto: Number(data.amount) || 0,
+        }
+      })
+    } catch (err) {
+      console.error('Error obteniendo el historial de Yape:', err)
+      throw err
+    }
   }
 
   /**
@@ -114,15 +170,13 @@ export function useDigitalPayments() {
     pendientes.value = []
   }
 
-  /**
-   * Retorna las propiedades y métodos del composable
-   */
   return {
     pendientes,
     loading,
     error,
     escucharPendientes,
     reclamarPagoDigital,
+    fetchHistorial, 
     detenerTodo,
   }
 }

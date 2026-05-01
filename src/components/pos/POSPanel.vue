@@ -143,78 +143,80 @@
     </main>
 
     <footer class="pos-footer-area">
-      <div class="summary-line">
-        <span class="summary-lbl">{{ isPaymentMode ? 'Saldo Pendiente' : 'Total a cobrar' }}</span>
-        <span class="summary-val" :class="{'is-saldo': isPaymentMode}">
-          <span class="summary-currency">S/</span>
-          {{ isPaymentMode ? saldoPendiente.toFixed(2) : totalGeneral.toFixed(2) }}
-        </span>
-      </div>
+  <div class="summary-line">
+    <span class="summary-lbl">{{ isPaymentMode ? 'Saldo Pendiente' : 'Total a cobrar' }}</span>
+    <span class="summary-val" :class="{'is-saldo': isPaymentMode}">
+      <span class="summary-currency">S/</span>
+      {{ isPaymentMode ? saldoPendiente.toFixed(2) : totalGeneral.toFixed(2) }}
+    </span>
+  </div>
 
-      <div v-if="isPaymentMode" class="summary-line abono-input-line">
-        <span class="summary-lbl">Monto a cobrar</span>
-        <span class="summary-input-val">
-          <InputNumber
-             v-model="montoAbono"
-             mode="currency"
-             currency="PEN"
-             locale="es-PE"
-             placeholder="0.00"
-             class="inline-abono"
-             inputClass="inline-abono-inner"
-             :min="0"
-          />
-        </span>
+  <div v-if="isPaymentMode" class="abono-input-wrapper">
+    <div class="abono-input-container">
+      <label class="abono-label">Monto a cobrar</label>
+      <div class="abono-input-field">
+        <InputNumber
+          v-model="montoAbono"
+          mode="currency"
+          currency="PEN"
+          locale="es-PE"
+          placeholder="0.00"
+          class="abono-input-number"
+          inputClass="abono-input-inner"
+          :min="0"
+        />
+        <i class="pi pi-credit-card input-icon"></i>
       </div>
+    </div>
+  </div>
 
-      <div v-if="pagosAcumulados.length > 0" class="abonos-list">
-        <span v-for="(p, i) in pagosAcumulados" :key="i" class="abono-badge">
-           Abono {{ p.method === 'CASH' ? 'EFECTIVO' : 'DIGITAL' }}: S/ {{ p.amount.toFixed(2) }}
-        </span>
-      </div>
+  <div v-if="pagosAcumulados.length > 0" class="abonos-list">
+    <span v-for="(p, i) in pagosAcumulados" :key="i" class="abono-badge">
+       Abono {{ p.method === 'CASH' ? 'EFECTIVO' : 'DIGITAL' }}: S/ {{ p.amount.toFixed(2) }}
+    </span>
+  </div>
 
-      <div v-if="!isPaymentMode" class="payment-action-single">
-        <button 
-          class="pay-btn-custom checkout-btn" 
-          @click="isPaymentMode = true"
-          :disabled="!puedeProcederAlPago || matcherState.isLocked"
-        >
-          <i class="pi pi-check-circle"></i>
-          <span>Cobrar</span>
-        </button>
-      </div>
+  <div v-if="!isPaymentMode" class="payment-action-single">
+    <button 
+      class="pay-btn-custom checkout-btn" 
+      @click="isPaymentMode = true"
+      :disabled="!puedeProcederAlPago || matcherState.isLocked"
+    >
+      <i class="pi pi-check-circle"></i>
+      <span>Cobrar</span>
+    </button>
+  </div>
 
-      <div v-else class="payment-hibrido-container">
-
-        <div class="payment-grid">
-          <button 
-            class="pay-btn-custom back-btn" 
-            @click="regresarEdicion"
-            v-tooltip.top="tienePagoDigital ? 'No puedes regresar si hay pagos por Yape' : 'Regresar'"
-            :disabled="tienePagoDigital"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-          <button
-            class="pay-btn-custom cash-btn"
-            @click="procesarPago('CASH', null)"
-            :disabled="!puedeProcederAlPago || matcherState.isLocked"
-          >
-            <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
-            <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
-          </button>
-          <button
-            class="pay-btn-custom yape-btn"
-            @click="iniciarFlujo"
-            :disabled="!puedeProcederAlPago || loading"
-          >
-            <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
-            <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
-            <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
-          </button>
-        </div>
-      </div>
-    </footer>
+  <div v-else class="payment-hibrido-container">
+    <div class="payment-grid">
+      <button 
+        class="pay-btn-custom back-btn" 
+        @click="regresarEdicion"
+        v-tooltip.top="tienePagoDigital ? 'No puedes regresar si hay pagos por Yape' : 'Cancelar'"
+        :disabled="tienePagoDigital"
+      >
+        <i class="pi pi-times"></i>
+      </button>
+      <button
+        class="pay-btn-custom cash-btn"
+        @click="procesarPago('CASH', null)"
+        :disabled="!puedeProcederAlPago || matcherState.isLocked"
+      >
+        <i :class="loading ? 'pi pi-spin pi-spinner' : 'pi pi-money-bill'"></i>
+        <span>{{ loading ? 'Procesando...' : 'Efectivo' }}</span>
+      </button>
+      <button
+        class="pay-btn-custom yape-btn"
+        @click="iniciarFlujo"
+        :disabled="!puedeProcederAlPago || loading"
+      >
+        <i :class="matcherState.isListening || loading ? 'pi pi-spin pi-spinner' : 'pi pi-qrcode'"></i>
+        <span>{{ loading ? 'Registrando...' : 'Yape / Plin' }}</span>
+        <Badge v-if="matcherState.isLocked" value="!" severity="warning" class="lock-badge" />
+      </button>
+    </div>
+  </div>
+</footer>
 
 <Dialog 
       v-model:visible="showUnknownBarcodeWizard" 
@@ -1041,6 +1043,109 @@ defineExpose({
   .btn-confirm {
     width: 100%;
     justify-content: center;
+  }
+}
+/* Nuevos estilos para el campo Monto a cobrar */
+.abono-input-wrapper {
+  margin: 0.75rem 0;
+  padding: 0 0.25rem;
+}
+
+.abono-input-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.abono-input-container:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+.abono-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.abono-input-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 160px;
+}
+
+.abono-input-number {
+  width: 100%;
+}
+
+.abono-input-number :deep(.p-inputnumber-input) {
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  width: 100%;
+}
+
+.input-icon {
+  position: absolute;
+  right: 0.5rem;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+/* Mejora del layout de pagos acumulados */
+.abonos-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  padding: 0.5rem 0;
+  border-top: 1px dashed var(--color-border);
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.abono-badge {
+  background: var(--color-primary);
+  color: white;
+  padding: 0.35rem 0.85rem;
+  border-radius: 99px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+  .abono-input-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  
+  .abono-input-field {
+    width: 100%;
+  }
+  
+  .payment-grid {
+    gap: 0.5rem;
+  }
+  
+  .pay-btn-custom span {
+    font-size: 0.8rem;
   }
 }
 </style>
