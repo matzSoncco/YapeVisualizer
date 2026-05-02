@@ -1,127 +1,96 @@
-import { reactive, computed } from 'vue';
+import { reactive, computed } from 'vue'
 
 /**
- * Store reactivo simple para manejar el estado global de sucursales
+ * Global store to manage user profile, business info, branches, etc
  */
 export const store = reactive({
-    sucursales: [],
-    sucursalActual: localStorage.getItem('sucursalActual') || null,
-    loading: false,
-    currentShift: null,
-    isAdminAuthenticated: false,
+  loading: false,
+  isAdminAuthenticated: false,
 
-    negocio: {
-        nombre: '',
-        ruc: '',
-        logoUrl: ''
-    },
+  userProfile: null,
+  negocio: {
+    nombre: '',
+    ruc: '',
+    logoUrl: '',
+  },
 
-    userProfile: {
-        role: 'user',
-        adminPin: null,
-        isConfigured: false,
-        deviceOnline: false,
-        lastHeartbeat: null,
-        subscription: {
-            isActive: false,
-            planName: 'Cargando...',
-            limitSucursales: 0,
-            status: 'loading',
-            nextBillingDate: null,
-            trialEndDate: null
-        }
-    }
-});
+  sucursales: [],
+  sucursalActual: localStorage.getItem('sucursalActual') || null,
+  currentShift: null,
+})
+
+// Getters
+export const isShiftOpen = computed(() => store.currentShift !== null)
+export const userRole = computed(() => store.userProfile?.role || 'user')
+
+// Mutations
+export const setLoading = (estado) => (store.loading = estado)
+export const setAdminAuth = (value) => (store.isAdminAuthenticated = value)
+export const setBranches = (data) => (store.sucursales = data)
 
 /**
- * Helper computado para usar en templates
- * Reemplaza la necesidad de un booleano manual
+ * Writes the current shift data to the store
  */
-export const isShiftOpen = computed(() => store.currentShift !== null);
+export const setCurrentShift = (data) => (store.currentShift = data)
 
 /**
- * Actualiza la lista de sucursales en el store
- * @param {*} data - Arreglo de sucursales
+ * Sets the current branch in the store and persists it in localStorage if it is not 'ADMIN
+ * @param {Object} id - The ID of the branch to set as current
  */
-export const setSucursales = (data) => {
-    store.sucursales = data;
-};
-
-/**
- * Establece la sucursal actual en el store y en localStorage
- * @param {string} id - UID de la sucursal actual o 'ADMIN'
- */
-export const setSucursalActual = (id) => {
-    store.sucursalActual = id;
-
-    if (id && id !== 'ADMIN') {
-        localStorage.setItem('sucursalActual', id);
-    } else {
-        localStorage.removeItem('sucursalActual');
-        store.currentShift = null;
-    }
-};
-
-/**
- * Establece el estado de carga en el store
- * @param {*} estado - Booleano de estado de carga
- */
-export const setLoading = (estado) => {
-    store.loading = estado;
-};
-
-/**
- * Actualiza los datos del perfil y suscripción
- * @param {Object} data - Objeto con role y subscription
- */
-export const setUserProfile = (data) => {
-    if (!data || Object.keys(data).length === 0) {
-        store.userProfile = {
-            role: 'user',
-            adminPin: null,
-            deviceOnline: false,
-            lastHeartbeat: null,
-            subscription: {
-                isActive: false,
-                planName: '',
-                limitSucursales: 0,
-                status: 'loading'
-            }
-        };
-        store.negocio = { nombre: '', ruc: '', logoUrl: '' };
-        return;
-    }
-    Object.assign(store.userProfile, {
-        ...data,
-        adminPin: data.adminPin || '1234'
-    });
-    if (data.negocio) {
-        Object.assign(store.negocio, data.negocio);
-    }
-};
-
-/**
- * Establece los datos de la sesión de caja en el store
- * @param {Object} data - Datos de la sesión de caja
- */
-export const setCurrentShift = (data) => {
-    store.currentShift = data;
+export const setCurrentBranch = (id) => {
+  store.sucursalActual = id
+  if (id && id !== 'ADMIN') {
+    localStorage.setItem('sucursalActual', id)
+  } else {
+    localStorage.removeItem('sucursalActual')
+  }
 }
 
 /**
- * Establece si el usuario está autenticado como administrador
- * @param {boolean} value - Valor booleano que indica si el usuario está autenticado como administrador
+ * Saves the user profile data to the store, role and subscription info included
+ * @param {Object} data - An object with the user profile data
  */
-export const setAdminAuth = (value) => {
-    store.isAdminAuthenticated = value;
-};
+export const setUserProfile = (data) => {
+  if (!data) {
+    store.userProfile = null
+    store.negocio = { nombre: '', ruc: '', logoUrl: '' }
+    return
+  }
+
+  store.userProfile = {
+    uid: data.uid,
+    email: data.email,
+    displayName: data.displayName,
+    role: data.role,
+    isConfigured: data.isConfigured,
+    subscription: data.subscription,
+  }
+
+  if (data.sucursales) {
+    store.sucursales = data.sucursales
+  }
+
+  if (data.negocio) {
+    Object.assign(store.negocio, data.negocio)
+  }
+}
 
 /**
- * Llave dinámica para la persistencia del carrito basada en la sucursal actual
- * Retorna null si no hay sucursal seleccionada o es admin global
+ * Generates a unique localStorage key for the cart based on the current branch
  */
-export const cartStorageKey = computed (() =>{
-    const sId = store.sucursalActual;
-    if (!sId || !sId === "ADMIN") return null;
-    return `post_cart_${sId}`;
+export const cartStorageKey = computed(() => {
+  const sId = store.sucursalActual
+  if (!sId || sId === 'ADMIN') return null
+  return `pos_cart_${sId}`
 })
+
+/**
+ * Clears all user-related data from the store and localStorage
+ */
+export const clearStore = () => {
+  store.userProfile = null
+  store.currentShift = null
+  store.isAdminAuthenticated = false
+  store.sucursalActual = null
+  localStorage.removeItem('sucursalActual')
+}
