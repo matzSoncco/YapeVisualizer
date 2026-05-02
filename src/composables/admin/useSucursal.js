@@ -2,7 +2,7 @@ import { computed } from 'vue'
 import { db } from '@/firebaseConfig'
 import { collection, doc, setDoc, deleteDoc, updateDoc } from 'firebase/firestore'
 import { useAuth } from '../core/useAuth'
-import { store, setSucursalActual } from '@/store'
+import { store, setCurrentBranch } from '@/store'
 
 /**
  * Composable para manejar sucursales
@@ -80,7 +80,7 @@ export function useSucursal() {
    */
   const seleccionar = async (nombreId, pinIngresado = null) => {
     if (nombreId !== 'ADMIN') {
-      setSucursalActual(nombreId)
+      setCurrentBranch(nombreId)
       return true
     }
 
@@ -89,7 +89,7 @@ export function useSucursal() {
     const esValido = await verifyAdminPin(pinIngresado)
 
     if (esValido) {
-      setSucursalActual('ADMIN')
+      setCurrentBranch('ADMIN')
       return true
     }
 
@@ -114,7 +114,7 @@ export function useSucursal() {
    * Limpia la sucursal actual seleccionada
    */
   const limpiarSucursal = () => {
-    setSucursalActual(null)
+    setCurrentBranch(null)
   }
 
   /**

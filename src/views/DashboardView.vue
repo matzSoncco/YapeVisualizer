@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard">
-    <GlobalLoader v-if="globalLoading || store.loading" />
     <ArqueoModal />
     <ShiftSummaryModal />
     <ExpenseModal />
@@ -72,7 +71,6 @@ import POSNavbar from '@/components/pos/layout/POSNavbar.vue'
 import ArqueoModal from '@/components/pos/modals/ArqueoModal.vue'
 import ExpenseModal from '@/components/pos/modals/ExpenseModal.vue'
 import PaymentMatchModal from '@/components/pos/modals/PaymentMatchModal.vue'
-import GlobalLoader from '@/components/shared/GlobalLoader.vue'
 
 const router = useRouter()
 const toast = useToast()

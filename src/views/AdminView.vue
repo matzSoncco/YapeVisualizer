@@ -75,7 +75,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSucursal } from '@/composables/admin/useSucursal'
 import { useAdmin } from '@/composables/admin/useAdmin'
@@ -94,7 +94,7 @@ const toast = useToast()
 const { sucursales } = useSucursal()
 const { reportes, loadingReportes, buscarCuadres, kpis, salesChartData, branchChartData } =
   useAdmin()
-const { tienePinInseguro } = useAuth()
+const { hasInsecurePin } = useAuth()
 
 const activeTab = ref('overview')
 const isDetailVisible = ref(false)
@@ -138,18 +138,32 @@ const verDetalle = (data) => {
  * Al montar el componente, verifica que el usuario no tenga el PIN por defecto o inseguro
  */
 onMounted(() => {
-  if (tienePinInseguro.value) {
+  // Solo procedemos si el perfil ya existe en el store
+  if (store.userProfile) {
+    checkInsecurePin();
+  }
+});
+
+const checkInsecurePin = () => {
+  if (hasInsecurePin.value) {
     toast.add({
       severity: 'warn',
       summary: 'Acción Requerida',
       detail: 'Por seguridad, debes cambiar tu PIN antes de administrar.',
       life: 6000,
-    })
-    router.push('/admin/perfil')
-    return
+    });
+    router.push('/admin/perfil');
+    return true;
   }
-  handleSearch()
-})
+  handleSearch();
+  return false;
+};
+
+watch(() => store.userProfile, (newProfile) => {
+  if (newProfile) {
+    checkInsecurePin();
+  }
+}, { immediate: true });
 </script>
 
 <style scoped>
