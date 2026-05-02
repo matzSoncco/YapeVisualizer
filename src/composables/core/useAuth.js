@@ -1,240 +1,129 @@
 import { ref, computed } from 'vue'
-import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
-import { auth, db } from '@/firebaseConfig'
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'
-import { store, setUserProfile } from '@/store'
-import { hashPin } from '@/utils/security'
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
+import { auth } from '@/firebaseConfig'
+import { store, setUserProfile, setLoading } from '@/store'
+import { apiFetch } from '@/services/api'
 
 const user = ref(null)
 
 /**
- * Listener de cambios en el estado de autenticación
- * Gestiona la sincronización entre Firebase Auth y el perfil en Firestore
+ * Listener for auth state changes
+ * Updates the user ref whenever the auth state changes
  */
-onAuthStateChanged(auth, async (currentUser) => {
-  user.value = currentUser
-
-  if (currentUser) {
-    try {
-      const userRef = doc(db, 'users', currentUser.uid)
-      const userSnap = await getDoc(userRef)
-
-      /**
-       * Inicialización de perfil: Si es la primera vez que entra,
-       * creamos su documento base con el plan de prueba.
-       * TODO: Cambiar el limite de sucursales y duración del trial según se requiera
-       */
-      if (!userSnap.exists()) {
-        const newProfile = {
-          email: currentUser.email,
-          displayName: currentUser.displayName || 'Usuario',
-          role: 'owner',
-          adminPin: '1234',
-          createdAt: new Date().toISOString(),
-          isConfigured: false,
-          businessProfile: {
-            name: '',
-            ruc: '',
-            address: '',
-            phone: '',
-            logoUrl: '',
-            currency: 'PEN',
-          },
-          subscription: {
-            isActive: true,
-            status: 'trial',
-            planName: 'Prueba Gratuita',
-            limitSucursales: 3,
-            trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            nextBillingDate: null,
-          },
-        }
-        await setDoc(userRef, newProfile)
-        setUserProfile(newProfile)
-      } else {
-        setUserProfile(userSnap.data())
-      }
-    } catch (error) {
-      console.error('Error al sincronizar perfil en Firestore:', error.code, error.message)
-    }
-  } else {
-    setUserProfile(null)
-  }
+onAuthStateChanged(auth, (firebaseUser) => {
+  user.value = firebaseUser
 })
 
-/**
- * Composable para manejar autenticación de usuarios
- * @returns {Object} Funciones y propiedades relacionadas con la autenticación
- */
 export function useAuth() {
-  const error = ref(null)
-  const loading = ref(false)
+  const authError = ref(null)
 
   /**
-   * Iniciar sesión con Google mediante popup
-   * @returns {Promise<void>} Promesa que se resuelve cuando la operación de login finaliza.
+   * Syncs the user profile with the backend after login
+   * @returns {Promise<Object>} - Promise that resolves with the user profile data
+   */
+  const syncProfile = async () => {
+    setLoading(true)
+    const response = await apiFetch('auth/sync-profile', { method: 'POST' })
+
+    try {
+      if (!response.ok) {
+        throw new Error(response.message || 'Error al sincronizar perfil')
+      }
+
+      setUserProfile(response.data)
+      return response.data
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
+   * Login with Google using Firebase Authentication
+   * @returns {Promise<void>} - Promise that resolves when the login process is complete
    */
   const logInWithGoogle = async () => {
-    error.value = null
-    loading.value = true
+    setLoading(true)
     try {
       const provider = new GoogleAuthProvider()
       provider.setCustomParameters({ prompt: 'select_account' })
       await signInWithPopup(auth, provider)
+      await syncProfile()
     } catch (err) {
-      error.value = err.code
-      console.error('Login Error:', err)
+      authError.value = err.code
+      console.error('Error en el acceso:', err)
     } finally {
-      loading.value = false
+      setLoading(false)
     }
   }
 
   /**
-   * Cerrar sesión del usuario actual
-   * @returns {Promise<void>} Promesa que se resuelve cuando la operación de logout finaliza.
+   * Log out the user and clear the local store
+   * @returns {Promise<void>} - Promise that resolves when the logout process is complete
    */
   const logOut = async () => {
     try {
       await signOut(auth)
-      user.value = null
-    } catch (err) {
-      console.error('Logout Error:', err)
+      store.clearStore()
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
     }
   }
 
   /**
-   * Actualiza el PIN administrativo en Firestore y en el estado local
-   * Realiza validación de doble factor
+   * Updates the admin PIN by sending the current and new PIN to the backend
+   * @param {string} currentPin - The current admin PIN
+   * @param {string} newPin - The new admin PIN to set
+   * @returns {Promise<boolean>} - Promise that resolves with true if the update was successful, false otherwise
    */
   const updateAdminPin = async (currentPin, newPin) => {
-    if (!user.value) throw new Error('Sesión no válida')
+    setLoading(true)
 
-    if (!/^\d{4}$/.test(newPin)) {
-      throw new Error('El PIN debe contener exactamente 4 dígitos numéricos.')
-    }
-
-    if (newPin === '1234') {
-      throw new Error('No puedes usar el PIN por defecto. Elige uno seguro.')
-    }
-
-    loading.value = true
     try {
-      const userRef = doc(db, 'users', user.value.uid)
-      const storedData = String(store.userProfile?.adminPin || '1234')
-      
-      const currentHash = await hashPin(String(currentPin))
-      const newHash = await hashPin(String(newPin))
-
-      const isPinCorrect = storedData.length > 10 
-        ? storedData === currentHash
-        : storedData === String(currentPin)
-
-      if (!isPinCorrect) {
-        throw new Error('El PIN actual ingresado es incorrecto.')
-      }
-
-      await setDoc(userRef, { adminPin: newHash }, { merge: true })
-
-      setUserProfile({ ...store.userProfile, adminPin: newHash })
-
-      return true
-    } catch (err) {
-      console.error('Error actualizando PIN:', err)
-      throw err
-    } finally {
-      loading.value = false
-    }
-  }
-
-  /**
-   * Verifica el PIN ingresado contra el almacenado en Firestore para el usuario actual
-   * @param {string} inputPin 
-   * @returns {Promise<boolean>} Promesa que se resuelve con true si el PIN es válido, false en caso contrario
-   */
-  const verifyAdminPin = async (inputPin) => {
-    if (!user.value) return false
-
-    loading.value = true;
-    try {
-      const userRef = doc(db, 'users', user.value.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) return false;
-
-      const storedData = String(userSnap.data().adminPin);
-      const inputHash = await hashPin(String(inputPin));
-
-      if (storedData.length > 10) {
-        return storedData === inputHash;
-      }
-
-      if (storedData === String(inputPin)) {
-        // Aprovechamos el éxito para actualizar a Hash en Firebase de una vez
-        await updateDoc(userRef, { adminPin: inputHash });
-        
-        // Opcional: Actualizar el store local para que no pida cambio de PIN
-        store.userProfile.adminPin = inputHash; 
-        
-        console.log("✅ Usuario migrado a Hash con éxito");
-        return true;
-      }
-
-      return false;
-    } catch (err) {
-      console.error('Error verificando PIN:', err);
-      return false;
-    } finally {
-      loading.value = true;
-    }
-  }
-
-  /**
-   * Propiedad computada para verificar si el PIN actual es inseguro (1234)
-   * @returns {boolean} true si el PIN es '1234', false en caso contrario
-   */
-  const tienePinInseguro = computed(() => {
-    return store.userProfile?.adminPin === '1234'
-  })
-
-  /**
-   * Actualiza el perfil del negocio en Firestore y sincroniza con el estado local
-   * @param {*} profileData - Objeto con los datos del perfil del negocio
-   */
-  const updateBusinessProfile = async (profileData) => {
-    if (!user.value) throw new Error('Sesión no válida')
-
-    loading.value = true
-    try {
-      const userRef = doc(db, 'users', user.value.uid)
-
-      const updateData = {
-        businessProfile: profileData,
-        isConfigured: true,
-      }
-
-      await setDoc(userRef, updateData, { merge: true })
-
-      setUserProfile({
-        ...store.userProfile,
-        ...updateData,
+      const response = await apiFetch('auth/update-pin', {
+        method: 'POST',
+        body: JSON.stringify({ currentPin, newPin }),
       })
-    } catch (err) {
-      console.error('Error actualizando perfil del negocio:', err)
-      throw err
+      return response.ok
     } finally {
-      loading.value = false
+      setLoading(false)
     }
   }
+
+  /**
+   * Verifies the entered PIN against the one stored in Firestore for the current user
+   * @param {string} pin - The admin PIN to verify
+   * @returns {Promise<boolean>} - Promise that resolves with true if the PIN is valid, false otherwise
+   */
+  const verifyAdminPin = async (pin) => {
+    setLoading(true)
+    try {
+      const response = await apiFetch('auth/verify-pin', {
+        method: 'POST',
+        body: JSON.stringify({ pin }),
+      })
+      return response.ok
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  /**
+   * Computed property to check if the user has an insecure PIN
+   * @returns {boolean} - True if the user's profile is not configured, false otherwise
+   */
+  const hasInsecurePin = computed(() => {
+    return store.userProfile?.isConfigured === false
+  })
 
   return {
     user,
-    error,
-    loading,
+    authError,
+    isLoading: computed(() => store.loading),
     logInWithGoogle,
     logOut,
+    syncProfile,
     updateAdminPin,
-    updateBusinessProfile,
     verifyAdminPin,
-    tienePinInseguro,
+    hasInsecurePin,
   }
 }
