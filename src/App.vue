@@ -4,7 +4,9 @@ import { watch } from 'vue'
 import { db } from './firebaseConfig'
 import { collection, query, onSnapshot, doc, updateDoc } from 'firebase/firestore'
 import { useAuth } from '@/composables/core/useAuth'
-import { setSucursales, setLoading, setUserProfile } from '@/store'
+import { setBranches, setLoading, setUserProfile } from '@/store'
+import { store } from '@/store'
+import GlobalLoader from './components/shared/GlobalLoader.vue'
 import SubscriptionBanner from './components/shared/SubscriptionBanner.vue'
 
 /**
@@ -38,7 +40,7 @@ watch(
     }
 
     if (!newUser?.uid) {
-      setSucursales([])
+      setBranches([])
       setUserProfile(null)
       return
     }
@@ -59,7 +61,7 @@ watch(
           icono: doc.data().icono || '🏪',
         }))
 
-        setSucursales(docs)
+        setBranches(docs)
         setLoading(false)
       },
       (error) => {
@@ -127,6 +129,7 @@ watch(
     </template>
   </ConfirmDialog>
   <SubscriptionBanner />
+  <GlobalLoader v-if="store.loading" mensaje="Sincronizando con la central..." />
   <Toast />
   <RouterView :key="route.fullPath" />
 </template>
