@@ -82,39 +82,58 @@ export function useDigitalPayments() {
     const notificationsRef = collection(db, 'users', user.value.uid, 'yape_notifications')
     const currentShift = store.currentShift
 
-    let q;
-
-    // LÓGICA DE TURNO: Si hay un turno abierto y tiene fecha de apertura
-    if (currentShift && currentShift.openedAt) {
-      q = query(
-        notificationsRef,
-        where('status', '==', 'pending'),
-        where('timestamp', '>=', currentShift.openedAt), // Filtro de respaldo de madrugada
-        orderBy('timestamp', 'desc')
-      )
-    } else {
-      // Fallback: Si no hay turno abierto, trae todos los pendientes recientes
-      q = query(
-        notificationsRef,
-        where('status', '==', 'pending'),
-        orderBy('timestamp', 'desc')
-      )
-    }
+    // 1. Consulta simple: Solo traemos los pendientes.
+    // Esto ya NO requiere el Índice Compuesto en Firebase.
+    const q = query(
+      notificationsRef,
+      where('status', '==', 'pending'),
+      orderBy('timestamp', 'desc')
+    )
 
     if (unsubPendientes) unsubPendientes()
 
     unsubPendientes = onSnapshot(
       q,
       (snapshot) => {
-        pendientes.value = snapshot.docs.map((doc) => {
-          const data = doc.data()
-          return {
-            id: doc.id,
-            ...data,
-            monto: Number(data.amount) || 0,
+        // 2. Calcular la fecha límite real
+        let fechaLimite;
+        if (currentShift && currentShift.openedAt) {
+          // Si es Timestamp de Firebase, lo convertimos. Si es string/número, usamos new Date()
+          fechaLimite = currentShift.openedAt.toDate 
+            ? currentShift.openedAt.toDate() 
+            : new Date(currentShift.openedAt);
+        } else {
+          // Si no hay turno, el límite estricto es HOY a las 00:00:00
+          fechaLimite = new Date();
+          fechaLimite.setHours(0, 0, 0, 0);
+        }
+
+        // 3. El Candado: Filtrar los documentos uno por uno
+        const pagosFiltrados = [];
+        
+        snapshot.docs.forEach((doc) => {
+          const data = doc.data();
+          
+          // Uniformizamos la fecha del Yape
+          let yapeFecha = new Date(0); // Fecha muy antigua por si hay error
+          if (data.timestamp) {
+             yapeFecha = data.timestamp.toDate 
+               ? data.timestamp.toDate() 
+               : new Date(data.timestamp);
           }
-        })
-        loading.value = false
+
+          if (yapeFecha >= fechaLimite) {
+            pagosFiltrados.push({
+              id: doc.id,
+              ...data,
+              monto: Number(data.amount) || 0,
+            });
+          }
+        });
+
+        // 4. Actualizamos la vista solo con los que pasaron el filtro
+        pendientes.value = pagosFiltrados;
+        loading.value = false;
       },
       (err) => {
         console.error('Error feed Yape:', err)

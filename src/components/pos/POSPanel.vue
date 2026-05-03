@@ -171,9 +171,20 @@
   </div>
 
   <div v-if="pagosAcumulados.length > 0" class="abonos-list">
-    <span v-for="(p, i) in pagosAcumulados" :key="i" class="abono-badge">
-       Abono {{ p.method === 'CASH' ? 'EFECTIVO' : 'DIGITAL' }}: S/ {{ p.amount.toFixed(2) }}
-    </span>
+    <div 
+      v-for="(p, i) in pagosAcumulados" 
+      :key="i" 
+      class="abono-item" 
+      :class="p.method === 'CASH' ? 'is-cash' : 'is-digital'"
+    >
+      <div class="abono-info">
+        <i :class="p.method === 'CASH' ? 'pi pi-money-bill' : 'pi pi-qrcode'"></i>
+        <span>Abono {{ p.method === 'CASH' ? 'Efectivo' : (p.wallet || 'Digital') }}</span>
+      </div>
+      <div class="abono-amount">
+        S/ {{ p.amount.toFixed(2) }}
+      </div>
+    </div>
   </div>
 
   <div v-if="!isPaymentMode" class="payment-action-single">
@@ -644,7 +655,7 @@ const procesarPago = async (method, pagoDigitalConfirmado = null) => {
     if (Math.round(saldoPendiente.value * 100) <= 0) {
        await finalizarVentaAcumulada(vuelto > 0 ? { vuelto, entregado: amountPaid } : null);
     } else {
-       toast.add({ severity: 'info', summary: 'Abono registrado', detail: `Se abonó S/ ${amountPaid.toFixed(2)}`, life: 3000 });
+       //toast.add({ severity: 'info', summary: 'Abono registrado', detail: `Se abonó S/ ${amountPaid.toFixed(2)}`, life: 3000 });
     }
   } catch (e) {
     console.error('Error procesando pago:', e)
@@ -1105,47 +1116,61 @@ defineExpose({
   pointer-events: none;
 }
 
-/* Mejora del layout de pagos acumulados */
 .abonos-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.5rem;
-  margin: 0.5rem 0;
-  padding: 0.5rem 0;
-  border-top: 1px dashed var(--color-border);
-  border-bottom: 1px dashed var(--color-border);
+  margin: 1rem 0;
+  padding: 0;
 }
 
-.abono-badge {
-  background: var(--color-primary);
-  color: white;
-  padding: 0.35rem 0.85rem;
-  border-radius: 99px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  display: inline-flex;
+.abono-item {
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid transparent; /* Línea gruesa de color a la izquierda */
+  box-shadow: var(--shadow-flat);
+  transition: all 0.2s ease;
 }
-/* Responsive para pantallas pequeñas */
-@media (max-width: 768px) {
-  .abono-input-container {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
-  }
-  
-  .abono-input-field {
-    width: 100%;
-  }
-  
-  .payment-grid {
-    gap: 0.5rem;
-  }
-  
-  .pay-btn-custom span {
-    font-size: 0.8rem;
-  }
+
+.abono-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.abono-info i {
+  font-size: 1.2rem;
+}
+
+.abono-amount {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Variante para Efectivo (Verde) */
+.is-cash {
+  border-left-color: var(--color-success, #10b981);
+}
+.is-cash .abono-info i,
+.is-cash .abono-amount {
+  color: var(--color-success, #10b981);
+}
+
+/* Variante para Yape/Digital (Morado) */
+.is-digital {
+  border-left-color: var(--color-yape, #7B2CBF);
+}
+.is-digital .abono-info i,
+.is-digital .abono-amount {
+  color: var(--color-yape, #7B2CBF);
 }
 </style>
