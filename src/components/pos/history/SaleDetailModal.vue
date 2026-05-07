@@ -43,11 +43,24 @@
       </div>
 
       <div class="op-summary">
-        <div class="summary-item">
-          <label>MÉTODO DE PAGO</label>
-          <div class="method-tag" :class="obtenerClaseMetodo(sale)">
-            <i :class="obtenerIconoMetodo(sale)"></i>
-            <span>{{ obtenerNombreMetodo(sale) }}</span>
+        <div class="summary-item payment-methods-area">
+          <label>MÉTODO{{ sale.payments?.length > 1 ? 'S' : '' }} DE PAGO</label>
+          
+          <template v-if="sale.type !== 'EXPENSE'">
+            <div class="methods-list">
+              <div v-for="(pay, i) in sale.payments" :key="i" class="method-tag" :class="obtenerClaseMetodo(pay)">
+                <div>
+                   <i :class="obtenerIconoMetodo(pay)"></i>
+                   <span>{{ obtenerNombreMetodo(pay) }}</span>
+                </div>
+                <span class="pay-portion">S/ {{ (pay.amount || 0).toFixed(2) }}</span>
+              </div>
+            </div>
+          </template>
+          
+          <div v-else class="method-tag method-expense">
+            <i class="pi pi-wallet"></i>
+            <span>CAJA</span>
           </div>
         </div>
         <div class="summary-item text-right">
@@ -104,9 +117,9 @@ const open = (data) => {
  * @param s - Objeto de venta o gasto
  * @returns {string} - Nombre del método o "CAJA" para gastos
  */
-const obtenerNombreMetodo = (s) => {
-  if (s.type === 'EXPENSE') return 'CAJA'
-  const pay = s.payments?.[0]
+const obtenerNombreMetodo = (payOrSale) => {
+  if (payOrSale.type === 'EXPENSE') return 'CAJA'
+  const pay = payOrSale.method ? payOrSale : payOrSale.payments?.[0]
   return (pay?.wallet || pay?.method || 'EFECTIVO').toUpperCase()
 }
 
@@ -115,9 +128,10 @@ const obtenerNombreMetodo = (s) => {
  * @param s - Objeto de venta o gasto
  * @returns {string} - Clase CSS del ícono correspondiente
  */
-const obtenerIconoMetodo = (s) => {
-  if (s.type === 'EXPENSE') return 'pi pi-wallet'
-  return s.payments?.[0]?.method === 'CASH' ? 'pi pi-money-bill' : 'pi pi-mobile'
+const obtenerIconoMetodo = (payOrSale) => {
+  if (payOrSale.type === 'EXPENSE') return 'pi pi-wallet'
+  const pay = payOrSale.method ? payOrSale : payOrSale.payments?.[0]
+  return pay?.method === 'CASH' ? 'pi pi-money-bill' : 'pi pi-mobile'
 }
 
 /**
@@ -125,9 +139,10 @@ const obtenerIconoMetodo = (s) => {
  * @param s - Objeto de venta o gasto
  * @returns {string} - Clase CSS correspondiente
  */
-const obtenerClaseMetodo = (s) => {
-  if (s.type === 'EXPENSE') return 'method-expense'
-  const wallet = s.payments?.[0]?.wallet?.toUpperCase() || s.payments?.[0]?.method
+const obtenerClaseMetodo = (payOrSale) => {
+  if (payOrSale.type === 'EXPENSE') return 'method-expense'
+  const pay = payOrSale.method ? payOrSale : payOrSale.payments?.[0]
+  const wallet = pay?.wallet?.toUpperCase() || pay?.method
   if (wallet === 'YAPE') return 'method-yape'
   if (wallet === 'PLIN') return 'method-plin'
   if (wallet === 'CASH') return 'method-cash'
@@ -260,12 +275,37 @@ defineExpose({ open })
 }
 
 /* Botones con los colores que te gustan */
+.payment-methods-area {
+  flex: 1;
+}
+
+.methods-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+
 .method-tag {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
+  padding: 0.3rem 0;
+}
+
+.method-tag div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pay-portion {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--color-text-main);
 }
 
 .method-yape {

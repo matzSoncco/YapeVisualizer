@@ -11,7 +11,7 @@ export const simularDatos = async (userId) => {
         return;
     }
 
-    const randomMonto = [1, 2, 5, 10][Math.floor(Math.random() * 4)];
+    const randomMonto = [1];
     const randomName = ['Max', 'Jose', 'Alejandro'][Math.floor(Math.random() * 3)];
     const wallets = ['YAPE', 'PLIN'];
     const randomWallet = wallets[Math.floor(Math.random() * wallets.length)];

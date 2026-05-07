@@ -248,6 +248,18 @@ export const getTicketHTML = (sale, options = {}) => {
         <span>TOTAL</span>
         <span>S/ ${total.toFixed(2)}</span>
       </div>
+      
+      <div class="payments-details" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #000; font-size: 10pt;">
+        ${(sale.payments || []).map(p => {
+          let mName = p.wallet || p.method || 'CASH';
+          if(mName === 'CASH') mName = 'EFECTIVO';
+          return `<div class="meta-row">
+            <span>${mName.toUpperCase()}</span>
+            <span>S/ ${(p.amount || 0).toFixed(2)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+
       <div class="letras">SON: ${montoEnLetras(total)}</div>
     </div>
 

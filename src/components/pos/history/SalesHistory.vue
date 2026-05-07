@@ -7,7 +7,10 @@
       </div>
       <div class="summary-badge">
         <span class="label">Ventas de Hoy</span>
-        <span class="value">S/ {{ total.toFixed(2) }}</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span class="value">S/ {{ hideAmounts ? '***' : total.toFixed(2) }}</span>
+          <Button :icon="hideAmounts ? 'pi pi-eye-slash' : 'pi pi-eye'" rounded text severity="secondary" @click="hideAmounts = !hideAmounts" style="width: 2rem; height: 2rem; padding: 0;" v-tooltip.top="hideAmounts ? 'Mostrar montos' : 'Ocultar montos'" />
+        </div>
       </div>
     </header>
 
@@ -53,6 +56,9 @@
                 severity="danger"
                 rounded
               />
+              <template v-else-if="slotProps.data.payments?.length > 1">
+                 <Tag value="Híbrido" class="tag-hybrid" rounded />
+              </template>
               <template v-else-if="obtenerBilletera(slotProps.data)">
                 <Tag
                   :value="obtenerBilletera(slotProps.data).label"
@@ -68,8 +74,13 @@
         <Column header="Monto" class="col-amount">
           <template #body="slotProps">
             <span class="amount-text" :class="{ 'is-expense': slotProps.data.type === 'EXPENSE' }">
-              {{ slotProps.data.type === 'EXPENSE' ? '-' : '' }} S/
-              {{ Number(slotProps.data.totalAmount || slotProps.data.amount).toFixed(2) }}
+              {{ slotProps.data.type === 'EXPENSE' ? '-' : '' }} 
+              <template v-if="hideAmounts">
+                 ***
+              </template>
+              <template v-else>
+                 S/ {{ Number(slotProps.data.totalAmount || slotProps.data.amount).toFixed(2) }}
+              </template>
             </span>
           </template>
         </Column>
@@ -107,6 +118,7 @@
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Tag from 'primevue/tag'
+import Button from 'primevue/button'
 import { ref, computed } from 'vue'
 import { formatearHora } from '@/utils/dates'
 import { store } from '@/store'
@@ -118,6 +130,7 @@ const props = defineProps({
   ventas: { type: Array, required: true },
 })
 
+const hideAmounts = ref(false)
 const detalleRef = ref(null)
 const { imprimirTicket: printTicket } = usePrintTicket()
 
@@ -357,6 +370,12 @@ const imprimirTicket = (data) => {
 :deep(.p-tag.tag-cash) {
   background: var(--color-cash-soft);
   color: var(--color-cash);
+  border: 1px solid var(--color-border);
+}
+
+:deep(.p-tag.tag-hybrid) {
+  background: var(--color-primary);
+  color: var(--color-accent);
   border: 1px solid var(--color-border);
 }
 

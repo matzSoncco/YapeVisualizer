@@ -27,13 +27,16 @@
           <DigitalFeed :pagos-digitales="pendientes" @pescar="handlePesca" />
         </section>
 
-        <main class="pos-main-stage">
-          <div class="stage-left">
+        <main class="pos-main-stage" :class="{ 'is-resizing': isResizing }">
+          <div class="stage-left" :style="{ width: leftPaneWidth + 'px', flexBasis: leftPaneWidth + 'px' }">
             <POSPanel
               ref="posPanelRef"
               @transaction-completed="handleTransaccionCompletada"
             />
           </div>
+          
+          <div class="resizer" @mousedown="initResize"></div>
+
           <div class="stage-right">
             <SalesHistory :ventas="movimientosTurno" />
           </div>
@@ -91,6 +94,31 @@ const { matcherState, vigilarEntrantes, validarSeleccionManual, resetMatcher, ca
 vigilarEntrantes(pendientes)
 
 const globalLoading = ref(true)
+
+const leftPaneWidth = ref(420)
+const isResizing = ref(false)
+
+const initResize = (e) => {
+  e.preventDefault()
+  isResizing.value = true
+  document.addEventListener('mousemove', resize)
+  document.addEventListener('mouseup', stopResize)
+}
+
+const resize = (e) => {
+  if (isResizing.value) {
+    let newWidth = e.clientX
+    if (newWidth < 300) newWidth = 300
+    if (newWidth > window.innerWidth - 300) newWidth = window.innerWidth - 300
+    leftPaneWidth.value = newWidth
+  }
+}
+
+const stopResize = () => {
+  isResizing.value = false
+  document.removeEventListener('mousemove', resize)
+  document.removeEventListener('mouseup', stopResize)
+}
 
 const nombreCajero = computed(() => {
   return currentShift.value?.cajero || 'Cajero no asignado'
@@ -198,7 +226,7 @@ const handleCierreClick = async () => {
 const handlePesca = (pagoDigital) => {
   if (!posPanelRef.value) return
 
-  const totalCarrito = posPanelRef.value.totalGeneral || 0
+  const totalCarrito = posPanelRef.value.montoAUsarParaPesca || posPanelRef.value.totalGeneral || 0
 
   const resultado = validarSeleccionManual(pagoDigital, totalCarrito)
 
