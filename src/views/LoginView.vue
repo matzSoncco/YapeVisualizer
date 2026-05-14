@@ -28,7 +28,7 @@
         <Button
           label="Continuar con Google"
           icon="pi pi-google"
-          :loading="loading"
+          :loading="isLoading"
           @click="handleLogin"
           class="google-btn"
         />
@@ -52,7 +52,7 @@ import { useAuth } from '@/composables/core/useAuth'
 import Button from 'primevue/button'
 
 const router = useRouter()
-const { logInWithGoogle, loading } = useAuth()
+const { logInWithGoogle, isLoading } = useAuth()
 
 const handleLogin = async () => {
   try {
